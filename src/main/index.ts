@@ -1,18 +1,34 @@
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { app, BrowserWindow, protocol } from 'electron'
+import { app, BrowserWindow, ipcMain, protocol, safeStorage } from 'electron'
+import { createProvider, createStudyAi } from './ai'
 import {
+  createAiRegistry,
   createConsoleLog,
   createMainWindow,
+  createSecretStore,
   ensureSingleInstance,
+  isAppUrl,
+  pickPdfs,
+  registerPdfProtocol,
   registerPdfScheme,
   resolveRendererSource,
-  waitForRendererLoad
+  runSmoke,
+  waitForRendererLoad,
+  writeSmokePdf
 } from './app'
+import { openDatabase } from './db'
+import { createEmitter, registerIpc } from './ipc'
+import { createJobQueue } from './jobs'
+import { createPdfLibrary, DEFAULT_CHUNK_OPTIONS } from './library'
+import { createPipelines } from './pipelines'
+import { createSrs } from './srs'
 
 /**
- * Composition root. Wave 2 adds the services (db, library, queue, AI registry, pipelines) and
- * registerIpc / registerPdfProtocol here.
- * `--smoke` runs the app with a hidden window and exits 0 once the renderer loaded (CI and local checks).
+ * Composition root: builds every service, registers IPC and the PDF protocol, opens the window.
+ * `--smoke` uses a throwaway data dir and the fake AI provider, runs the full user flow through the
+ * real handlers and exits 0/1 (CI and local checks).
  */
 
 const isSmoke = process.argv.includes('--smoke')
@@ -20,6 +36,7 @@ const log = createConsoleLog('[main]')
 
 // Must run before app 'ready'.
 registerPdfScheme(protocol)
+if (isSmoke) app.setPath('userData', mkdtempSync(join(tmpdir(), 'study-buddy-smoke-')))
 
 const renderer = resolveRendererSource(
   process.env['ELECTRON_RENDERER_URL'],
@@ -44,11 +61,55 @@ function openMainWindow(): BrowserWindow {
 
 async function bootstrap(): Promise<void> {
   await app.whenReady()
+  const dataDir = app.getPath('userData')
+  const now = (): Date => new Date()
+  const db = openDatabase(join(dataDir, 'study-buddy.db'), { now })
+  const secrets = createSecretStore(db.settings, safeStorage, { log })
+  const ai = createAiRegistry({
+    getSettings: () => db.settings.get(),
+    secrets,
+    createProvider,
+    createStudyAi,
+    forceProvider: isSmoke ? 'fake' : undefined
+  })
+  const pipelines = createPipelines({
+    db,
+    library: createPdfLibrary({ rootDir: join(dataDir, 'library'), chunk: DEFAULT_CHUNK_OPTIONS }),
+    queue: createJobQueue({ repo: db.jobs, concurrency: db.settings.get().aiConcurrency, now }),
+    srs: createSrs(),
+    aiFor: (provider) => ai.aiFor(provider),
+    secrets,
+    emit: createEmitter(() => BrowserWindow.getAllWindows(), log),
+    now,
+    pickPdfs: () => pickPdfs(mainWindow),
+    appInfo: { version: app.getVersion(), platform: process.platform, dataDir }
+  })
+  registerIpc(ipcMain, pipelines.handlers, { isTrustedSender: (url) => isAppUrl(renderer, url), log })
+  registerPdfProtocol(protocol, (docId) => db.documents.get(docId)?.storedPath ?? null, { log })
+  pipelines.start()
+
+  let quitting = false
+  app.on('before-quit', (event) => {
+    if (quitting) return
+    quitting = true
+    event.preventDefault()
+    void pipelines
+      .stop()
+      .catch((err: unknown) => log.error('pipelines.stop failed', err))
+      .finally(() => {
+        db.close()
+        app.quit()
+      })
+  })
+
   const win = openMainWindow()
   if (isSmoke) {
     try {
       await waitForRendererLoad(win.webContents, 30_000)
-      console.info('[smoke] OK: renderer loaded')
+      log.info('[smoke] OK: renderer loaded')
+      const pdfPath = await writeSmokePdf(join(dataDir, 'smoke'))
+      await runSmoke(pipelines.handlers, { pdfPath, log, timeoutMs: 120_000 })
+      await pipelines.stop()
       app.exit(0)
     } catch (err) {
       log.error('[smoke] FAIL', err)
