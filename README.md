@@ -16,7 +16,7 @@ Turn theory-heavy PDFs (lecture slides, notes, textbooks) into an exam plan you 
 
 Works with your **Claude subscription** through a local Claude Code login, so there are no API costs. You can also use your own Anthropic API key.
 
-> Status: v0.1, usable. See `docs/ARCHITECTURE.md` for how it's built.
+> Status: v0.1, usable. [Project overview](docs/OVERVIEW.md) · [Architecture](docs/ARCHITECTURE.md)
 
 ## Development
 
