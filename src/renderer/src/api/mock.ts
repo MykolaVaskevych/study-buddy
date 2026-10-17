@@ -457,6 +457,7 @@ export function createMockApi(options: MockOptions = {}): MockApi {
         expectedScore,
         targetScore: input.targetScore,
         budgetMinutes: budget,
+        reserveMinutes: 0,
         plannedMinutes: used,
         items,
         notes: []
