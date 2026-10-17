@@ -29,6 +29,11 @@ export interface PlanInput {
    * Absent means PLANNER_DEFAULTS.reserveFraction. Part of the input so a saved plan keeps it.
    */
   reserveFraction?: number
+  /**
+   * The student's pace: multiplies every time estimate (0.75 = learns faster than estimated,
+   * 1.5 = slower). Absent means 1.
+   */
+  pace?: number
 }
 
 export interface TopicOverride {

@@ -17,7 +17,7 @@
  * Deterministic: the same input always gives the same schedule.
  */
 import type { PlanInput, PlanResult, PlanTopic, Schedule, StudyDay, StudySession, StudyLevel } from './types'
-import { PLANNER_DEFAULTS, modelTopics } from './model'
+import { PLANNER_DEFAULTS, modelTopics, withPace } from './model'
 import { isoDayNumber, isoDayString } from './dates'
 
 interface LearnUnit {
@@ -146,12 +146,8 @@ function pack(units: LearnUnit[], capacity: number[], step: number = PLANNER_DEF
  * Every planned learn minute is scheduled. Each day stays within the daily limit unless the plan
  * itself is larger than the calendar allows (e.g. pinned topics beyond the budget).
  */
-export function buildSchedule(
-  plan: PlanResult,
-  topics: PlanTopic[],
-  input: PlanInput,
-  today: string
-): Schedule {
+export function buildSchedule(plan: PlanResult, raw: PlanTopic[], input: PlanInput, today: string): Schedule {
+  const topics = withPace(raw, input.pace)
   const p = PLANNER_DEFAULTS
   const start = isoDayNumber(today)
   if (start === null) throw new RangeError(`buildSchedule: today must be an ISO date, got "${today}"`)

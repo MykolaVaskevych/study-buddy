@@ -1,5 +1,5 @@
 import type { PlanInput, PlanItem, PlanResult, PlanTopic, StudyLevel } from './types'
-import { PLANNER_DEFAULTS, modelTopics, type PlannerParams, type TopicModel } from './model'
+import { PLANNER_DEFAULTS, modelTopics, type PlannerParams, type TopicModel, withPace } from './model'
 import { resolveBudget, type BudgetInfo } from './budget'
 import { approxPercent, formatMinutes, formatPercent } from './format'
 import {
@@ -158,7 +158,8 @@ function studiedReason(m: TopicModel, level: 'core' | 'full', ctx: ReasonContext
  * at least at core, except prerequisites the user pinned to skip. Those are reported in the notes.
  * See ./model.ts for the value and cost model and ./search.ts for the exact solver.
  */
-export function solvePlan(topics: PlanTopic[], input: PlanInput, opts: SolveOptions = {}): PlanResult {
+export function solvePlan(raw: PlanTopic[], input: PlanInput, opts: SolveOptions = {}): PlanResult {
+  const topics = withPace(raw, input.pace)
   const params = PLANNER_DEFAULTS
   const slot = params.slotMinutes
   const target = clamp(input.targetScore, 0, 1)

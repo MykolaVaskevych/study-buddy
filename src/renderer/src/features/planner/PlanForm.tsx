@@ -174,6 +174,18 @@ export function PlanForm({ draft, today, onChange }: Props): React.JSX.Element {
             hint="Share of your time held back for page checks, spaced review and mock exams."
           />
         </div>
+        <div className="mt-3">
+          <Slider
+            label="My pace"
+            value={draft.pace}
+            min={LIMITS.pace.min}
+            max={LIMITS.pace.max}
+            step={LIMITS.pace.step}
+            valueText={draft.pace === 1 ? 'As estimated' : `${draft.pace}× the estimated time`}
+            onChange={(pace) => set({ pace })}
+            hint="Below 1 if you learn faster than the estimates, above 1 if you need more time."
+          />
+        </div>
       </details>
     </form>
   )
