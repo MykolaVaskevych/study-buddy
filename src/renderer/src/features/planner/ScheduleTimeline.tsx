@@ -114,7 +114,7 @@ export function ScheduleTimeline({ schedule, docId, today, examDate, pageOf }: P
   const maxMinutes = Math.max(30, ...days.map((d) => d.totalMinutes))
 
   return (
-    <section aria-labelledby="schedule-heading" className="flex flex-col gap-4">
+    <section data-tour="schedule" aria-labelledby="schedule-heading" className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
         <div className="flex flex-col gap-0.5">
           <h2 id="schedule-heading" className="font-serif text-xl font-semibold">

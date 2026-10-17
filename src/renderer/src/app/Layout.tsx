@@ -1,3 +1,4 @@
+import { TourOverlay } from '../features/tour/TourOverlay'
 import { useMemo } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router'
 import { ErrorBoundary } from './ErrorBoundary'
@@ -37,6 +38,7 @@ export function Layout(): React.JSX.Element {
         <StatusBar />
       </div>
       <Toaster />
+      <TourOverlay />
     </div>
   )
 }

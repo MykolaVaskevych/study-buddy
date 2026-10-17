@@ -125,7 +125,7 @@ export function ReaderToolbar({
 
       <span aria-hidden className="mx-1 h-5 w-px bg-rule" />
 
-      <nav aria-label="Study tools" className="flex items-center gap-0.5">
+      <nav data-tour="study-tools" aria-label="Study tools" className="flex items-center gap-0.5">
         {(
           [
             { to: `/book/${docId}/quiz`, icon: 'target', label: 'Quiz' },

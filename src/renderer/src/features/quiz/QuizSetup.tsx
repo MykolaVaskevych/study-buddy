@@ -106,6 +106,7 @@ export function QuizSetup({ docId, pageCount, topics, preset, onStart }: QuizSet
   const legend = 'text-sm font-semibold text-graphite'
   return (
     <form
+      data-tour="quiz-setup"
       className="flex flex-col gap-7"
       onSubmit={(e) => {
         e.preventDefault()

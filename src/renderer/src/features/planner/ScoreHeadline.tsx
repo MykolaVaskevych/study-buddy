@@ -141,7 +141,7 @@ export function ScoreHeadline({ preview, topics, draft, today, onChange }: Props
   }
 
   return (
-    <section aria-labelledby="plan-score" className="flex flex-col gap-5">
+    <section data-tour="plan-score" aria-labelledby="plan-score" className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end gap-x-8 gap-y-2">
         <div className="flex flex-col">
           <h2 id="plan-score" className="text-sm font-semibold text-graphite">

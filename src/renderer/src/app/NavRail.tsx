@@ -1,3 +1,7 @@
+import { useLocation } from 'react-router'
+import { useTour } from '../features/tour/tourStore'
+import { tourForPath } from '../features/tour/tours'
+import logoUrl from '../assets/logo.png'
 import { NavLink } from 'react-router'
 import { useSettings, useUpdateSettings } from '../api/hooks'
 import { cx, Icon, IconButton, Tooltip } from '../components'
@@ -17,6 +21,8 @@ const themeLabel: Record<ThemeSetting, string> = {
 export function NavRail(): React.JSX.Element {
   const settings = useSettings()
   const update = useUpdateSettings()
+  const location = useLocation()
+  const startTour = useTour((t) => t.start)
   const theme = settings.data?.theme ?? 'system'
 
   return (
@@ -24,13 +30,18 @@ export function NavRail(): React.JSX.Element {
       aria-label="Sections"
       className="flex w-[4.5rem] shrink-0 flex-col items-center gap-1 border-r border-rule bg-paper py-3"
     >
-      <span aria-hidden className="mb-3 font-serif text-xl font-bold italic">
-        <span className="marker-stroke">Sb</span>
-      </span>
+      <img
+        src={logoUrl}
+        alt=""
+        aria-hidden
+        className="mb-3 size-9 rounded-[0.6rem] select-none"
+        draggable={false}
+      />
       {navRoutes().map(({ path, nav }) => (
         <Tooltip key={path} label={nav.label} shortcut={nav.shortcut} side="right">
           <NavLink
             to={path}
+            data-tour={`nav-${path}`}
             end={path === '/'}
             className={({ isActive }) =>
               cx(
@@ -55,7 +66,15 @@ export function NavRail(): React.JSX.Element {
           </NavLink>
         </Tooltip>
       ))}
-      <div className="mt-auto">
+      <div className="mt-auto flex flex-col items-center gap-1">
+        <span data-tour="help">
+          <IconButton
+            icon="help"
+            label="Show the tour for this screen"
+            tooltipSide="right"
+            onClick={() => startTour(tourForPath(location.pathname))}
+          />
+        </span>
         <IconButton
           icon={themeIcon[theme]}
           label={themeLabel[theme]}

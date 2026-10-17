@@ -66,6 +66,7 @@ export function PlanForm({ draft, today, onChange }: Props): React.JSX.Element {
 
   return (
     <form
+      data-tour="plan-form"
       aria-label="Plan settings"
       className="grid content-start items-start gap-6 md:grid-cols-2 md:gap-x-10 lg:grid-cols-1"
       onSubmit={(e) => e.preventDefault()}

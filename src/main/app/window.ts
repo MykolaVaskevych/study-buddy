@@ -14,10 +14,12 @@ export interface MainWindowOptions {
   isDev: boolean
   preloadPath: string
   renderer: RendererSource
+  /** Window/taskbar icon (dev; packaged builds get theirs from the desktop entry). */
+  icon?: string
 }
 
 export function createMainWindow(opts: MainWindowOptions): BrowserWindow {
-  const { isSmoke, isDev, preloadPath, renderer } = opts
+  const { isSmoke, isDev, preloadPath, renderer, icon } = opts
   // Global, but cheap and idempotent: every window creation (macOS re-activate) gets the same menu.
   Menu.setApplicationMenu(
     Menu.buildFromTemplate(
@@ -32,6 +34,7 @@ export function createMainWindow(opts: MainWindowOptions): BrowserWindow {
     minHeight: 600,
     show: false,
     title: 'Study Buddy',
+    ...(icon ? { icon } : {}),
     autoHideMenuBar: true,
     webPreferences: {
       preload: preloadPath,

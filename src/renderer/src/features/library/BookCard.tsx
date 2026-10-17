@@ -47,7 +47,10 @@ export function BookCard({ doc, now }: { doc: DocumentSummary; now: Date }): Rea
   const countdown = examCountdown(doc.examDate, now)
   const mastery = doc.mastery
   return (
-    <article className="group relative flex overflow-hidden rounded-lg border border-rule bg-sheet transition-colors focus-within:border-accent hover:border-rule-strong">
+    <article
+      data-tour="book-card"
+      className="group relative flex overflow-hidden rounded-lg border border-rule bg-sheet transition-colors focus-within:border-accent hover:border-rule-strong"
+    >
       <div aria-hidden className={cx('w-1.5 shrink-0', spineClass[spineIndex(doc.id) - 1])} />
       <div className="flex min-w-0 flex-1 flex-col gap-4 p-5">
         <div className="flex flex-col gap-1">

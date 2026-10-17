@@ -142,7 +142,7 @@ export function CourseMap({ doc, index, page, onJump }: Props): React.JSX.Elemen
   const current = topicAt(list, page)
 
   return (
-    <div data-reader-panel className="flex h-full flex-col">
+    <div data-reader-panel data-tour="course-map" className="flex h-full flex-col">
       <h2 className="flex h-11 shrink-0 items-center px-4 text-sm font-semibold text-graphite">Course map</h2>
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4" tabIndex={-1}>
         {topics.isPending ? (
