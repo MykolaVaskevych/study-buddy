@@ -52,6 +52,7 @@ describe('PlanRepo', () => {
         expectedScore: 0.5,
         targetScore: 0.6,
         budgetMinutes: 300,
+        reserveMinutes: 75,
         plannedMinutes: 300,
         items: [],
         notes: ['Target not reachable']
