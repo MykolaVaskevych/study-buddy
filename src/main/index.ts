@@ -1,81 +1,72 @@
 import { join } from 'node:path'
-import { app, BrowserWindow, protocol, shell } from 'electron'
-import { PDF_SCHEME } from '@shared/ipc/contract'
+import { app, BrowserWindow, protocol } from 'electron'
+import {
+  createConsoleLog,
+  createMainWindow,
+  ensureSingleInstance,
+  registerPdfScheme,
+  resolveRendererSource,
+  waitForRendererLoad
+} from './app'
 
 /**
- * Composition root. Wave 2 replaces the body of `bootstrap()` with createServices() + registerIpc().
- * `--smoke` runs the app headlessly-ish and exits 0 once the renderer loaded (CI and local checks).
+ * Composition root. Wave 2 adds the services (db, library, queue, AI registry, pipelines) and
+ * registerIpc / registerPdfProtocol here.
+ * `--smoke` runs the app with a hidden window and exits 0 once the renderer loaded (CI and local checks).
  */
 
 const isSmoke = process.argv.includes('--smoke')
+const log = createConsoleLog('[main]')
 
 // Must run before app 'ready'.
-protocol.registerSchemesAsPrivileged([
-  { scheme: PDF_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } }
-])
+registerPdfScheme(protocol)
 
-function createWindow(): BrowserWindow {
-  const win = new BrowserWindow({
-    width: 1440,
-    height: 900,
-    minWidth: 960,
-    minHeight: 600,
-    show: false,
-    title: 'Study Buddy',
-    autoHideMenuBar: true,
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.cjs'),
-      contextIsolation: true,
-      sandbox: true,
-      nodeIntegration: false,
-      spellcheck: false
-    }
-  })
+const renderer = resolveRendererSource(
+  process.env['ELECTRON_RENDERER_URL'],
+  join(__dirname, '../renderer/index.html')
+)
 
-  win.once('ready-to-show', () => {
-    if (!isSmoke) win.show()
-  })
+let mainWindow: BrowserWindow | null = null
 
-  // Open external links in the browser, never inside the app.
-  win.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('https://')) void shell.openExternal(url)
-    return { action: 'deny' }
+function openMainWindow(): BrowserWindow {
+  const win = createMainWindow({
+    isSmoke,
+    isDev: !app.isPackaged,
+    preloadPath: join(__dirname, '../preload/index.cjs'),
+    renderer
   })
-  win.webContents.on('will-navigate', (event, url) => {
-    if (url !== win.webContents.getURL()) event.preventDefault()
+  win.on('closed', () => {
+    if (mainWindow === win) mainWindow = null
   })
-
-  const devUrl = process.env['ELECTRON_RENDERER_URL']
-  if (devUrl) void win.loadURL(devUrl)
-  else void win.loadFile(join(__dirname, '../renderer/index.html'))
+  mainWindow = win
   return win
-}
-
-function runSmoke(win: BrowserWindow): void {
-  const fail = (reason: string): void => {
-    console.error(`[smoke] FAIL: ${reason}`)
-    app.exit(1)
-  }
-  const timer = setTimeout(() => fail('timeout waiting for renderer'), 30_000)
-  win.webContents.once('did-fail-load', (_e, code, desc) => fail(`renderer failed to load: ${code} ${desc}`))
-  win.webContents.once('did-finish-load', () => {
-    clearTimeout(timer)
-    console.info('[smoke] OK: renderer loaded')
-    app.exit(0)
-  })
 }
 
 async function bootstrap(): Promise<void> {
   await app.whenReady()
-  const win = createWindow()
-  if (isSmoke) runSmoke(win)
+  const win = openMainWindow()
+  if (isSmoke) {
+    try {
+      await waitForRendererLoad(win.webContents, 30_000)
+      console.info('[smoke] OK: renderer loaded')
+      app.exit(0)
+    } catch (err) {
+      log.error('[smoke] FAIL', err)
+      app.exit(1)
+    }
+    return
+  }
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0) openMainWindow()
   })
 }
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
-})
-
-void bootstrap()
+// Smoke runs skip the lock so they work while a dev instance is open.
+if (!isSmoke && !ensureSingleInstance(app, () => mainWindow)) {
+  app.quit()
+} else {
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit()
+  })
+  void bootstrap()
+}
