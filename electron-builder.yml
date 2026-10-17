@@ -1,0 +1,28 @@
+appId: io.github.mykolavaskevych.studybuddy
+productName: Study Buddy
+executableName: study-buddy
+copyright: Copyright © 2026 Mykola Vaskevych
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**/*
+  - package.json
+  # The subscription provider uses the user's installed Claude Code; skip the SDK's ~270 MB bundled binary.
+  - '!**/node_modules/@anthropic-ai/claude-agent-sdk-*/**'
+asar: true
+asarUnpack:
+  - '**/*.node'
+linux:
+  target: [AppImage, pacman, deb]
+  category: Education
+  icon: build/icon.png
+  synopsis: Turn theory-heavy PDFs into an exam plan you can finish
+  description: Page notes, flashcards with spaced repetition, page checks, quizzes and an exam triage planner, powered by Claude.
+  maintainer: Mykola Vaskevych <bebagi61@gmail.com>
+  syncDesktopName: true
+mac:
+  target: [dmg]
+  category: public.app-category.education
+win:
+  target: [nsis]
