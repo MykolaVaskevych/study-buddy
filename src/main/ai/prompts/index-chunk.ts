@@ -1,6 +1,13 @@
 import type { ChunkInfo } from '../../library/types'
 import type { PageTextLookup } from '../types'
-import { CORE_PRINCIPLES, FOCUS_PAGES_KEY, PDF_PRINCIPLES, formatRange, headerLines } from './common'
+import {
+  CORE_PRINCIPLES,
+  FOCUS_PAGES_KEY,
+  PDF_PRINCIPLES,
+  formatRange,
+  headerLines,
+  pageLabel
+} from './common'
 import { formatManifest, manifestEntries } from './manifest'
 
 /** Index pass over one chunk (fast tier). Produces page notes and the digest for the topic map. */
@@ -12,7 +19,7 @@ ${PDF_PRINCIPLES}
 Your task: index every page of the attached chunk for a study app. Output exactly one entry per page in the page manifest, in page order.
 
 For each page:
-- page: the SB-PAGE number.
+- page: the number on the page stamp.
 - kind: title | toc | content | exercise | answers | references | blank | other ("other" for administrative pages such as schedules, grading rules or contact details).
 - teachable: true if a student should learn from the page; false for title, table of contents, blank, references and administrative pages.
 - summary: 1-3 sentences stating what the page teaches (the content itself, not "this slide shows"). For a non-teachable page, a few words saying what it is.
@@ -33,6 +40,6 @@ export function buildIndexUser(chunk: ChunkInfo, pageText: PageTextLookup): stri
   return [
     headerLines({ Task: 'index', [FOCUS_PAGES_KEY]: formatRange(chunk.startPage, chunk.endPage) }),
     formatManifest(manifest),
-    `Index all ${manifest.length} pages (SB-PAGE ${chunk.startPage} to ${chunk.endPage}).`
+    `Index all ${manifest.length} pages (${pageLabel(chunk.startPage)} to ${pageLabel(chunk.endPage)}).`
   ].join('\n\n')
 }

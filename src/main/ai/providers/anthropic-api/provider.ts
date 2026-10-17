@@ -146,6 +146,12 @@ export function parseStructured<T>(message: BetaMessage, schema: z.ZodType<T>): 
   return parsed.data
 }
 
+/** The real SDK call. The key lives only inside the client; it is never logged or put in messages. */
+function sdkStream(apiKey: string): MessageStreamFn {
+  const client = new Anthropic({ apiKey })
+  return (params, options) => client.beta.messages.stream(params, options)
+}
+
 export function createAnthropicApiProvider(
   config: AnthropicApiConfig,
   deps: AnthropicApiDeps = {}
@@ -154,10 +160,8 @@ export function createAnthropicApiProvider(
   const now = deps.now ?? Date.now
   const maxTokens = config.maxTokens ?? DEFAULT_MAX_TOKENS
   const apiKey = config.apiKey
-  const client = apiKey === null || deps.stream ? null : new Anthropic({ apiKey })
-  const streamFn: MessageStreamFn | null =
-    deps.stream ??
-    (client === null ? null : (params, options) => client.beta.messages.stream(params, options))
+  // No key, no calls: even an injected stream is never used without one.
+  const streamFn: MessageStreamFn | null = apiKey === null ? null : (deps.stream ?? sdkStream(apiKey))
 
   async function call(
     req: {

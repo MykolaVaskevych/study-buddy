@@ -1,4 +1,5 @@
 import type { PromptPart } from '@shared/ai/provider'
+import { PAGE_STAMP_PREFIX, stampText } from '../../library'
 import type { ChunkInfo } from '../../library/types'
 
 /**
@@ -20,8 +21,14 @@ Ground rules:
 
 /** Extra rules when chunk PDFs are attached. */
 export const PDF_PRINCIPLES = `About the attached PDF pages:
-- Every page carries a small stamp "SB-PAGE <n>" in a corner. <n> is the absolute page number: use it for every page number in your output. The stamp itself is not content; never mention it.
+- Every page carries a small stamp "${PAGE_STAMP_PREFIX} <n>" in a corner. <n> is the absolute page number: use it for every page number in your output. The stamp itself is not content; never mention it.
 - Many pages are image-only slides without a text layer. Read the image: use diagrams, plots, tables, circuit sketches and handwritten formulas, and describe them in words where needed.`
+
+/** The page stamp as written in prompts, e.g. "SB-PAGE 12" (same text the library stamps on chunks). */
+export const pageLabel = stampText
+
+/** Regex source matching a page label and capturing the page number. */
+export const PAGE_LABEL_PATTERN = `${PAGE_STAMP_PREFIX} (\\d+)`
 
 /** Output language instruction; 'auto' means the language of the document itself. */
 export function languageInstruction(language: string): string {

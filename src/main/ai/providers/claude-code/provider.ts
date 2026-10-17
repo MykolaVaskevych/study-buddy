@@ -120,6 +120,16 @@ function modelOf(result: SDKResultSuccess, initModel: string | null, alias: stri
   return initModel ?? first?.[1].canonicalModel ?? first?.[0] ?? alias
 }
 
+/**
+ * JSON schema for `outputFormat`. The runtime validates it with a validator that does not know
+ * the draft 2020-12 meta-schema zod declares in `$schema` (the CLI exits with "not a valid JSON
+ * Schema"), so that key is dropped; the schemas themselves use only basic keywords.
+ */
+export function outputSchema(schema: z.ZodType): Record<string, unknown> {
+  const { $schema: _metaSchema, ...rest } = z.toJSONSchema(schema)
+  return rest
+}
+
 function parseJson(text: string): unknown {
   try {
     return JSON.parse(text)
@@ -144,13 +154,8 @@ interface RunOutcome {
   apiKeySource: ApiKeySource | null
 }
 
-export function createClaudeCodeProvider(
-  config: ClaudeCodeConfig,
-  deps: ClaudeCodeDeps = {}
-): LlmProvider & {
-  /** Health check that also reports which credential the runtime used. */
-  health(signal?: AbortSignal): Promise<HealthResult>
-} {
+/** health() also warns when the runtime billed an API key instead of the subscription. */
+export function createClaudeCodeProvider(config: ClaudeCodeConfig, deps: ClaudeCodeDeps = {}): LlmProvider {
   const queryFn: QueryFn = deps.query ?? sdkQuery
   const readFile = deps.readFile ?? defaultReadFile
   const now = deps.now ?? Date.now
@@ -237,7 +242,7 @@ export function createClaudeCodeProvider(
   async function generateWithSource<T>(
     req: GenerateRequest<T>
   ): Promise<GenerateResult<T> & { apiKeySource: ApiKeySource | null }> {
-    const outcome = await run({ ...req, schema: z.toJSONSchema(req.schema) })
+    const outcome = await run({ ...req, schema: outputSchema(req.schema) })
     const { result } = outcome
     const candidate = result.structured_output ?? parseJson(result.result)
     const parsed = req.schema.safeParse(candidate)
@@ -264,7 +269,19 @@ export function createClaudeCodeProvider(
     },
 
     async *stream(req: StreamRequest): AsyncIterable<StreamEvent> {
-      const outcome = yield* pumpText((onText, signal) => run({ ...req, signal, onText }), req.signal)
+      // Fields are picked explicitly: a stream never asks for structured output.
+      const outcome = yield* pumpText(
+        (onText, signal) =>
+          run({
+            system: req.system,
+            parts: req.parts,
+            tier: req.tier,
+            signal,
+            onText,
+            ...(req.effort === undefined ? {} : { effort: req.effort })
+          }),
+        req.signal
+      )
       yield { type: 'done', usage: usageFromResult(outcome.result), model: outcome.model }
     },
 

@@ -17,7 +17,7 @@ const RULES = `Flashcard rules:
 - Cover what an exam asks: definitions, relationships, formulas and when to use them, typical calculations, classic traps. Skip trivia.
 - Do not repeat cards listed under "Already covered".
 - essential: true for the must-know core (definitions, key formulas, classic exam facts), false for supporting detail.
-- source_pages: the SB-PAGE numbers the card is based on, all inside the focus pages.
+- source_pages: the page-stamp numbers the card is based on, all inside the focus pages.
 - evidence: a verbatim quote (at most 25 words) copied from the text of a source page that supports the back. If the source page is image-only, briefly describe the figure instead.`
 
 const ESSENTIALS = `Essentials only: create only must-know core cards (definitions, key formulas, classic exam facts). Every card has essential = true. Fewer, high-value cards are better than filler.`

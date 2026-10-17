@@ -1,4 +1,5 @@
 import type { IndexedPage } from '../types'
+import { pageLabel } from './common'
 
 /**
  * Index notes as compact text for generation prompts. They tell the model what the index pass
@@ -15,7 +16,7 @@ function short(text: string, max = MAX_FIELD): string {
 
 /** Text header of one page's notes block; the fake provider splits notes on it. */
 export function notesPageHeader(page: IndexedPage): string {
-  return `SB-PAGE ${page.page} [${page.kind}${page.teachable ? '' : ', not teachable'}]`
+  return `${pageLabel(page.page)} [${page.kind}${page.teachable ? '' : ', not teachable'}]`
 }
 
 export function formatNotes(notes: readonly IndexedPage[]): string {

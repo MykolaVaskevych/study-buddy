@@ -7,7 +7,7 @@ import type {
   VerifyOutput
 } from '@shared/ai/schemas'
 import type { QuestionType } from '@shared/domain'
-import { FOCUS_PAGES_KEY, parseHeader, parseRange } from '../../prompts/common'
+import { FOCUS_PAGES_KEY, PAGE_LABEL_PATTERN, parseHeader, parseRange } from '../../prompts/common'
 import { readTagged } from '../../prompts/grade'
 import { parseManifest } from '../../prompts/manifest'
 import { parseBlindQuestions } from '../../prompts/verify'
@@ -47,12 +47,14 @@ function countOf(text: string, fallback: number): number {
 /** Reads the notes blocks written by prompts/notes.ts. */
 export function parseNotes(text: string): NotePage[] {
   const out: NotePage[] = []
-  for (const block of text.split(/\n(?=SB-PAGE \d+ \[)/)) {
-    const header = /^SB-PAGE (\d+) \[/.exec(block.trimStart())
-    if (!header?.[1]) continue
+  const header = new RegExp(`^${PAGE_LABEL_PATTERN} \\[`)
+  // Notes blocks are separated by blank lines (see prompts/notes.ts) and start with the page label.
+  for (const block of text.split('\n\n')) {
+    const match = header.exec(block.trimStart())
+    if (!match?.[1]) continue
     const summary = /^Summary: (.*)$/m.exec(block)?.[1]?.trim() ?? ''
     const concept = /^Concepts: (.*?) \(/m.exec(block)?.[1]?.trim()
-    out.push({ page: Number(header[1]), summary, term: concept ?? firstWords(summary, 3) })
+    out.push({ page: Number(match[1]), summary, term: concept ?? firstWords(summary, 3) })
   }
   return out
 }

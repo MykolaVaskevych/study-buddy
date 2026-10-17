@@ -192,6 +192,12 @@ export function errorFromThrown(
       retryable: false,
       cause: err
     })
+  // Argument validation by the CLI (e.g. a rejected --json-schema): retrying cannot help.
+  if (/is not a valid JSON Schema|error: (unknown|invalid) option/i.test(`${message}\n${state.stderr}`))
+    return new AiError('unknown', `Claude Code rejected the request: ${message}`, {
+      retryable: false,
+      cause: err
+    })
   if (/failed to spawn/i.test(message))
     return new AiError('unavailable', `Could not start Claude Code: ${message}`, { cause: err })
   if (state.assistantError !== null) {

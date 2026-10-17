@@ -1,4 +1,5 @@
 import type { PageTextLookup } from '../types'
+import { PAGE_LABEL_PATTERN, pageLabel } from './common'
 
 /**
  * The page manifest lists every page the model must handle and whether it has a text layer.
@@ -14,7 +15,7 @@ export interface ManifestEntry {
   snippet: string | null
 }
 
-const HEADER = 'Page manifest (SB-PAGE number | text layer | opening text):'
+const HEADER = 'Page manifest (page stamp | text layer | opening text):'
 
 /** First `max` characters of the page text, cut at a word boundary. */
 export function snippetOf(text: string, max: number): string {
@@ -47,10 +48,10 @@ export function manifestEntries(
 
 export function formatManifest(entries: readonly ManifestEntry[]): string {
   const lines = entries.map((e) => {
-    if (e.imageOnly) return `SB-PAGE ${e.page} | image-only (no text layer: read the slide image)`
+    if (e.imageOnly) return `${pageLabel(e.page)} | image-only (no text layer: read the slide image)`
     return e.snippet === null
-      ? `SB-PAGE ${e.page} | text`
-      : `SB-PAGE ${e.page} | text | ${JSON.stringify(e.snippet)}`
+      ? `${pageLabel(e.page)} | text`
+      : `${pageLabel(e.page)} | text | ${JSON.stringify(e.snippet)}`
   })
   return [HEADER, ...lines].join('\n')
 }
@@ -58,8 +59,9 @@ export function formatManifest(entries: readonly ManifestEntry[]): string {
 /** Inverse of `formatManifest` (lines that do not parse are skipped). */
 export function parseManifest(text: string): ManifestEntry[] {
   const entries: ManifestEntry[] = []
+  const pattern = new RegExp(`^${PAGE_LABEL_PATTERN} \\| (image-only|text)(?: \\| (".*"))?`)
   for (const line of text.split('\n')) {
-    const match = /^SB-PAGE (\d+) \| (image-only|text)(?: \| (".*"))?/.exec(line)
+    const match = pattern.exec(line)
     if (!match?.[1]) continue
     entries.push({
       page: Number(match[1]),

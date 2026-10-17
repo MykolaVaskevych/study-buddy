@@ -51,7 +51,9 @@ const BY_TASK: Partial<Record<AiTask, (text: string) => unknown>> = {
 export function sampleFromJsonSchema(schema: unknown): unknown {
   if (typeof schema !== 'object' || schema === null) return null
   const node = new Map(Object.entries(schema))
-  const type = node.get('type')
+  const rawType = node.get('type')
+  // Nullable fields come as type: ['string', 'null']; prefer the non-null member.
+  const type = Array.isArray(rawType) ? (rawType.find((t) => t !== 'null') ?? 'null') : rawType
   const anyOf = node.get('anyOf')
   if (Array.isArray(anyOf)) return sampleFromJsonSchema(anyOf.find((s) => !isNullSchema(s)) ?? anyOf[0])
   const enumValues = node.get('enum')

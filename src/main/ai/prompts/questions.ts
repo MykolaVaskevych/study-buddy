@@ -36,7 +36,7 @@ const RULES = `Question rules:
 - difficulty: integer 1 (recall) to 5 (multi-step reasoning).
 - explanation: why the answer is right, referring to the idea on the page (2-4 sentences).
 - Do not repeat questions listed under "Already asked".
-- source_pages: the SB-PAGE numbers the question is based on, all inside the focus pages.
+- source_pages: the page-stamp numbers the question is based on, all inside the focus pages.
 - evidence: a verbatim quote (at most 25 words) copied from the text of a source page that supports the answer. If the source page is image-only, briefly describe the figure instead.`
 
 export function buildQuestionsUser(
