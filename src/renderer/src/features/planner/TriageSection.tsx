@@ -90,7 +90,7 @@ export function TriageSection({
   )
 
   return (
-    <section aria-labelledby="triage-heading" className="flex flex-col gap-4">
+    <section data-tour="triage" aria-labelledby="triage-heading" className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <div className="flex flex-col gap-0.5">
           <h2 id="triage-heading" className="font-serif text-xl font-semibold">
