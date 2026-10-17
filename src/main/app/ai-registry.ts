@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto'
 import type { LlmProvider, ProviderId } from '@shared/ai/provider'
 import type { Settings } from '@shared/settings'
 import type { StudyAi } from '../ai/types'
@@ -6,8 +5,8 @@ import type { SecretStore } from '../pipelines/types'
 
 /**
  * Caches one StudyAi per provider and rebuilds it when the inputs that provider was built from change.
- * Each lookup computes a small fingerprint of just those inputs (models, executable path, API key
- * digest), so a settings change that does not concern a provider (theme, concurrency) keeps its
+ * Each lookup compares a small fingerprint of just those settings (models, executable path) plus the
+ * API key, so a settings change that does not concern a provider (theme, concurrency) keeps its
  * instance, while a new key or model takes effect on the very next call without explicit plumbing.
  */
 
@@ -27,26 +26,27 @@ export interface AiRegistry {
   invalidate(): void
 }
 
-const digest = (value: string): string => createHash('sha256').update(value).digest('hex').slice(0, 16)
-
-/** Fingerprint of the inputs a provider is built from. Holds a digest of the key, never the key. */
-export function providerFingerprint(provider: ProviderId, settings: Settings, apiKey: string | null): string {
+/** Fingerprint of the settings a provider is built from. The API key is compared separately, never put here. */
+export function providerFingerprint(provider: ProviderId, settings: Settings): string {
   switch (provider) {
     case 'claude-code':
       return JSON.stringify([provider, settings.models['claude-code'], settings.claudeCodePath])
     case 'anthropic-api':
-      return JSON.stringify([
-        provider,
-        settings.models['anthropic-api'],
-        apiKey === null ? null : digest(apiKey)
-      ])
+      return JSON.stringify([provider, settings.models['anthropic-api']])
     case 'fake':
       return provider
   }
 }
 
+interface Entry {
+  fingerprint: string
+  /** The key the provider was built with. The provider holds it in memory anyway; kept for comparison only. */
+  apiKey: string | null
+  ai: StudyAi
+}
+
 export function createAiRegistry(deps: AiRegistryDeps): AiRegistry {
-  const cache = new Map<ProviderId, { fingerprint: string; ai: StudyAi }>()
+  const cache = new Map<ProviderId, Entry>()
 
   return {
     aiFor(requested) {
@@ -54,12 +54,12 @@ export function createAiRegistry(deps: AiRegistryDeps): AiRegistry {
       const provider = deps.forceProvider ?? requested ?? settings.provider
       // Only the API provider needs the key; skip the keyring otherwise.
       const apiKey = provider === 'anthropic-api' ? deps.secrets.getApiKey() : null
-      const fingerprint = providerFingerprint(provider, settings, apiKey)
+      const fingerprint = providerFingerprint(provider, settings)
       const hit = cache.get(provider)
-      if (hit && hit.fingerprint === fingerprint) return hit.ai
+      if (hit && hit.fingerprint === fingerprint && hit.apiKey === apiKey) return hit.ai
 
       const ai = deps.createStudyAi(deps.createProvider({ ...settings, provider }, { apiKey }))
-      cache.set(provider, { fingerprint, ai })
+      cache.set(provider, { fingerprint, apiKey, ai })
       return ai
     },
     invalidate() {

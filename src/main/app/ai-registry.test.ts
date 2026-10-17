@@ -117,10 +117,15 @@ describe('createAiRegistry', () => {
 })
 
 describe('providerFingerprint', () => {
-  it('holds a digest of the API key, never the key itself', () => {
-    const fp = providerFingerprint('anthropic-api', DEFAULT_SETTINGS, 'sk-ant-secret-value')
-    expect(fp).not.toContain('sk-ant-secret-value')
-    expect(fp).not.toBe(providerFingerprint('anthropic-api', DEFAULT_SETTINGS, 'sk-ant-other-value'))
-    expect(fp).not.toBe(providerFingerprint('anthropic-api', DEFAULT_SETTINGS, null))
+  it("covers only the provider's own settings", () => {
+    const base = providerFingerprint('anthropic-api', DEFAULT_SETTINGS)
+    expect(
+      providerFingerprint('anthropic-api', { ...DEFAULT_SETTINGS, theme: 'dark', claudeCodePath: '/x' })
+    ).toBe(base)
+    const models = {
+      ...DEFAULT_SETTINGS.models,
+      'anthropic-api': { fast: 'claude-haiku-5-5', smart: 'claude-sonnet-5' }
+    }
+    expect(providerFingerprint('anthropic-api', { ...DEFAULT_SETTINGS, models })).not.toBe(base)
   })
 })
