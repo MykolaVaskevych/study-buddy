@@ -1,0 +1,173 @@
+/*
+ * Study Buddy design tokens.
+ *
+ * The palette is a student's pencil case: paper and a cool desk, blue-black ink for text and
+ * primary actions, a yellow highlighter for "this matters / you are here", a red pen for exam
+ * traps and errors, a green pen for things that went right. The default Tailwind palette is
+ * cleared on purpose so every screen draws from these tokens.
+ *
+ * Utilities: bg-paper, text-ink, border-rule, bg-marker, text-redpen, ... (see @theme below).
+ * Dark mode re-points the same variables, so components never branch on the theme.
+ */
+
+@theme {
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-transparent: transparent;
+
+  /* Surfaces, from back to front. */
+  --color-desk: #e2e6ec;
+  --color-paper: #f6f7f9;
+  --color-sheet: #ffffff;
+  --color-sunken: #edf0f4;
+
+  /* Text. */
+  --color-ink: #18233d;
+  --color-graphite: #4f586b;
+  --color-faint: #687083;
+
+  /* Lines. */
+  --color-rule: #d6dbe3;
+  --color-rule-strong: #b6bdca;
+
+  /* Highlighter: always paired with dark ink text on top. */
+  --color-marker: #ffe45e;
+  --color-marker-soft: #fff4b8;
+  --color-marker-ink: #18233d;
+
+  /* Fountain-pen blue: links, focus, the active tab. */
+  --color-accent: #2b4acb;
+  --color-accent-soft: #e6ebfb;
+  --color-on-accent: #ffffff;
+
+  /* Primary buttons are ink on paper. */
+  --color-primary: #18233d;
+  --color-primary-hover: #26345a;
+  --color-on-primary: #f6f7f9;
+
+  --color-redpen: #b3302a;
+  --color-redpen-soft: #fbe9e7;
+  --color-ok: #22714a;
+  --color-ok-soft: #e2f2e9;
+
+  --color-focus: #2b4acb;
+
+  /* Book spines: muted, distinct, all readable behind white text. */
+  --color-spine-1: #3d5a99;
+  --color-spine-2: #2c7472;
+  --color-spine-3: #74488a;
+  --color-spine-4: #587435;
+  --color-spine-5: #9b5530;
+  --color-spine-6: #505c76;
+
+  --font-sans: 'Atkinson Hyperlegible Next Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Literata Variable', Literata, Georgia, ui-serif, serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', 'Cascadia Code', monospace;
+
+  /* Type scale (≈1.2 ratio) tuned for a desktop app read at arm's length. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1.35;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.4;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.45;
+  --text-base: 0.875rem;
+  --text-base--line-height: 1.5;
+  --text-md: 1rem;
+  --text-md--line-height: 1.65;
+  --text-lg: 1.1875rem;
+  --text-lg--line-height: 1.4;
+  --text-xl: 1.4375rem;
+  --text-xl--line-height: 1.3;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 1.2;
+  --text-3xl: 2.125rem;
+  --text-3xl--line-height: 1.15;
+
+  /* Radius follows hierarchy: tags < controls < surfaces. PDF pages stay square-ish (paper). */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+
+  --shadow-page: 0 1px 2px rgb(20 30 55 / 0.14), 0 6px 18px rgb(20 30 55 / 0.08);
+  --shadow-pop: 0 2px 6px rgb(20 30 55 / 0.12), 0 12px 32px rgb(20 30 55 / 0.16);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-shimmer: sb-shimmer 1.6s linear infinite;
+  --animate-spin: sb-spin 0.9s linear infinite;
+  --animate-toast-in: sb-toast-in 220ms var(--ease-out);
+
+  @keyframes sb-shimmer {
+    from {
+      background-position: 100% 0;
+    }
+    to {
+      background-position: -100% 0;
+    }
+  }
+  @keyframes sb-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes sb-toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+}
+
+/* Night study: deep ink-blue desk, lamp-lit paper. Same token names, re-pointed. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-desk: #0d1220;
+  --color-paper: #141a29;
+  --color-sheet: #1a2234;
+  --color-sunken: #111827;
+
+  --color-ink: #e4e8f1;
+  --color-graphite: #a9b1c2;
+  --color-faint: #8790a4;
+
+  --color-rule: #283149;
+  --color-rule-strong: #3b4766;
+
+  --color-marker: #f0d64d;
+  --color-marker-soft: #3a3620;
+  --color-marker-ink: #18233d;
+
+  --color-accent: #93a8ff;
+  --color-accent-soft: #212b4b;
+  --color-on-accent: #0d1220;
+
+  --color-primary: #e4e8f1;
+  --color-primary-hover: #ffffff;
+  --color-on-primary: #141a29;
+
+  --color-redpen: #ff8b7c;
+  --color-redpen-soft: #3a1d22;
+  --color-ok: #6fd39c;
+  --color-ok-soft: #15301f;
+
+  --color-focus: #93a8ff;
+
+  --color-spine-1: #5e7cc0;
+  --color-spine-2: #3f9592;
+  --color-spine-3: #9468ab;
+  --color-spine-4: #7a9a52;
+  --color-spine-5: #c0754c;
+  --color-spine-6: #6f7c99;
+
+  --shadow-page: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 24px rgb(0 0 0 / 0.35);
+  --shadow-pop: 0 2px 8px rgb(0 0 0 / 0.4), 0 16px 40px rgb(0 0 0 / 0.45);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
