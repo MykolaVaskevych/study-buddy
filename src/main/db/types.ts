@@ -142,10 +142,11 @@ export interface CardRepo {
     srs: SrsData,
     log: { rating: Rating; reviewedAt: IsoDate; elapsedMs: number }
   ): Card
+  /** nextDue: earliest due date among active cards not due yet, null if none. */
   stats(
     docId: DocId | null,
     now: IsoDate
-  ): { due: number; new: number; learning: number; review: number; total: number }
+  ): { due: number; new: number; learning: number; review: number; total: number; nextDue: IsoDate | null }
 }
 
 export interface QuestionRepo {

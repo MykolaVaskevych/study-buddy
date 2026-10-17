@@ -165,7 +165,16 @@ describe('CardRepo', () => {
       'early',
       'late'
     ])
-    expect(db.cards.stats(doc, now)).toEqual({ due: 2, new: 0, learning: 0, review: 3, total: 3 })
+    expect(db.cards.stats(doc, now)).toEqual({
+      due: 2,
+      new: 0,
+      learning: 0,
+      review: 3,
+      total: 3,
+      nextDue: '2026-10-30T00:00:00.000Z'
+    })
+    // Suspended cards and other documents never count; nothing upcoming gives null.
+    expect(db.cards.stats(other, now).nextDue).toBeNull()
   })
 
   it('list() filters by page, range, topic (with subtopics and unassigned items) and document', () => {

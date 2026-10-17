@@ -185,12 +185,14 @@ export function createCardRepo(ctx: RepoContext): CardRepo {
           new: sql<number>`coalesce(sum(case when ${cards.srsState} = 'new' then 1 else 0 end), 0)`,
           learning: sql<number>`coalesce(sum(case when ${cards.srsState} in ('learning', 'relearning') then 1 else 0 end), 0)`,
           review: sql<number>`coalesce(sum(case when ${cards.srsState} = 'review' then 1 else 0 end), 0)`,
-          total: sql<number>`count(*)`
+          total: sql<number>`count(*)`,
+          // Canonical ISO strings sort chronologically, so min() is the earliest upcoming due date.
+          nextDue: sql<string | null>`min(case when ${cards.due} > ${nowIso} then ${cards.due} end)`
         })
         .from(cards)
         .where(and(ofDoc(docId), active))
         .get()
-      return row ?? { due: 0, new: 0, learning: 0, review: 0, total: 0 }
+      return row ?? { due: 0, new: 0, learning: 0, review: 0, total: 0, nextDue: null }
     }
   }
 }

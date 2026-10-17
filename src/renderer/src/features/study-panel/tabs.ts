@@ -1,10 +1,10 @@
 import type { ComponentType } from 'react'
 import type { IndexStatus } from '@shared/domain'
 import type { IconName } from '../../components'
-import { CardsTab } from './CardsTab'
+import { CardsTab } from '../study/CardsTab'
+import { TestMeTab } from '../study/TestMeTab'
 import { ChatTab } from './ChatTab'
 import { NotesTab } from './NotesTab'
-import { TestMeTab } from './TestMeTab'
 
 /** Everything a study tab gets. Tabs follow the reader: `page` changes as the person scrolls. */
 export interface StudyTabProps {
