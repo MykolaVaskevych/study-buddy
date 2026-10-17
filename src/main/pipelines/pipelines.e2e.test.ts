@@ -1,3 +1,5 @@
+import { join } from 'node:path'
+import { runSmoke, writeSmokePdf } from '../app/smoke'
 import { localDate } from './dates'
 import { correctResponse, createHarness, wrongResponse, type Harness } from './test-harness'
 
@@ -124,5 +126,18 @@ describe('pipelines end to end (fixture PDF, fake provider, real modules)', () =
     // Job events reached the renderer.
     expect(t.eventsOf('jobs.changed').some((j) => j.kind === 'index_chunk' && j.state === 'done')).toBe(true)
     expect((await h['jobs.list']({ docId })).length).toBeGreaterThan(0)
+  })
+
+  it('passes the app --smoke flow (src/main/app/smoke.ts) driven through the real handlers', async () => {
+    t = await createHarness()
+    const pdfPath = await writeSmokePdf(join(t.libraryDir, '..', 'smoke'))
+    const lines: string[] = []
+    const log = {
+      info: (m: string) => lines.push(m),
+      warn: (m: string) => lines.push(m),
+      error: (m: string) => lines.push(m)
+    }
+    const report = await runSmoke(t.h, { pdfPath, log, timeoutMs: 15_000, pollMs: 5, now: t.clock.now })
+    expect(report.steps.map((s) => s.name)).toContain('usage.summary')
   })
 })
