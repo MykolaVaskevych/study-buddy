@@ -162,6 +162,13 @@ describe('solvePlan: budget and reserve', () => {
     expect(plan.budgetMinutes + plan.reserveMinutes).toBe(600)
     expect(plan.notes[0]).toBe('No study time given; assumed 10 h. Set total hours or hours per day.')
   })
+
+  it('takes the reserve from the input, and the option wins over it', () => {
+    const input = planInput({ totalHours: 10, reserveFraction: 0.3 })
+    expect(solvePlan(headline, input).reserveMinutes).toBe(180)
+    expect(solvePlan(headline, input, { reserveFraction: 0.1 }).reserveMinutes).toBe(60)
+    expect(solvePlan(headline, planInput({ totalHours: 10 })).reserveMinutes).toBe(120)
+  })
 })
 
 describe('solvePlan: overrides', () => {
