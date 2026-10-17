@@ -110,6 +110,13 @@ describe('generation prompts', () => {
     expect(user).toMatch(/mock exam/)
     expect(user).toMatch(/never use "all of the above"/i)
   })
+
+  it('questions: must not point at slide or page numbers, only at the content', () => {
+    const user = buildQuestionsUser(ctx, { count: 4, types: null, purpose: 'page_check', existingStems: [] })
+    expect(user).toMatch(/never refer to slide numbers, page numbers or slide labels/)
+    expect(user).toContain('not "Slide 3 compares..."')
+    expect(user).toMatch(/Name the content itself instead/)
+  })
 })
 
 describe('verify prompt', () => {
