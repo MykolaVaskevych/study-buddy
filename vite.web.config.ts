@@ -2,6 +2,7 @@ import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { pdfjsAssets } from './build-tools/pdfjs-assets'
 
 /**
  * Browser mode (`npm run dev:web`): the renderer alone in a normal browser. With no preload
@@ -15,6 +16,6 @@ export default defineConfig({
       '@renderer': resolve(import.meta.dirname, 'src/renderer/src')
     }
   },
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), pdfjsAssets(import.meta.dirname)],
   server: { port: 5174, strictPort: false }
 })

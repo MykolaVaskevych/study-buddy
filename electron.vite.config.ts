@@ -2,6 +2,7 @@ import { resolve } from 'node:path'
 import { defineConfig } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { pdfjsAssets } from './build-tools/pdfjs-assets'
 
 const alias = {
   '@shared': resolve(import.meta.dirname, 'src/shared'),
@@ -33,6 +34,6 @@ export default defineConfig({
   },
   renderer: {
     resolve: { alias },
-    plugins: [react(), tailwindcss()]
+    plugins: [react(), tailwindcss(), pdfjsAssets(import.meta.dirname)]
   }
 })

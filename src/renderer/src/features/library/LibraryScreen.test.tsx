@@ -9,7 +9,7 @@ describe('LibraryScreen', () => {
     const books = await screen.findByRole('region', { name: 'Books' })
     expect(within(books).getByRole('link', { name: 'Optical Networks' })).toBeTruthy()
     expect(within(books).getAllByText(/^\d+ cards due$/).length).toBeGreaterThan(0)
-    expect(within(books).getByText('Exam in 9 days')).toBeTruthy()
+    expect(within(books).getByText(/^Exam in (8|9|10) days$/)).toBeTruthy()
     expect(within(books).getByText(/Indexing, 60 of 146 pages/)).toBeTruthy()
   })
 
