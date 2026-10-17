@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { IpcRendererEvent } from 'electron'
 import type { PreloadApi } from '@shared/ipc/contract'
 import { IPC_EVENT_PREFIX, IPC_INVOKE_PREFIX } from '@shared/ipc/contract'
@@ -15,7 +15,10 @@ const api: PreloadApi = {
     return () => {
       ipcRenderer.removeListener(IPC_EVENT_PREFIX + event, wrapped)
     }
-  }
+  },
+  // Drag-and-drop imports: the sandbox hides File.path, webUtils is the supported replacement.
+  // Returns '' for files not backed by disk; the renderer treats that as "no path".
+  pathForFile: (file) => webUtils.getPathForFile(file)
 }
 
 contextBridge.exposeInMainWorld('api', api)

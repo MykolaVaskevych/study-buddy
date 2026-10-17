@@ -203,6 +203,11 @@ export type IpcEvent = keyof IpcEvents
 export interface PreloadApi {
   invoke<C extends IpcChannel>(channel: C, input: IpcInput<C>): Promise<IpcEnvelope<IpcOutput<C>>>
   on<E extends IpcEvent>(event: E, listener: (payload: IpcEvents[E]) => void): () => void
+  /**
+   * Absolute path of a dropped file (Electron's sandbox hides `File.path`). Optional: bridges that
+   * cannot resolve paths (tests, browser mode) leave it out and the renderer falls back to the picker.
+   */
+  pathForFile?(file: File): string
 }
 
 export const IPC_INVOKE_PREFIX = 'sb:'
