@@ -2,6 +2,8 @@ import { z } from 'zod'
 import type {
   AttemptResult,
   Card,
+  CheatSheet,
+  PastPaperResult,
   DocumentDetail,
   DocumentSummary,
   IndexStatus,
@@ -95,6 +97,8 @@ export const ipcContract = {
     })
   ),
   'library.pageNotes': route<PageNotes>()(z.object({ docId: id, page })),
+  /** Revision sheet from the index: core concepts and formulas per topic (no AI call). */
+  'library.cheatSheet': route<CheatSheet>()(z.object({ docId: id })),
 
   // ------------------------------------------------------------ AI index pass
   'index.start': route<IndexStatus>()(z.object({ docId: id })),
@@ -159,6 +163,26 @@ export const ipcContract = {
   'quiz.history': route<QuizResult[]>()(z.object({ docId: id, limit: z.number().int().min(1).max(200) })),
   'quiz.reportQuestion': route<{ ok: true }>()(z.object({ questionId: id, reason: z.string().max(500) })),
 
+  /** Anki import file (tab-separated, Basic + Cloze note types, MathJax delimiters). */
+  'cards.exportAnki': route<{ fileName: string; content: string; count: number }>()(
+    z.object({ docId: id.nullable() })
+  ),
+
+  // ------------------------------------------------------------ chat
+  /** Starts a streamed answer; text arrives as 'chat.delta' events, then one 'chat.done'. */
+  'chat.ask': route<{ requestId: string }>()(
+    z.object({
+      docId: id,
+      page: page.nullable(),
+      question: z.string().max(4000),
+      history: z
+        .array(z.object({ role: z.enum(['user', 'assistant']), text: z.string().max(20_000) }))
+        .max(20),
+      mode: z.enum(['chat', 'explain_simple', 'explain_exam', 'worked_example'])
+    })
+  ),
+  'chat.cancel': route<{ ok: true }>()(z.object({ requestId: id })),
+
   // ------------------------------------------------------------ reading
   'reading.track': route<{ ok: true }>()(z.object({ docId: id, page, seconds: z.number().min(0).max(3600) })),
 
@@ -168,6 +192,10 @@ export const ipcContract = {
   'plan.topics': route<PlanTopic[]>()(z.object({ docId: id })),
   'plan.save': route<ExamPlan>()(z.object({ docId: id, input: planInputSchema })),
   'plan.today': route<StudyDay | null>()(z.object({ docId: id })),
+  /** Maps past exam papers (paths = null opens a picker) to topics and recalibrates exam weights. */
+  'plan.importPastPaper': route<PastPaperResult>()(
+    z.object({ docId: id, paths: z.array(z.string()).nullable() })
+  ),
 
   // ------------------------------------------------------------ settings & AI
   'settings.get': route<PublicSettings>()(none),
@@ -202,6 +230,9 @@ export interface IpcEvents {
   'library.changed': { docId: string | null }
   'cards.changed': { docId: string }
   'pageCheck.ready': { docId: string; page: number }
+  'chat.delta': { requestId: string; text: string }
+  /** error = null on success; citations = distinct [p. N] pages in the answer. */
+  'chat.done': { requestId: string; error: string | null; citations: number[] }
   /** null = rate limit cleared. */
   'ai.rateLimited': RateLimitInfo | null
 }

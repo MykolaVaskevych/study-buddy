@@ -139,6 +139,7 @@ export function BookScreen(): React.JSX.Element {
 
         <section aria-label="Reader" className="flex min-w-0 flex-1 flex-col">
           <ReaderToolbar
+            docId={docId}
             title={doc?.title ?? ''}
             page={currentPage}
             numPages={numPages}

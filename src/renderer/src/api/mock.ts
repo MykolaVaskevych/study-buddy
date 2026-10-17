@@ -136,7 +136,9 @@ export function createMockApi(options: MockOptions = {}): MockApi {
     'library.changed': new Set(),
     'cards.changed': new Set(),
     'pageCheck.ready': new Set(),
-    'ai.rateLimited': new Set()
+    'ai.rateLimited': new Set(),
+    'chat.delta': new Set(),
+    'chat.done': new Set()
   }
   const emit = <E extends IpcEvent>(event: E, payload: IpcEvents[E]): void => {
     for (const l of listeners[event]) l(payload)
@@ -512,6 +514,59 @@ export function createMockApi(options: MockOptions = {}): MockApi {
       return plans.get(docId)?.schedule.days.find((day) => day.date === today) ?? null
     },
 
+    'library.cheatSheet': ({ docId }) => {
+      const d = getDoc(docId)
+      return {
+        docId,
+        title: d.spec.title,
+        sections: [
+          {
+            topicId: null,
+            title: 'Power budget',
+            pageStart: 12,
+            pageEnd: 14,
+            concepts: [
+              {
+                term: 'Attenuation',
+                definition: 'Loss of optical power along the fibre, in dB/km.',
+                importance: 'core'
+              }
+            ],
+            formulas: [
+              {
+                latex: 'P_{rx} = P_{tx} - \\alpha L',
+                meaning: 'Received power after a span of length L',
+                symbols: [],
+                importance: 'core'
+              }
+            ],
+            keyFacts: ['Typical single-mode loss is 0.2 dB/km at 1550 nm.']
+          }
+        ]
+      }
+    },
+    'cards.exportAnki': ({ docId }) => ({
+      fileName: 'study-buddy-anki.txt',
+      content: '#separator:tab\n#html:true\n#notetype column:1\n#deck column:2\n#tags column:5\n',
+      count: docId === null ? 0 : 0
+    }),
+    'chat.ask': ({ page, question }) => {
+      const requestId = nextId('chat')
+      const words =
+        `Here is what your notes say about "${question.slice(0, 60)}": the received power falls by the fibre loss times the length [p. ${page ?? 12}].`.split(
+          ' '
+        )
+      words.forEach((w, i) =>
+        setTimeout(() => emit('chat.delta', { requestId, text: `${w} ` }), 30 * (i + 1))
+      )
+      setTimeout(
+        () => emit('chat.done', { requestId, error: null, citations: [page ?? 12] }),
+        30 * (words.length + 2)
+      )
+      return { requestId }
+    },
+    'chat.cancel': () => ({ ok: true }),
+    'plan.importPastPaper': () => ({ questionsMapped: 0, unmapped: 0, changes: [] }),
     'settings.get': () => settings,
     'settings.update': (patch) => {
       settings = { ...settings, ...patch }

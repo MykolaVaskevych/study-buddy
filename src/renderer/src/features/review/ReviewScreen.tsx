@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { useDueCards, useLibrary } from '../../api/hooks'
+import { downloadText, useDueCards, useExportAnki, useLibrary } from '../../api/hooks'
 import { Button, cx, EmptyState, Skeleton } from '../../components'
 import { fieldClass } from '../study/form'
 import { ReviewSession } from './ReviewSession'
@@ -25,6 +25,7 @@ export function ReviewScreen(): React.JSX.Element {
   const docId = params.get('book')
   const library = useLibrary()
   const due = useDueCards(docId, 200)
+  const exportAnki = useExportAnki()
   const [round, setRound] = useState(0)
   const books = useMemo(() => library.data ?? [], [library.data])
   const titles = useMemo(() => new Map(books.map((b) => [b.id, b.title])), [books])
@@ -34,6 +35,17 @@ export function ReviewScreen(): React.JSX.Element {
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-7 px-8 py-9">
         <header className="flex flex-wrap items-center gap-x-6 gap-y-3">
           <h1 className="font-serif text-2xl font-semibold">Review</h1>
+          <Button
+            size="sm"
+            variant="ghost"
+            loading={exportAnki.isPending}
+            title="Download cards as an Anki import file"
+            onClick={() =>
+              exportAnki.mutate({ docId }, { onSuccess: (f) => downloadText(f.fileName, f.content) })
+            }
+          >
+            Export to Anki
+          </Button>
           <label className="ml-auto flex items-center gap-2 text-sm text-graphite">
             Cards from
             <select

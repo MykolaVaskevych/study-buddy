@@ -21,7 +21,9 @@ export function Layout(): React.JSX.Element {
   return (
     <div className="flex h-full flex-col">
       <div className="flex min-h-0 flex-1">
-        <NavRail />
+        <div className="contents print:hidden">
+          <NavRail />
+        </div>
         <main className="flex min-w-0 flex-1 flex-col">
           <RateLimitBanner />
           <div className="min-h-0 flex-1">
@@ -31,7 +33,9 @@ export function Layout(): React.JSX.Element {
           </div>
         </main>
       </div>
-      <StatusBar />
+      <div className="contents print:hidden">
+        <StatusBar />
+      </div>
       <Toaster />
     </div>
   )

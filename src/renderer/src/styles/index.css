@@ -222,3 +222,15 @@
     background-image: none;
   }
 }
+
+/* Printing (cheat sheet): let content flow across pages instead of the app's fixed-height panes. */
+@media print {
+  html,
+  body,
+  #root,
+  #root * {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}

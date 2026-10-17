@@ -158,3 +158,19 @@ export const verifyOutputSchema = z.strictObject({
   )
 })
 export type VerifyOutput = z.infer<typeof verifyOutputSchema>
+
+// ---------------------------------------------------------------- past papers
+
+/** Questions of a past exam paper mapped to course topics (keys given in the prompt). */
+export const pastPaperOutputSchema = z.strictObject({
+  questions: z.array(
+    z.strictObject({
+      summary: z.string(),
+      /** Marks printed on the paper, else an estimate (1 per sub-question). */
+      marks: z.number(),
+      /** Key of the best matching topic, null if none fits. */
+      topic_key: z.string().nullable()
+    })
+  )
+})
+export type PastPaperOutput = z.infer<typeof pastPaperOutputSchema>

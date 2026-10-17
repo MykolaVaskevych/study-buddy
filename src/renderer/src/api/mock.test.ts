@@ -66,7 +66,11 @@ describe('mock api', () => {
       'settings.setApiKey': { apiKey: null },
       'ai.health': { provider: null },
       'jobs.list': { docId: null },
-      'jobs.cancel': { jobId: 'none' }
+      'jobs.cancel': { jobId: 'none' },
+      'cards.exportAnki': { docId: null },
+      'chat.ask': { docId, page: 12, question: 'Why light?', history: [], mode: 'chat' },
+      'chat.cancel': { requestId: 'none' },
+      'plan.importPastPaper': { docId, paths: [] }
     }
     const docChannels = [
       'library.get',
@@ -77,7 +81,8 @@ describe('mock api', () => {
       'topics.rebuild',
       'plan.get',
       'plan.topics',
-      'plan.today'
+      'plan.today',
+      'library.cheatSheet'
     ]
     const empty = ['app.info', 'library.list', 'settings.get', 'usage.summary']
     for (const channel of contractChannels) {
