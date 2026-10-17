@@ -1,0 +1,299 @@
+import { useEffect } from 'react'
+import { keepPreviousData, queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { QueryClient, QueryKey } from '@tanstack/react-query'
+import type { IpcChannel, IpcInput, IpcOutput } from '@shared/ipc/contract'
+import type { DocumentSummary, IndexStatus, JobInfo, RateLimitInfo, Scope } from '@shared/domain'
+import { call, subscribe } from './client'
+
+/**
+ * Typed TanStack Query hooks, one per IPC channel. Components never call `call()` directly.
+ *
+ * Query keys are `[channel, input]`, so invalidating `[channel, { docId }]` matches every query
+ * of that channel for the document (TanStack matches object keys partially).
+ * Main pushes events; `useApiEvents` turns them into cache updates and invalidations.
+ */
+
+declare module '@tanstack/react-query' {
+  interface Register {
+    /** silent: don't toast failures (background reporting such as reading.track). */
+    queryMeta: { silent?: boolean }
+    mutationMeta: { silent?: boolean }
+  }
+}
+
+export function channelKey<C extends IpcChannel>(channel: C, input?: Partial<IpcInput<C>>): QueryKey {
+  return input === undefined ? [channel] : [channel, input]
+}
+
+function channelQuery<C extends IpcChannel>(channel: C, input: IpcInput<C>) {
+  return queryOptions<IpcOutput<C>>({
+    queryKey: [channel, input],
+    queryFn: () => call(channel, input)
+  })
+}
+
+interface MutationOptions<C extends IpcChannel> {
+  onSuccess?: (data: IpcOutput<C>, input: IpcInput<C>, qc: QueryClient) => void
+  silent?: boolean
+}
+
+function useChannelMutation<C extends IpcChannel>(channel: C, options: MutationOptions<C> = {}) {
+  const qc = useQueryClient()
+  return useMutation<IpcOutput<C>, Error, IpcInput<C>>({
+    mutationKey: [channel],
+    mutationFn: (input) => call(channel, input),
+    onSuccess: (data, input) => options.onSuccess?.(data, input, qc),
+    meta: options.silent ? { silent: true } : undefined
+  })
+}
+
+const invalidate = (qc: QueryClient, ...keys: QueryKey[]): void => {
+  for (const queryKey of keys) void qc.invalidateQueries({ queryKey })
+}
+
+const docKeys = (docId: string): QueryKey[] => [['library.list'], channelKey('library.get', { docId })]
+
+// ------------------------------------------------------------------ app
+
+export const useAppInfo = () => useQuery({ ...channelQuery('app.info', {}), staleTime: Infinity })
+
+// ------------------------------------------------------------------ library
+
+export const useLibrary = () => useQuery(channelQuery('library.list', {}))
+
+export const useDocument = (docId: string) => useQuery(channelQuery('library.get', { docId }))
+
+/** Full-text search; disabled until the query has two characters. Keeps old hits while typing. */
+export const useLibrarySearch = (query: string, docId: string | null = null, limit = 30) => {
+  const q = query.trim()
+  return useQuery({
+    ...channelQuery('library.search', { query: q, docId, limit }),
+    enabled: q.length >= 2,
+    placeholderData: keepPreviousData,
+    staleTime: 30_000
+  })
+}
+
+export const usePageNotes = (docId: string, page: number) =>
+  useQuery({ ...channelQuery('library.pageNotes', { docId, page }), staleTime: 60_000 })
+
+/** Warms the notes cache for neighbouring pages so paging through slides feels instant. */
+export function usePrefetchPageNotes(docId: string, pages: number[]): void {
+  const qc = useQueryClient()
+  const key = pages.join(',')
+  useEffect(() => {
+    for (const page of key.split(',').map(Number)) {
+      if (page >= 1)
+        void qc.prefetchQuery({ ...channelQuery('library.pageNotes', { docId, page }), staleTime: 60_000 })
+    }
+  }, [qc, docId, key])
+}
+
+export const useImportPdfs = () =>
+  useChannelMutation('library.import', { onSuccess: (_d, _i, qc) => invalidate(qc, ['library.list']) })
+
+export const useRenameDocument = () =>
+  useChannelMutation('library.rename', {
+    onSuccess: (_d, { docId }, qc) => invalidate(qc, ...docKeys(docId))
+  })
+
+export const useDeleteDocument = () =>
+  useChannelMutation('library.delete', { onSuccess: (_d, _i, qc) => invalidate(qc, ['library.list']) })
+
+export const useSetLastPage = () =>
+  useChannelMutation('library.setLastPage', {
+    silent: true,
+    onSuccess: (_d, { docId, page }, qc) => {
+      // Patch in place: refetching the whole library on every page turn is wasteful.
+      qc.setQueryData<DocumentSummary[]>(['library.list', {}], (old) =>
+        old?.map((d) => (d.id === docId ? { ...d, lastPage: page } : d))
+      )
+    }
+  })
+
+// ------------------------------------------------------------------ index pass
+
+export const useIndexStatus = (docId: string) => useQuery(channelQuery('index.status', { docId }))
+
+const setIndexStatus = (qc: QueryClient, docId: string, status: IndexStatus): void => {
+  qc.setQueryData(['index.status', { docId }], status)
+  qc.setQueryData<DocumentSummary[]>(['library.list', {}], (old) =>
+    old?.map((d) => (d.id === docId ? { ...d, index: status } : d))
+  )
+}
+
+export const useStartIndex = () =>
+  useChannelMutation('index.start', {
+    onSuccess: (status, { docId }, qc) => setIndexStatus(qc, docId, status)
+  })
+
+export const usePauseIndex = () =>
+  useChannelMutation('index.pause', {
+    onSuccess: (status, { docId }, qc) => setIndexStatus(qc, docId, status)
+  })
+
+export const useIndexFocus = () => useChannelMutation('index.focus', { silent: true })
+
+// ------------------------------------------------------------------ topics
+
+export const useTopics = (docId: string) => useQuery(channelQuery('topics.list', { docId }))
+
+export const useRebuildTopics = () => useChannelMutation('topics.rebuild')
+
+// ------------------------------------------------------------------ flashcards
+
+export const useCards = (scope: Scope, includeInactive = false) =>
+  useQuery(channelQuery('cards.list', { scope, includeInactive }))
+
+export const useDueCards = (docId: string | null, limit = 200) =>
+  useQuery(channelQuery('cards.due', { docId, limit }))
+
+export const useCardStats = (docId: string | null) => useQuery(channelQuery('cards.stats', { docId }))
+
+const invalidateCards = (qc: QueryClient): void =>
+  invalidate(qc, ['cards.list'], ['cards.due'], ['cards.stats'], ['library.list'])
+
+export const useGenerateCards = () => useChannelMutation('cards.generate')
+export const useReviewCard = () =>
+  useChannelMutation('cards.review', { onSuccess: (_d, _i, qc) => invalidateCards(qc) })
+export const useUpdateCard = () =>
+  useChannelMutation('cards.update', { onSuccess: (_d, _i, qc) => invalidateCards(qc) })
+export const useSetCardStatus = () =>
+  useChannelMutation('cards.setStatus', { onSuccess: (_d, _i, qc) => invalidateCards(qc) })
+
+// ------------------------------------------------------------------ quizzes
+
+/** Creating a quiz has side effects (it may generate questions), so it's a mutation. */
+export const useCreateQuiz = () => useChannelMutation('quiz.create')
+/** "Test me" on a page; instant when the page check was prefetched. */
+export const useStartPageCheck = () => useChannelMutation('quiz.pageCheck')
+export const useAnswerQuestion = () => useChannelMutation('quiz.answer')
+export const useFinishQuiz = () =>
+  useChannelMutation('quiz.finish', {
+    onSuccess: (_d, _i, qc) => invalidate(qc, ['quiz.history'], ['topics.list'])
+  })
+export const useQuizHistory = (docId: string, limit = 20) =>
+  useQuery(channelQuery('quiz.history', { docId, limit }))
+export const useReportQuestion = () => useChannelMutation('quiz.reportQuestion')
+
+// ------------------------------------------------------------------ reading
+
+export const useTrackReading = () => useChannelMutation('reading.track', { silent: true })
+
+// ------------------------------------------------------------------ planner
+
+export const usePlan = (docId: string) => useQuery(channelQuery('plan.get', { docId }))
+export const usePlanTopics = (docId: string) => useQuery(channelQuery('plan.topics', { docId }))
+export const useTodayPlan = (docId: string) => useQuery(channelQuery('plan.today', { docId }))
+export const useSavePlan = () =>
+  useChannelMutation('plan.save', {
+    onSuccess: (plan, { docId }, qc) => {
+      qc.setQueryData(['plan.get', { docId }], plan)
+      invalidate(qc, channelKey('plan.today', { docId }), ['library.list'])
+    }
+  })
+
+// ------------------------------------------------------------------ settings & AI
+
+export const useSettings = () => useQuery({ ...channelQuery('settings.get', {}), staleTime: Infinity })
+
+export const useUpdateSettings = () =>
+  useChannelMutation('settings.update', {
+    onSuccess: (s, _i, qc) => qc.setQueryData(['settings.get', {}], s)
+  })
+
+export const useSetApiKey = () =>
+  useChannelMutation('settings.setApiKey', {
+    onSuccess: (s, _i, qc) => qc.setQueryData(['settings.get', {}], s)
+  })
+
+/** Health check is an explicit action ("Test connection"), not something to poll. */
+export const useCheckAiHealth = () => useChannelMutation('ai.health')
+
+// ------------------------------------------------------------------ jobs & usage
+
+export const useJobs = (docId: string | null = null) => useQuery(channelQuery('jobs.list', { docId }))
+export const useCancelJob = () => useChannelMutation('jobs.cancel')
+export const useUsage = () => useQuery(channelQuery('usage.summary', {}))
+
+// ------------------------------------------------------------------ events
+
+/** Rate-limit state lives in the query cache under this key (no channel; fed by events/errors). */
+export const rateLimitKey: QueryKey = ['event', 'ai.rateLimited']
+
+export function setRateLimit(qc: QueryClient, info: RateLimitInfo | null): void {
+  qc.setQueryData(rateLimitKey, info)
+}
+
+export const useRateLimit = () =>
+  useQuery<RateLimitInfo | null>({
+    queryKey: rateLimitKey,
+    queryFn: () => null,
+    initialData: null,
+    staleTime: Infinity,
+    gcTime: Infinity
+  })
+
+const ACTIVE: JobInfo['state'][] = ['queued', 'running', 'paused']
+
+/** Upserts a job into every cached jobs.list whose filter includes it; finished jobs drop out. */
+export function applyJobChange(qc: QueryClient, job: JobInfo): void {
+  for (const [key, data] of qc.getQueriesData<JobInfo[]>({ queryKey: ['jobs.list'] })) {
+    const filter = key[1]
+    const filterDoc = typeof filter === 'object' && filter !== null && 'docId' in filter ? filter.docId : null
+    if (filterDoc !== null && filterDoc !== job.docId) continue
+    const rest = (data ?? []).filter((j) => j.id !== job.id)
+    qc.setQueryData(key, ACTIVE.includes(job.state) ? [...rest, job] : rest)
+  }
+  if (job.state !== 'done' || job.docId === null) return
+  const docId = job.docId
+  switch (job.kind) {
+    case 'index_chunk':
+      invalidate(qc, channelKey('library.pageNotes', { docId }), channelKey('index.status', { docId }))
+      break
+    case 'topic_map':
+      invalidate(qc, channelKey('topics.list', { docId }), channelKey('plan.topics', { docId }), [
+        'library.list'
+      ])
+      break
+    case 'generate_cards':
+      invalidateCards(qc)
+      break
+    case 'generate_questions':
+    case 'page_check':
+    case 'verify_questions':
+      invalidate(qc, ['quiz.history'])
+      break
+  }
+}
+
+interface ApiEventOptions {
+  onJobFailed?: (job: JobInfo) => void
+}
+
+/** Subscribes to main's push events for the lifetime of the app. Mount once (app/providers). */
+export function useApiEvents({ onJobFailed }: ApiEventOptions = {}): void {
+  const qc = useQueryClient()
+  useEffect(() => {
+    const offs = [
+      subscribe('jobs.changed', (job) => {
+        applyJobChange(qc, job)
+        if (job.state === 'failed') onJobFailed?.(job)
+      }),
+      subscribe('index.progress', ({ docId, status }) => {
+        setIndexStatus(qc, docId, status)
+        invalidate(qc, channelKey('library.pageNotes', { docId }))
+      }),
+      subscribe('library.changed', ({ docId }) => {
+        invalidate(qc, ['library.list'], docId ? channelKey('library.get', { docId }) : ['library.get'])
+        if (docId) invalidate(qc, channelKey('topics.list', { docId }))
+      }),
+      subscribe('cards.changed', () => invalidateCards(qc)),
+      subscribe('pageCheck.ready', ({ docId }) => invalidate(qc, channelKey('quiz.history', { docId }))),
+      subscribe('ai.rateLimited', (info) => setRateLimit(qc, info))
+    ]
+    return () => {
+      for (const off of offs) off()
+    }
+  }, [qc, onJobFailed])
+}

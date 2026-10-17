@@ -1,8 +1,15 @@
-/** Placeholder shell; the UI work package replaces this with the routed app. */
+import { useState } from 'react'
+import { RouterProvider } from 'react-router'
+import { Providers } from './app/providers'
+import { createQueryClient } from './app/queryClient'
+import { createAppRouter } from './app/router'
+
 export function App(): React.JSX.Element {
+  const [client] = useState(() => createQueryClient())
+  const [router] = useState(() => createAppRouter())
   return (
-    <main className="flex h-screen items-center justify-center">
-      <h1 className="text-2xl font-semibold">Study Buddy</h1>
-    </main>
+    <Providers client={client}>
+      <RouterProvider router={router} />
+    </Providers>
   )
 }

@@ -23,7 +23,8 @@
     "smoke": "npm run build && electron . --smoke",
     "eval": "ELECTRON_RUN_AS_NODE=1 electron --import tsx ./scripts/eval.ts",
     "postinstall": "electron-builder install-app-deps",
-    "dist:linux": "npm run build && electron-builder --linux"
+    "dist:linux": "npm run build && electron-builder --linux",
+    "dev:web": "vite --config vite.web.config.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.3.302",
@@ -40,6 +41,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@fontsource-variable/atkinson-hyperlegible-next": "^5.3.0",
+    "@fontsource-variable/literata": "^5.3.0",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-query": "^5.104.3",
     "@testing-library/dom": "^10.4.2",

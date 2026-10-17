@@ -45,3 +45,18 @@ export function subscribe<E extends IpcEvent>(
 ): () => void {
   return getBridge().on(event, listener)
 }
+
+/**
+ * Optional bridge capability, not in PreloadApi yet: resolve a dropped File to its absolute
+ * path. Electron's sandbox hides File.path, so the preload must expose
+ * `pathForFile: (file) => webUtils.getPathForFile(file)` (follow-up for the lead). Returns
+ * null when the bridge can't do it, and callers fall back to the native file picker.
+ */
+export function pathForFile(file: File): string | null {
+  const api: unknown = bridge ?? (typeof window !== 'undefined' ? window.api : undefined)
+  if (typeof api !== 'object' || api === null || !('pathForFile' in api)) return null
+  const resolve = api.pathForFile
+  if (typeof resolve !== 'function') return null
+  const path: unknown = resolve.call(api, file)
+  return typeof path === 'string' && path.length > 0 ? path : null
+}
