@@ -3,8 +3,8 @@ import type { IsoDate, PlanId, DocId, TopicId } from '../domain'
 /**
  * Exam triage planner contract. Implementation: src/shared/planner (pure functions, no I/O).
  *
- *   solvePlan(topics, input)          -> PlanResult  (which level per topic, expected score)
- *   buildSchedule(plan, input, today) -> Schedule    (day-by-day sessions until the exam)
+ *   solvePlan(topics, input, opts)            -> PlanResult  (which level per topic, expected score)
+ *   buildSchedule(plan, topics, input, today) -> Schedule    (day-by-day sessions until the exam)
  */
 
 /** How deep to study a topic. */
@@ -70,7 +70,10 @@ export interface PlanResult {
   feasible: boolean
   expectedScore: number
   targetScore: number
+  /** Minutes available for learning (the study budget minus `reserveMinutes`). */
   budgetMinutes: number
+  /** Minutes held back from the budget for page checks, spaced review and mock exams. */
+  reserveMinutes: number
   plannedMinutes: number
   items: PlanItem[]
   /** Human-readable notes, e.g. "Target 80 % not reachable in 6 h; best is ~71 %". */
