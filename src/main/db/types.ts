@@ -78,6 +78,9 @@ export interface NewTopic {
 export type NewCard = Omit<Card, 'id' | 'srs' | 'createdAt' | 'status'>
 export type NewQuestion = Omit<Question, 'id' | 'createdAt' | 'status'>
 
+/** What a question was generated for (mirrors StudyAi.generateQuestions' purpose). */
+export type QuestionPurpose = 'page_check' | 'quiz' | 'mock'
+
 // ---------------------------------------------------------------- repositories
 
 export interface DocumentRepo {
@@ -146,7 +149,8 @@ export interface CardRepo {
 }
 
 export interface QuestionRepo {
-  insertMany(questions: NewQuestion[], now: IsoDate): Question[]
+  /** `purpose` defaults to 'quiz'; page-check prefetch passes 'page_check' so list() can serve them. */
+  insertMany(questions: NewQuestion[], now: IsoDate, purpose?: QuestionPurpose): Question[]
   get(questionId: QuestionId): Question | null
   list(scope: Scope, opts: { purpose: 'page_check' | 'any'; includeInactive: boolean }): Question[]
   stems(docId: DocId): string[]
@@ -220,6 +224,8 @@ export interface JobRepo {
   findActive(dedupeKey: string): JobRow | null
   /** Highest priority queued job whose runAfter has passed. */
   nextRunnable(now: IsoDate, excludeKinds?: JobKind[]): JobRow | null
+  /** Earliest runAfter still in the future among queued jobs (the queue's wake-up time), or null. */
+  nextRunAfter(now: IsoDate, excludeKinds?: JobKind[]): IsoDate | null
   update(
     id: JobId,
     patch: Partial<
