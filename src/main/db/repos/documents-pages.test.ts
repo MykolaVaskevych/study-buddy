@@ -89,6 +89,7 @@ describe('DocumentRepo', () => {
           expectedScore: 0.7,
           targetScore: 0.7,
           budgetMinutes: 600,
+          reserveMinutes: 150,
           plannedMinutes: 600,
           items: [],
           notes: []
