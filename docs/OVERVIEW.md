@@ -21,7 +21,7 @@ Study Buddy takes those materials (or any PDF) and turns them into an exam plan 
 ## Why it is different
 
 - **Trustworthy.** Every generated item cites its source page and is checked against the page text. Answer keys are verified by a second, blind pass.
-- **Honest about time.** It's the only study tool here that tells you what _not_ to study, and why.
+- **Honest about time.** It tells you what _not_ to study, and why, instead of pretending everything fits.
 - **Free to run for subscribers.** It works with an existing Claude subscription through Claude Code, so there are no API bills. You can also bring an Anthropic API key.
 - **Local-first.** PDFs and progress stay on your machine.
 
