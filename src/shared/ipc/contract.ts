@@ -178,6 +178,8 @@ export type IpcContract = typeof ipcContract
 export type IpcChannel = keyof IpcContract
 export type IpcInput<C extends IpcChannel> = z.input<IpcContract[C]['input']>
 export type IpcOutput<C extends IpcChannel> = IpcContract[C]['output']
+/** Input after zod parsing in main (defaults applied). */
+export type IpcParsedInput<C extends IpcChannel> = z.output<IpcContract[C]['input']>
 
 export type IpcErrorKind = 'validation' | 'not_found' | 'ai' | 'rate_limited' | 'conflict' | 'internal'
 
