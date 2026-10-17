@@ -250,9 +250,4 @@ export interface PreloadApi {
   pathForFile?(file: File): string
 }
 
-export const IPC_INVOKE_PREFIX = 'sb:'
-export const IPC_EVENT_PREFIX = 'sb-event:'
-
-/** Custom protocol that serves stored PDFs to the viewer: sb-pdf://doc/<docId> */
-export const PDF_SCHEME = 'sb-pdf'
-export const pdfUrl = (docId: string): string => `${PDF_SCHEME}://doc/${encodeURIComponent(docId)}`
+export { IPC_EVENT_PREFIX, IPC_INVOKE_PREFIX, PDF_SCHEME, pdfUrl } from './constants'

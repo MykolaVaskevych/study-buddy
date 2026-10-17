@@ -120,6 +120,13 @@ async function bootstrap(): Promise<void> {
     try {
       await waitForRendererLoad(win.webContents, 30_000)
       log.info('[smoke] OK: renderer loaded')
+      // Round trip through the real preload bridge: catches a broken preload (the renderer would
+      // otherwise fall back to the browser mock).
+      const bridge: unknown = await win.webContents.executeJavaScript(
+        "window.api ? window.api.invoke('app.info', {}).then((r) => r.ok) : false"
+      )
+      if (bridge !== true) throw new Error('renderer has no working window.api bridge')
+      log.info('[smoke] OK: preload bridge round trip')
       const pdfPath = await writeSmokePdf(join(dataDir, 'smoke'))
       await runSmoke(pipelines.handlers, { pdfPath, log, timeoutMs: 120_000 })
       await pipelines.stop()

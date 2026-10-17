@@ -12,6 +12,10 @@ import { App } from './App'
 /** Outside Electron there is no preload bridge: run against the in-memory mock (browser mode). */
 async function installMockIfNeeded(): Promise<void> {
   if (typeof window.api !== 'undefined') return
+  // Inside Electron a missing bridge is a broken preload: fail loudly instead of showing fake books.
+  if (navigator.userAgent.includes('Electron')) {
+    throw new Error('The app bridge did not load (preload failed). Please report this bug.')
+  }
   const { createMockApi } = await import('./api/mock')
   const mock = createMockApi()
   setBridge(mock)
@@ -31,4 +35,8 @@ async function start(): Promise<void> {
   )
 }
 
-void start()
+start().catch((err: unknown) => {
+  const root = document.getElementById('root')
+  if (root) root.textContent = err instanceof Error ? err.message : String(err)
+  console.error(err)
+})
