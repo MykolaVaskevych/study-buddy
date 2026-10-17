@@ -196,4 +196,32 @@ describe('QuizRepo', () => {
       /not found/
     )
   })
+  it('lastAttemptAt() gives the latest answer time per question across quizzes', () => {
+    const { db } = openTestDb()
+    const doc = seedDocument(db)
+    const [q1, q2, q3] = db.questions.insertMany(
+      [newQuestion(doc, { stem: 'a' }), newQuestion(doc, { stem: 'b' }), newQuestion(doc, { stem: 'c' })],
+      '2026-10-17T10:00:00.000Z'
+    )
+    const scope = { kind: 'document', docId: doc } as const
+    const quizA = db.quizzes.create(
+      { docId: doc, mode: 'topic', scope, questionIds: [q1!.id, q2!.id], timeLimit: null },
+      '2026-10-17T10:00:00.000Z'
+    )
+    const quizB = db.quizzes.create(
+      { docId: doc, mode: 'topic', scope, questionIds: [q1!.id], timeLimit: null },
+      '2026-10-18T10:00:00.000Z'
+    )
+    db.quizzes.saveAttempt(quizA, attempt(q1!.id, false), null, 1, '2026-10-17T10:01:00.000Z')
+    db.quizzes.saveAttempt(quizA, attempt(q2!.id, true), null, 1, '2026-10-17T10:02:00.000Z')
+    db.quizzes.saveAttempt(quizB, attempt(q1!.id, true), null, 1, '2026-10-18T10:01:00.000Z')
+
+    expect(db.quizzes.lastAttemptAt([q1!.id, q2!.id, q3!.id, q1!.id])).toEqual(
+      new Map([
+        [q1!.id, '2026-10-18T10:01:00.000Z'],
+        [q2!.id, '2026-10-17T10:02:00.000Z']
+      ])
+    )
+    expect(db.quizzes.lastAttemptAt([])).toEqual(new Map())
+  })
 })
