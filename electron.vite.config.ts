@@ -15,7 +15,9 @@ export default defineConfig({
     build: {
       rolldownOptions: {
         input: {
-          index: resolve(import.meta.dirname, 'src/main/index.ts')
+          index: resolve(import.meta.dirname, 'src/main/index.ts'),
+          // worker_threads entry for PDF extraction/chunking; the library resolves it next to index.js.
+          'pdf-worker': resolve(import.meta.dirname, 'src/main/library/pdf-worker.ts')
         }
       }
     }
