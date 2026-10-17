@@ -2,7 +2,6 @@ import type { ComponentType } from 'react'
 import type { RouteObject } from 'react-router'
 import type { IconName } from '../components'
 import { LibraryScreen } from '../features/library/LibraryScreen'
-import { Placeholder } from './Placeholder'
 
 /**
  * Route registry. To add a screen (Wave 2):
@@ -28,21 +27,6 @@ export interface AppRoute {
   lazy?: () => Promise<ComponentType>
 }
 
-const ReviewPlaceholder = (): React.JSX.Element => (
-  <Placeholder
-    title="Review"
-    icon="review"
-    body="Your due flashcards from every book, scheduled so the important ones are fresh on exam day."
-  />
-)
-const SettingsPlaceholder = (): React.JSX.Element => (
-  <Placeholder
-    title="Settings"
-    icon="settings"
-    body="Claude connection, models, content language and theme."
-  />
-)
-
 export const appRoutes: AppRoute[] = [
   { path: '/', Component: LibraryScreen, nav: { label: 'Library', icon: 'library', shortcut: 'Mod+1' } },
   {
@@ -51,7 +35,7 @@ export const appRoutes: AppRoute[] = [
   },
   {
     path: '/review',
-    Component: ReviewPlaceholder,
+    lazy: () => import('../features/review/ReviewScreen').then((m) => m.ReviewScreen),
     nav: { label: 'Review', icon: 'review', shortcut: 'Mod+2' }
   },
   {
@@ -61,12 +45,16 @@ export const appRoutes: AppRoute[] = [
   },
   {
     path: '/settings',
-    Component: SettingsPlaceholder,
+    lazy: () => import('../features/settings/SettingsScreen').then((m) => m.SettingsScreen),
     nav: { label: 'Settings', icon: 'settings', shortcut: 'Mod+4' }
   },
   {
     path: '/book/:docId/plan',
     lazy: () => import('../features/planner/PlannerScreen').then((m) => m.PlannerScreen)
+  },
+  {
+    path: '/book/:docId/quiz',
+    lazy: () => import('../features/quiz/QuizScreen').then((m) => m.QuizScreen)
   }
 ]
 
