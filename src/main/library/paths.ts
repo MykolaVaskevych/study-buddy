@@ -10,6 +10,7 @@ import { LibraryError } from './types'
  *   <root>/<sha>/extract.json           cached extraction (text, outline, labels, title)
  *   <root>/<sha>/chunks/<index>.pdf     stamped chunk PDFs
  *   <root>/<sha>/chunks/manifest.json   chunk grid (ranges, sizes, options it was built with)
+ *   <root>/<sha>/focus/<from>-<to>.pdf  cached focus chunks (a few stamped pages, see focus.ts)
  *
  * Chunk paths are derived from the directory rather than stored, so a moved library keeps working.
  */
@@ -38,6 +39,10 @@ export function extractCachePath(rootDir: string, sha256: string): string {
 
 export function chunksDir(rootDir: string, sha256: string): string {
   return join(documentDir(rootDir, sha256), 'chunks')
+}
+
+export function focusFilePath(rootDir: string, sha256: string, from: number, to: number): string {
+  return join(documentDir(rootDir, sha256), 'focus', `${from}-${to}.pdf`)
 }
 
 export function chunkFilePath(dir: string, index: number): string {

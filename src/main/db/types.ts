@@ -182,6 +182,8 @@ export interface QuizRepo {
     now: IsoDate
   ): void
   attempts(quizId: QuizId): AttemptResult[]
+  /** When each question was last answered, across all quizzes; never-answered questions are absent. */
+  lastAttemptAt(questionIds: readonly QuestionId[]): Map<QuestionId, IsoDate>
   finish(quizId: QuizId, result: QuizResult): void
   history(docId: DocId, limit: number): QuizResult[]
 }

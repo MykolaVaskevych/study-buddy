@@ -30,6 +30,7 @@ const RULES = `Question rules:
   - short: model_answer (a complete answer in 1-4 sentences) and rubric (2-5 independently gradable points).
   - numeric: numeric_value, numeric_tolerance (relative, e.g. 0.02 means plus or minus 2 %), numeric_unit (null when dimensionless). Give all needed values in the stem; the answer must follow from the pages with a calculator.
 - Prefer questions that test understanding and calculation over recall of wording.
+- A question stands on its own, like an exam question: stems, options and explanations never refer to slide numbers, page numbers or slide labels (not "Slide 3 compares...", "as shown on page 12" or "the diagram on the previous slide"). Name the content itself instead (e.g. "The comparison of single-mode and multimode fibre shows...").
 - Distractors are plausible (typical misconceptions, sign or unit errors, confusing related concepts), similar in length and style to the correct option, and clearly wrong for a student who understood the page. Never use "all of the above" or "none of the above". No giveaway wording.
 - The correct option position varies across questions.
 - A true/false statement is unambiguously true or false according to the pages.

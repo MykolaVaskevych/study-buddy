@@ -1,8 +1,11 @@
-import { and, asc, desc, eq, isNotNull } from 'drizzle-orm'
-import type { QuizResult } from '@shared/domain'
+import { and, asc, desc, eq, inArray, isNotNull, max } from 'drizzle-orm'
+import type { IsoDate, QuestionId, QuizResult } from '@shared/domain'
 import { clampLimit, iso, NotFoundError, type RepoContext } from '../context'
 import { quizAttempts, quizzes } from '../schema'
 import type { QuizRepo } from '../types'
+
+/** Ids per IN (...) list; far below SQLite's bound-parameter limit. */
+const ID_BATCH = 500
 
 export function createQuizRepo(ctx: RepoContext): QuizRepo {
   const { db } = ctx
@@ -63,6 +66,21 @@ export function createQuizRepo(ctx: RepoContext): QuizRepo {
         .orderBy(asc(quizAttempts.createdAt), asc(quizAttempts.id))
         .all()
         .map((r) => r.result)
+    },
+
+    lastAttemptAt(questionIds) {
+      const out = new Map<QuestionId, IsoDate>()
+      const ids = [...new Set(questionIds)]
+      for (let i = 0; i < ids.length; i += ID_BATCH) {
+        const rows = db
+          .select({ questionId: quizAttempts.questionId, at: max(quizAttempts.createdAt) })
+          .from(quizAttempts)
+          .where(inArray(quizAttempts.questionId, ids.slice(i, i + ID_BATCH)))
+          .groupBy(quizAttempts.questionId)
+          .all()
+        for (const row of rows) if (row.at !== null) out.set(row.questionId, row.at)
+      }
+      return out
     },
 
     finish(quizId, result: QuizResult) {
