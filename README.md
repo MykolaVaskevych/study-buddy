@@ -4,14 +4,17 @@ Turn theory-heavy PDFs (lecture slides, notes, textbooks) into an exam plan you 
 
 - **Reads any PDF**, including image-only slides and formula-heavy pages. The AI sees each page, not just its text.
 - **Page notes:** summary, key points, concepts and formulas with symbol tables.
-- **Read → test loop:** "Test me" on the page you just read, prepared in advance so it's instant.
-- **Flashcards with spaced repetition (FSRS)** that plan reviews around your exam date. There's an essentials deck and a full deck.
-- **Quizzes and mock exams** with verified answer keys, numeric problems and explanations that link back to the page.
-- **Exam triage:** give it the time you have and a target score. It picks what to learn fully, what to learn only at core level, and what to skip (long, hard, low-value topics), and shows the expected score and why.
+- **Read → test loop:** "Test me" on the page you just read, prepared in the background so it's instant.
+- **Flashcards with spaced repetition (FSRS)** that plan reviews around your exam date. Essentials deck or full deck, with cloze and formula cards.
+- **Quizzes and timed mock exams** with verified answer keys, numeric problems with units, and explanations that link back to the page. "From the book" quizzes reuse the book's own exercises.
+- **Exam triage planner:** give it your time and a target score. It picks what to learn fully, what to learn only at core level, and what to skip (long, hard, low-value topics), and shows the expected score, a reason per topic, and a day-by-day schedule. Past exam papers recalibrate the topic weights.
+- **Tutor chat** about your book, with answers that cite pages (`[p. 14]` jumps there). One-click "explain simply", "exam answer" and "worked example" for the page you're on.
+- **Cheat sheet:** a printable one-page summary of the core formulas and concepts per topic.
+- **Anki export** of your cards (Basic + Cloze, math included).
 
 Works with your **Claude subscription** through a local Claude Code login, so there are no API costs. You can also use your own Anthropic API key.
 
-> Status: early development. See `docs/ARCHITECTURE.md`.
+> Status: v0.1, usable. See `docs/ARCHITECTURE.md` for how it's built.
 
 ## Development
 
