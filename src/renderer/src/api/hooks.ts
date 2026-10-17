@@ -1,5 +1,12 @@
 import { useEffect } from 'react'
-import { keepPreviousData, queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  queryOptions,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient
+} from '@tanstack/react-query'
 import type { QueryClient, QueryKey } from '@tanstack/react-query'
 import type { IpcChannel, IpcInput, IpcOutput } from '@shared/ipc/contract'
 import type { DocumentSummary, IndexStatus, JobInfo, RateLimitInfo, Scope } from '@shared/domain'
@@ -185,6 +192,9 @@ export const useTrackReading = () => useChannelMutation('reading.track', { silen
 export const usePlan = (docId: string) => useQuery(channelQuery('plan.get', { docId }))
 export const usePlanTopics = (docId: string) => useQuery(channelQuery('plan.topics', { docId }))
 export const useTodayPlan = (docId: string) => useQuery(channelQuery('plan.today', { docId }))
+/** Today's sessions for several books at once (the library's Today widget); shares useTodayPlan's cache. */
+export const useTodayPlans = (docIds: string[]) =>
+  useQueries({ queries: docIds.map((docId) => channelQuery('plan.today', { docId })) })
 export const useSavePlan = () =>
   useChannelMutation('plan.save', {
     onSuccess: (plan, { docId }, qc) => {

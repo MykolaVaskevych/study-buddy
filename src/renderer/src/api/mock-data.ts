@@ -30,6 +30,8 @@ export interface TopicSpec {
   mastery: number | null
   slides: SlideSpec[]
   children?: TopicSpec[]
+  /** Titles of topics in the same book that this one builds on (planner prerequisites). */
+  prerequisites?: string[]
 }
 
 export interface BookSpec {
@@ -110,8 +112,8 @@ const optical: TopicSpec[] = [
     difficulty: 2,
     examWeight: 0.12,
     coreFraction: 0.7,
-    coreMinutes: 35,
-    fullMinutes: 70,
+    coreMinutes: 45,
+    fullMinutes: 105,
     mastery: 0.58,
     slides: [],
     children: [
@@ -124,7 +126,7 @@ const optical: TopicSpec[] = [
         examWeight: 0.07,
         coreFraction: 0.75,
         coreMinutes: 20,
-        fullMinutes: 40,
+        fullMinutes: 45,
         mastery: 0.66,
         slides: [
           {
@@ -183,9 +185,10 @@ const optical: TopicSpec[] = [
         difficulty: 3,
         examWeight: 0.05,
         coreFraction: 0.6,
-        coreMinutes: 15,
-        fullMinutes: 30,
+        coreMinutes: 25,
+        fullMinutes: 60,
         mastery: 0.41,
+        prerequisites: ['Snell’s law and total internal reflection'],
         slides: [
           {
             title: 'Numerical aperture',
@@ -219,8 +222,8 @@ const optical: TopicSpec[] = [
     difficulty: 3,
     examWeight: 0.2,
     coreFraction: 0.75,
-    coreMinutes: 45,
-    fullMinutes: 90,
+    coreMinutes: 60,
+    fullMinutes: 150,
     mastery: 0.35,
     slides: [
       {
@@ -289,9 +292,10 @@ const optical: TopicSpec[] = [
     difficulty: 4,
     examWeight: 0.16,
     coreFraction: 0.6,
-    coreMinutes: 40,
-    fullMinutes: 85,
+    coreMinutes: 75,
+    fullMinutes: 180,
     mastery: null,
+    prerequisites: ['Modes and numerical aperture'],
     slides: [
       {
         title: 'Chromatic dispersion',
@@ -331,9 +335,10 @@ const optical: TopicSpec[] = [
     difficulty: 3,
     examWeight: 0.12,
     coreFraction: 0.7,
-    coreMinutes: 30,
-    fullMinutes: 65,
+    coreMinutes: 45,
+    fullMinutes: 120,
     mastery: null,
+    prerequisites: ['Attenuation and the power budget'],
     slides: [
       {
         title: 'Photodetectors',
@@ -363,9 +368,71 @@ const optical: TopicSpec[] = [
     difficulty: 4,
     examWeight: 0.14,
     coreFraction: 0.55,
-    coreMinutes: 35,
-    fullMinutes: 80,
+    coreMinutes: 135,
+    fullMinutes: 330,
     mastery: null,
+    children: [
+      {
+        title: 'Erbium-doped fibre amplifiers',
+        from: 89,
+        to: 98,
+        objectives: [
+          'Explain how an EDFA amplifies the C-band',
+          'Read gain and noise figure off a datasheet'
+        ],
+        difficulty: 3,
+        examWeight: 0.08,
+        coreFraction: 0.7,
+        coreMinutes: 45,
+        fullMinutes: 90,
+        mastery: null,
+        prerequisites: ['Attenuation and the power budget'],
+        slides: []
+      },
+      {
+        title: 'OSNR chain derivation',
+        from: 99,
+        to: 106,
+        objectives: ['Derive OSNR after N amplified spans from ASE power spectral density'],
+        difficulty: 5,
+        examWeight: 0.06,
+        coreFraction: 0.3,
+        coreMinutes: 90,
+        fullMinutes: 240,
+        mastery: null,
+        prerequisites: ['Erbium-doped fibre amplifiers'],
+        slides: [
+          {
+            title: 'OSNR after a chain of amplifiers',
+            summary:
+              'Each span adds the same ASE noise, so noise power grows with N while signal power stays fixed; the derivation starts from the ASE spectral density of one amplifier.',
+            keyPoints: [
+              'ASE power in a reference bandwidth: $P_{ASE} = n_{sp}\\,h\\nu\\,(G-1)\\,B_{ref}$ per amplifier.',
+              'With N identical spans the noise adds linearly, so OSNR falls by $10\\log_{10} N$ dB.',
+              'The 58 dB constant comes from $h\\nu$ at 1550 nm and a 0.1 nm reference bandwidth.'
+            ],
+            concepts: [
+              c(
+                'Spontaneous emission factor',
+                'Population inversion factor $n_{sp} \\geq 1$ of an amplifier.'
+              )
+            ],
+            formulas: [
+              f(
+                'P_{ASE} = n_{sp}\\,h\\nu\\,(G-1)\\,B_{ref}',
+                'ASE noise power of one amplifier in the reference bandwidth.',
+                [
+                  ['n_{sp}', 'spontaneous emission factor', null],
+                  ['G', 'amplifier gain', null],
+                  ['B_{ref}', 'reference optical bandwidth', 'Hz']
+                ],
+                'detail'
+              )
+            ]
+          }
+        ]
+      }
+    ],
     slides: [
       {
         title: 'Erbium-doped fibre amplifiers',
@@ -398,9 +465,10 @@ const optical: TopicSpec[] = [
     difficulty: 3,
     examWeight: 0.12,
     coreFraction: 0.7,
-    coreMinutes: 30,
-    fullMinutes: 60,
+    coreMinutes: 45,
+    fullMinutes: 120,
     mastery: null,
+    prerequisites: ['Erbium-doped fibre amplifiers', 'Dispersion'],
     slides: [
       {
         title: 'The ITU grid',
@@ -423,9 +491,10 @@ const optical: TopicSpec[] = [
     difficulty: 2,
     examWeight: 0.06,
     coreFraction: 0.8,
-    coreMinutes: 15,
-    fullMinutes: 35,
+    coreMinutes: 20,
+    fullMinutes: 60,
     mastery: null,
+    prerequisites: ['Wavelength-division multiplexing'],
     slides: [
       {
         title: 'Protection schemes',
@@ -502,6 +571,7 @@ const signals: TopicSpec[] = [
     coreMinutes: 60,
     fullMinutes: 140,
     mastery: 0.61,
+    prerequisites: ['Signals and their properties'],
     slides: [
       {
         title: 'Convolution',
@@ -527,6 +597,7 @@ const signals: TopicSpec[] = [
     coreMinutes: 55,
     fullMinutes: 120,
     mastery: 0.55,
+    prerequisites: ['Convolution and LTI systems'],
     slides: [
       {
         title: 'Fourier transform',

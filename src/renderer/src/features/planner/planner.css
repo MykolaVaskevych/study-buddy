@@ -1,0 +1,104 @@
+/*
+ * Planner-only styles that utilities can't express: the range slider parts and the "level changed"
+ * highlight. Colours come from the design tokens, so dark mode follows automatically.
+ */
+
+.sb-range {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 1.5rem;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.sb-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--color-ink) 0,
+    var(--color-ink) var(--fill, 0%),
+    var(--color-rule-strong) var(--fill, 0%)
+  );
+}
+
+.sb-range::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-rule-strong);
+}
+
+.sb-range::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-ink);
+}
+
+.sb-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border-radius: 999px;
+  border: 2px solid var(--color-ink);
+  background: var(--color-sheet);
+  transition: transform 120ms var(--ease-out);
+}
+
+.sb-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid var(--color-ink);
+  background: var(--color-sheet);
+}
+
+.sb-range:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+
+.sb-range:focus-visible {
+  outline: none;
+}
+
+.sb-range:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.sb-range:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/*
+ * A row whose level just changed gets a highlighter swipe that fades out, so the eye finds what a
+ * slider move did. Two identical keyframes let consecutive changes restart the animation.
+ */
+@keyframes sb-level-changed-a {
+  from {
+    background-color: var(--color-marker-soft);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+@keyframes sb-level-changed-b {
+  from {
+    background-color: var(--color-marker-soft);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+.sb-changed-a {
+  animation: sb-level-changed-a 1100ms var(--ease-out);
+}
+
+.sb-changed-b {
+  animation: sb-level-changed-b 1100ms var(--ease-out);
+}
