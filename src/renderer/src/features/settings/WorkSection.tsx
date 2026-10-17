@@ -1,7 +1,8 @@
+import { useTour } from '../tour/tourStore'
 import { useId, useState } from 'react'
 import type { PublicSettings } from '@shared/settings'
 import { useUpdateSettings } from '../../api/hooks'
-import { cx } from '../../components'
+import { Button, cx } from '../../components'
 import { fieldClass, Segmented, Switch } from '../study/form'
 import { SettingRow, SettingsSection } from './layout'
 
@@ -116,6 +117,7 @@ export function WorkSection({ settings }: { settings: PublicSettings }): React.J
 /** Language of generated content, and the app's colour theme. */
 export function AppearanceSection({ settings }: { settings: PublicSettings }): React.JSX.Element {
   const update = useUpdateSettings()
+  const resetTours = useTour((t) => t.reset)
   const languageId = useId()
   const known = LANGUAGES.some(([code]) => code === settings.contentLanguage)
   const languages = known ? LANGUAGES : [...LANGUAGES, [settings.contentLanguage, settings.contentLanguage]]
@@ -138,6 +140,11 @@ export function AppearanceSection({ settings }: { settings: PublicSettings }): R
             </option>
           ))}
         </select>
+      </SettingRow>
+      <SettingRow label="Tutorials" description="Show the guided tour again on every screen.">
+        <Button size="sm" variant="secondary" onClick={() => resetTours()}>
+          Replay tutorials
+        </Button>
       </SettingRow>
       <SettingRow label="Theme" description="Dark is easier on the eyes for late-night study.">
         <Segmented

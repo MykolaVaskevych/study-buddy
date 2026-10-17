@@ -207,14 +207,16 @@ export function ReviewSession({
         />
       </div>
 
-      <IndexCard
-        ref={cardRef}
-        card={card}
-        flipped={state.flipped}
-        bookTitle={docId === null ? (bookTitles.get(card.docId) ?? null) : null}
-      />
+      <div data-tour="review-card">
+        <IndexCard
+          ref={cardRef}
+          card={card}
+          flipped={state.flipped}
+          bookTitle={docId === null ? (bookTitles.get(card.docId) ?? null) : null}
+        />
+      </div>
 
-      <div className="flex min-h-11 items-stretch gap-2">
+      <div data-tour="review-ratings" className="flex min-h-11 items-stretch gap-2">
         {state.flipped ? (
           RATINGS.map(({ rating, label, className }) => (
             <button

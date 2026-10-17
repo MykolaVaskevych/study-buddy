@@ -1,3 +1,4 @@
+import { useAutoTour } from '../tour/useAutoTour'
 import { useCallback, useMemo, useState } from 'react'
 import { useImportPdfs, useLibrary } from '../../api/hooks'
 import { toast } from '../../app/toasts'
@@ -46,7 +47,14 @@ function Welcome({ onImport, importing }: { onImport: () => void; importing: boo
         ))}
       </ol>
       <div className="flex items-center gap-4">
-        <Button variant="primary" icon="import" onClick={onImport} loading={importing} shortcut="Mod+O">
+        <Button
+          data-tour="import"
+          variant="primary"
+          icon="import"
+          onClick={onImport}
+          loading={importing}
+          shortcut="Mod+O"
+        >
           Import PDF
         </Button>
         <span className="text-sm text-graphite">or drop PDF files anywhere on this window</span>
@@ -61,6 +69,7 @@ export function LibraryScreen(): React.JSX.Element {
   const { mutate: importMutate, isPending: importing } = useImportPdfs()
   // One clock per render pass keeps every card's countdown consistent.
   const [now] = useState(() => new Date())
+  useAutoTour('library', !library.isPending)
 
   const runImport = useCallback(
     (paths: string[] | null) => {

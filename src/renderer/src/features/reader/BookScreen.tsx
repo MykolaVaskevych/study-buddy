@@ -1,3 +1,4 @@
+import { useAutoTour } from '../tour/useAutoTour'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useParams, useSearchParams } from 'react-router'
 import { ApiError } from '../../api/client'
@@ -51,6 +52,7 @@ export function BookScreen(): React.JSX.Element {
   const indexQuery = useIndexStatus(docId)
   const [attempt, setAttempt] = useState(0)
   const pdf = usePdfDocument(docId, attempt)
+  useAutoTour('book', pdf.status === 'ready')
   const viewer = useRef<PdfViewerHandle>(null)
   const panes = useUiStore((s) => s.panes)
   const togglePane = useUiStore((s) => s.togglePane)
@@ -149,7 +151,7 @@ export function BookScreen(): React.JSX.Element {
             onZoom={zoomBy}
             onFit={fit}
           />
-          <div className="min-h-0 flex-1">
+          <div data-tour="reader" className="min-h-0 flex-1">
             <ErrorBoundary resetKey={`${docId}:${attempt}`}>
               {pdf.status === 'ready' && doc ? (
                 <PdfViewer

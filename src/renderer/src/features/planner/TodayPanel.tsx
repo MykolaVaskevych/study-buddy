@@ -77,7 +77,7 @@ export function TodayPanel({ docs, now }: { docs: DocumentSummary[]; now: Date }
   })
   if (entries.length === 0) return null
   return (
-    <section aria-labelledby="today-heading" className="flex flex-col gap-3">
+    <section data-tour="today" aria-labelledby="today-heading" className="flex flex-col gap-3">
       <h2 id="today-heading" className="font-serif text-xl font-semibold">
         <span className="marker-stroke">Today</span>
       </h2>

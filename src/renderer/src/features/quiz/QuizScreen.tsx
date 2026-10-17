@@ -1,3 +1,4 @@
+import { useAutoTour } from '../tour/useAutoTour'
 import { useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import type { QuizSession } from '@shared/domain'
@@ -28,6 +29,7 @@ export function QuizScreen(): React.JSX.Element {
   const doc = useDocument(docId)
   const topics = useTopics(docId)
   const [active, setActive] = useState<{ session: QuizSession; reveal: RevealMode } | null>(null)
+  useAutoTour('quiz', active === null && !doc.isPending)
   const onCitation = (page: number): void => void navigate(`/book/${encodeURIComponent(docId)}?page=${page}`)
 
   return (

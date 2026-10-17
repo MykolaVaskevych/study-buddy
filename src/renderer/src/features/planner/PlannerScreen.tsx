@@ -1,3 +1,4 @@
+import { useAutoTour } from '../tour/useAutoTour'
 import { useToasts } from '../../app/toasts'
 import { memo, useCallback, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router'
@@ -181,6 +182,7 @@ function PlannerEditor({ doc, planTopics, topics, saved, today }: EditorProps): 
   const pages = useMemo(() => new Map(topics.map((t) => [t.id, t.pageStart])), [topics])
   const pageOf = useCallback((topicId: string) => pages.get(topicId) ?? null, [pages])
   const save = useSavePlan()
+  useAutoTour('planner')
   const pastPaper = useImportPastPaper()
   const pushToast = useToasts((t) => t.push)
 
@@ -262,6 +264,7 @@ function PlannerEditor({ doc, planTopics, topics, saved, today }: EditorProps): 
               variant="secondary"
               size="sm"
               loading={pastPaper.isPending}
+              data-tour="past-papers"
               title="Match past exam papers to topics and recalibrate exam weights"
               onClick={() =>
                 pastPaper.mutate(
@@ -290,6 +293,7 @@ function PlannerEditor({ doc, planTopics, topics, saved, today }: EditorProps): 
             <Button
               variant="primary"
               size="sm"
+              data-tour="save-plan"
               shortcut="Mod+S"
               loading={save.isPending}
               disabled={state === 'saved'}

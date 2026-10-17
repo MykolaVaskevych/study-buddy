@@ -52,7 +52,8 @@ function openMainWindow(): BrowserWindow {
     isSmoke,
     isDev: !app.isPackaged,
     preloadPath: join(__dirname, '../preload/index.cjs'),
-    renderer
+    renderer,
+    icon: app.isPackaged ? undefined : join(app.getAppPath(), 'build/icon.png')
   })
   win.on('closed', () => {
     if (mainWindow === win) mainWindow = null

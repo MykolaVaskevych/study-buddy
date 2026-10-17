@@ -1,3 +1,4 @@
+import { useAutoTour } from '../tour/useAutoTour'
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { downloadText, useDueCards, useExportAnki, useLibrary } from '../../api/hooks'
@@ -26,6 +27,7 @@ export function ReviewScreen(): React.JSX.Element {
   const library = useLibrary()
   const due = useDueCards(docId, 200)
   const exportAnki = useExportAnki()
+  useAutoTour('review', !due.isPending)
   const [round, setRound] = useState(0)
   const books = useMemo(() => library.data ?? [], [library.data])
   const titles = useMemo(() => new Map(books.map((b) => [b.id, b.title])), [books])
@@ -39,6 +41,7 @@ export function ReviewScreen(): React.JSX.Element {
             size="sm"
             variant="ghost"
             loading={exportAnki.isPending}
+            data-tour="export-anki"
             title="Download cards as an Anki import file"
             onClick={() =>
               exportAnki.mutate({ docId }, { onSuccess: (f) => downloadText(f.fileName, f.content) })

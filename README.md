@@ -1,4 +1,6 @@
-# Study Buddy
+<p align="center"><img src="docs/logo.png" width="128" alt="Study Buddy logo"></p>
+
+<h1 align="center">Study Buddy</h1>
 
 Turn theory-heavy PDFs (lecture slides, notes, textbooks) into an exam plan you can actually finish.
 
