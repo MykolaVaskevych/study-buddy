@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Format
+        run: npm run format:check
+      - name: Unit + integration tests
+        run: npm test
+      - name: Smoke (real Electron app under xvfb)
+        run: |
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          npm run build
+          xvfb-run -a npx electron . --smoke

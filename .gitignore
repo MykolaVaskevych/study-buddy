@@ -1,0 +1,14 @@
+node_modules/
+out/
+dist/
+release/
+coverage/
+*.log
+.DS_Store
+.env
+.env.*
+# Course material and any user PDFs are never committed (copyright). Test fixtures are generated.
+*.pdf
+.claude/worktrees/
+tmp/
+*.tsbuildinfo
