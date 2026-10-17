@@ -3,8 +3,9 @@ import { basename } from 'node:path'
 import { readCompleteChunkGrid } from './chunks'
 import { io } from './errors'
 import { readExtractCache, writeExtractCache } from './extract-cache'
+import { FOCUS_CHUNK_INDEX, writeFocusChunk } from './focus'
 import type { PdfJob } from './job'
-import { assertSha256, chunksDir, documentDir, extractCachePath, storedPdfPath } from './paths'
+import { assertSha256, chunksDir, documentDir, extractCachePath, focusFilePath, storedPdfPath } from './paths'
 import { storeSourcePdf } from './store'
 import {
   LibraryError,
@@ -17,6 +18,8 @@ import {
 import { DEFAULT_WORKER_TIMEOUT_MS, processPdf, type ProcessOptions } from './worker-client'
 
 export { PAGE_STAMP_PREFIX, stampText } from './chunk-plan'
+export { FOCUS_CHUNK_INDEX } from './focus'
+export { hasTextLayer } from './text'
 
 /** 10 pages keeps a chunk well inside one model call; 20 MB leaves headroom under the 32 MB API limit. */
 export const DEFAULT_CHUNK_OPTIONS: ChunkOptions = { pagesPerChunk: 10, maxChunkBytes: 20 * 1024 * 1024 }
@@ -115,9 +118,30 @@ export function createPdfLibrary(config: LibraryConfig, runtime: LibraryRuntimeO
     return result.chunks
   }
 
+  async function buildFocusChunk(
+    sha256: string,
+    pageCount: number,
+    from: number,
+    to: number
+  ): Promise<ChunkInfo> {
+    assertSha256(sha256)
+    const valid = [pageCount, from, to].every(Number.isInteger) && from >= 1 && from <= to && to <= pageCount
+    if (!valid) throw new LibraryError('io', `Invalid focus range ${from}-${to} of ${pageCount} pages`)
+    const path = focusFilePath(root, sha256, from, to)
+    const cached = await stat(path).then(
+      (s) => (s.isFile() ? s.size : 0),
+      () => 0
+    )
+    if (cached > 0) return { index: FOCUS_CHUNK_INDEX, startPage: from, endPage: to, path, bytes: cached }
+    const grid = await ensureChunks(sha256, pageCount)
+    const bytes = await writeFocusChunk(grid, from, to, path)
+    return { index: FOCUS_CHUNK_INDEX, startPage: from, endPage: to, path, bytes }
+  }
+
   return {
     importPdf,
     ensureChunks,
+    buildFocusChunk,
     storedPath(sha256) {
       assertSha256(sha256)
       return storedPdfPath(root, sha256)

@@ -64,6 +64,13 @@ export interface PdfLibrary {
   importPdf(sourcePath: string): Promise<ImportedPdf>
   /** Re-create chunk files if missing (e.g. library moved). Returns the chunk grid. */
   ensureChunks(sha256: string, pageCount: number): Promise<ChunkInfo[]>
+  /**
+   * A small stamped PDF holding only pages from..to (absolute, inclusive), copied from the chunk grid,
+   * so a page-sized AI request does not pay for a whole chunk. Rebuilds missing grid files first (hence
+   * `pageCount`, as in `ensureChunks`). Cached at `<root>/<sha>/focus/<from>-<to>.pdf`. The result has
+   * `index` -1: it is not a position in the grid.
+   */
+  buildFocusChunk(sha256: string, pageCount: number, from: number, to: number): Promise<ChunkInfo>
   /** Absolute path of the stored PDF for a document hash. */
   storedPath(sha256: string): string
   /** Remove stored PDF and chunks. */
