@@ -255,6 +255,7 @@ export function applyJobChange(qc: QueryClient, job: JobInfo): void {
     const rest = (data ?? []).filter((j) => j.id !== job.id)
     qc.setQueryData(key, ACTIVE.includes(job.state) ? [...rest, job] : rest)
   }
+  qc.setQueryData(jobKey(job.id), job)
   if (job.state !== 'done' || job.docId === null) return
   const docId = job.docId
   switch (job.kind) {
@@ -299,11 +300,59 @@ export function useApiEvents({ onJobFailed }: ApiEventOptions = {}): void {
         if (docId) invalidate(qc, channelKey('topics.list', { docId }))
       }),
       subscribe('cards.changed', () => invalidateCards(qc)),
-      subscribe('pageCheck.ready', ({ docId }) => invalidate(qc, channelKey('quiz.history', { docId }))),
+      subscribe('pageCheck.ready', ({ docId, page }) => {
+        invalidate(qc, channelKey('quiz.history', { docId }))
+        markPageCheckReady(qc, docId, page)
+      }),
       subscribe('ai.rateLimited', (info) => setRateLimit(qc, info))
     ]
     return () => {
       for (const off of offs) off()
     }
   }, [qc, onJobFailed])
+}
+
+// ------------------------------------------------------------------ study (page checks, card jobs)
+
+/** Latest state of one background job, fed by `jobs.changed` (see applyJobChange). */
+export const jobKey = (jobId: string): QueryKey => ['event', 'job', jobId]
+
+/**
+ * Follows one job (e.g. the one `cards.generate` returned). Unlike `jobs.list` it keeps the job
+ * after it finishes, so callers can tell "done" from "failed". null until the first event.
+ */
+export function useJob(jobId: string | null) {
+  const qc = useQueryClient()
+  return useQuery<JobInfo | null>({
+    queryKey: jobKey(jobId ?? ''),
+    // Events may have arrived before the caller knew the id: fall back to a cached jobs.list.
+    queryFn: () =>
+      qc
+        .getQueriesData<JobInfo[]>({ queryKey: ['jobs.list'] })
+        .flatMap(([, jobs]) => jobs ?? [])
+        .find((j) => j.id === jobId) ?? null,
+    enabled: jobId !== null,
+    staleTime: Infinity
+  })
+}
+
+/** Pages whose page check main has prefetched, per document (fed by `pageCheck.ready`). */
+export const pageCheckReadyKey = (docId: string): QueryKey => ['event', 'pageCheck.ready', docId]
+
+export function markPageCheckReady(qc: QueryClient, docId: string, page: number): void {
+  qc.setQueryData<number[]>(pageCheckReadyKey(docId), (old = []) =>
+    old.includes(page) ? old : [...old, page]
+  )
+}
+
+/** True once main reported that the page check for this page is prefetched (starting it is instant). */
+export function usePageCheckReady(docId: string, page: number): boolean {
+  const ready = useQuery<number[]>({
+    queryKey: pageCheckReadyKey(docId),
+    queryFn: () => [],
+    initialData: [],
+    staleTime: Infinity,
+    gcTime: Infinity
+  })
+  return ready.data.includes(page)
 }

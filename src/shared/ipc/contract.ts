@@ -5,6 +5,7 @@ import type {
   DocumentDetail,
   DocumentSummary,
   IndexStatus,
+  IsoDate,
   JobInfo,
   PageNotes,
   QuizResult,
@@ -123,9 +124,15 @@ export const ipcContract = {
   'cards.setStatus': route<Card>()(
     z.object({ cardId: id, status: z.enum(['active', 'suspended', 'reported']) })
   ),
-  'cards.stats': route<{ due: number; new: number; learning: number; review: number; total: number }>()(
-    z.object({ docId: id.nullable() })
-  ),
+  /** nextDue: earliest due date among active cards not due yet; null when none (for "nothing due" screens). */
+  'cards.stats': route<{
+    due: number
+    new: number
+    learning: number
+    review: number
+    total: number
+    nextDue: IsoDate | null
+  }>()(z.object({ docId: id.nullable() })),
 
   // ------------------------------------------------------------ quizzes
   /** Resolves when the questions are ready (may take a while if they must be generated). */

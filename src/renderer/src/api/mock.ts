@@ -10,17 +10,12 @@ import type {
   PreloadApi
 } from '@shared/ipc/contract'
 import type {
-  AttemptResult,
   Card,
   DocumentDetail,
   DocumentSummary,
   IndexStatus,
   JobInfo,
   PageNotes,
-  Question,
-  QuizResult,
-  QuizSession,
-  Scope,
   SearchHit,
   Topic
 } from '@shared/domain'
@@ -31,6 +26,7 @@ import { buildSchedule, solvePlan } from '@shared/planner'
 import { BOOKS, flattenTopics, pageText, slideFor } from './mock-data'
 import type { BookSpec } from './mock-data'
 import { makeBookPdf } from './mock-pdf'
+import { createStudyHandlers, makeCards } from './mock-study'
 import type { PdfSourceResolver } from './pdfSource'
 
 /**
@@ -104,38 +100,6 @@ function chunkStarts(pageCount: number, done: (p: number) => boolean): number[] 
   return out
 }
 
-function makeCards(spec: BookSpec, now: Date): Card[] {
-  const slides = flattenTopics(spec.topics).flatMap(({ spec: t }) =>
-    t.slides.flatMap((s) => (s.formulas ?? []).map((f) => ({ t, f })))
-  )
-  return slides.slice(0, Math.max(2, spec.cardsDue > 0 ? 6 : 2)).map(({ t, f }, i) => ({
-    id: `${spec.id}-card-${i + 1}`,
-    docId: spec.id,
-    topicId: `${spec.id}:${t.title}`,
-    type: 'formula',
-    front: `What does this formula give you? $${f.latex}$`,
-    back: f.meaning,
-    essential: f.importance === 'core',
-    sourcePages: [t.from],
-    evidence: null,
-    verification: 'verified',
-    status: 'active',
-    srs: {
-      due: isoDaysFrom(now, i < 3 ? -1 : 3),
-      stability: 2.5,
-      difficulty: 5,
-      reps: i,
-      lapses: 0,
-      state: i === 0 ? 'new' : 'review',
-      lastReview: i === 0 ? null : isoDaysFrom(now, -2),
-      elapsedDays: 2,
-      scheduledDays: 3,
-      learningSteps: 0
-    },
-    createdAt: isoDaysFrom(now, -5)
-  }))
-}
-
 function initialState(spec: BookSpec, now: Date): DocState {
   const indexed = Array.from({ length: spec.pageCount }, (_, i) => i + 1 <= spec.indexedThrough)
   const complete = spec.indexedThrough >= spec.pageCount
@@ -159,8 +123,6 @@ export function createMockApi(options: MockOptions = {}): MockApi {
   const now = options.now ?? (() => new Date())
   const docs = new Map<string, DocState>(BOOKS.map((b) => [b.id, initialState(b, now())]))
   const jobs = new Map<string, JobInfo>()
-  const quizzes = new Map<string, QuizSession>()
-  const answers = new Map<string, AttemptResult[]>()
   const plans = new Map<string, ExamPlan>()
   const pdfCache = new Map<string, Promise<Uint8Array>>()
   const timers = new Set<ReturnType<typeof setInterval>>()
@@ -342,74 +304,23 @@ export function createMockApi(options: MockOptions = {}): MockApi {
     }, 800)
   }
 
-  // ---------------------------------------------------------------- quizzes
+  // ---------------------------------------------------------------- flashcards & quizzes
 
-  const pageQuestions = (d: DocState, page: number): Question[] => {
-    const s = slideFor(d.spec, page)
-    const base = {
-      docId: d.spec.id,
-      topicId: null,
-      difficulty: 2,
-      sourcePages: [page],
-      evidence: s.summary || null,
-      verification: 'verified' as const,
-      status: 'active' as const,
-      fromBook: false,
-      createdAt: now().toISOString(),
-      optionRationales: null
-    }
-    const formula = s.formulas?.[0]
-    return [
-      {
-        ...base,
-        id: nextId('q'),
-        type: 'tf',
-        stem: `True or false: ${s.keyPoints[0] ?? s.summary}`,
-        options: null,
-        answer: { type: 'tf', value: true },
-        explanation: `This is stated on page ${page} [p. ${page}].`
-      },
-      {
-        ...base,
-        id: nextId('q'),
-        type: 'mcq',
-        stem: formula ? `Which formula describes: ${formula.meaning}` : `What is page ${page} mainly about?`,
-        options: formula
-          ? [`$${formula.latex}$`, '$P = I^2 R$', '$E = mc^2$', '$V = IR$']
-          : [s.title, 'Something else', 'None of these', 'All of these'],
-        answer: { type: 'mcq', correctIndex: 0 },
-        explanation: `See [p. ${page}].`
-      }
-    ]
-  }
-
-  const grade = (q: Question, response: IpcInput<'quiz.answer'>['response']): AttemptResult => {
-    let correct = false
-    let score = 0
-    const a = q.answer
-    if (a.type === 'mcq' && response.type === 'mcq') correct = a.correctIndex === response.index
-    else if (a.type === 'tf' && response.type === 'tf') correct = a.value === response.value
-    else if (a.type === 'numeric' && response.type === 'numeric')
-      correct = Math.abs(response.value - a.value) <= Math.abs(a.value) * a.tolerance
-    else if (a.type === 'multi' && response.type === 'multi') {
-      const right = response.indices.filter((i) => a.correctIndices.includes(i)).length
-      const wrong = response.indices.length - right
-      score = Math.max(0, (right - wrong) / a.correctIndices.length)
-      correct = score === 1
-    } else if (a.type === 'short' && response.type === 'short') {
-      score = response.text.trim().length > 20 ? 0.5 : 0
-      correct = false
-    }
-    if (a.type !== 'multi' && a.type !== 'short') score = correct ? 1 : 0
-    return {
-      questionId: q.id,
-      correct,
-      score,
-      feedback: correct ? 'Correct.' : 'Not quite.',
-      missingPoints: [],
-      correctAnswer: q.explanation
-    }
-  }
+  const study = createStudyHandlers({
+    docs,
+    now,
+    nextId,
+    emit,
+    upsertJob,
+    fail: (kind, message) => {
+      throw new MockError(kind, message)
+    },
+    later: (fn, ms) => {
+      if (simulate) setTimeout(fn, ms)
+      else fn()
+    },
+    simulate
+  })
 
   // ---------------------------------------------------------------- planner
 
@@ -463,8 +374,6 @@ export function createMockApi(options: MockOptions = {}): MockApi {
     }
     plans.set(seeded.spec.id, buildPlan(seeded, input))
   }
-
-  const scopeDoc = (scope: Scope): DocState => getDoc(scope.docId)
 
   // ---------------------------------------------------------------- handlers
 
@@ -569,153 +478,17 @@ export function createMockApi(options: MockOptions = {}): MockApi {
       const d = getDoc(docId)
       const start = Math.floor((page - 1) / CHUNK) * CHUNK + 1
       if (d.queue.includes(start)) d.queue = [start, ...d.queue.filter((s) => s !== start)]
+      // Main prefetches the page check for the page being read; announce it like main would.
+      if (simulate && settings.prefetchPageChecks && d.indexed[page - 1]) {
+        setTimeout(() => emit('pageCheck.ready', { docId, page }), 1200)
+      }
       return { ok: true }
     },
 
     'topics.list': ({ docId }) => topicsOf(getDoc(docId)),
     'topics.rebuild': ({ docId }) => buildTopics(getDoc(docId)),
 
-    'cards.generate': ({ scope }) => {
-      const d = scopeDoc(scope)
-      const job: JobInfo = {
-        id: nextId('job'),
-        kind: 'generate_cards',
-        docId: d.spec.id,
-        state: 'done',
-        progress: 1,
-        label: `Writing flashcards for ${d.title}`,
-        error: null,
-        attempts: 1,
-        createdAt: now().toISOString(),
-        updatedAt: now().toISOString()
-      }
-      upsertJob(job)
-      emit('cards.changed', { docId: d.spec.id })
-      return { jobId: job.id }
-    },
-    'cards.list': ({ scope, includeInactive }) =>
-      scopeDoc(scope).cards.filter((c) => includeInactive || c.status === 'active'),
-    'cards.due': ({ docId, limit }) =>
-      [...docs.values()]
-        .filter((d) => !docId || d.spec.id === docId)
-        .flatMap((d) => d.cards)
-        .filter((c) => c.status === 'active' && c.srs.due <= now().toISOString())
-        .slice(0, limit),
-    'cards.review': ({ cardId, rating }) => {
-      const card = [...docs.values()].flatMap((d) => d.cards).find((c) => c.id === cardId)
-      if (!card) throw new MockError('not_found', `Card ${cardId} not found`)
-      card.srs = {
-        ...card.srs,
-        due: isoDaysFrom(now(), rating === 1 ? 0.01 : rating * 2),
-        reps: card.srs.reps + 1,
-        lapses: card.srs.lapses + (rating === 1 ? 1 : 0),
-        state: rating === 1 ? 'relearning' : 'review',
-        lastReview: now().toISOString()
-      }
-      emit('cards.changed', { docId: card.docId })
-      return card
-    },
-    'cards.update': ({ cardId, front, back }) => {
-      const card = [...docs.values()].flatMap((d) => d.cards).find((c) => c.id === cardId)
-      if (!card) throw new MockError('not_found', `Card ${cardId} not found`)
-      card.front = front
-      card.back = back
-      return card
-    },
-    'cards.setStatus': ({ cardId, status }) => {
-      const card = [...docs.values()].flatMap((d) => d.cards).find((c) => c.id === cardId)
-      if (!card) throw new MockError('not_found', `Card ${cardId} not found`)
-      card.status = status
-      return card
-    },
-    'cards.stats': ({ docId }) => {
-      const cards = [...docs.values()].filter((d) => !docId || d.spec.id === docId).flatMap((d) => d.cards)
-      const due = cards.filter((c) => c.srs.due <= now().toISOString()).length
-      const count = (s: Card['srs']['state']): number => cards.filter((c) => c.srs.state === s).length
-      return {
-        due,
-        new: count('new'),
-        learning: count('learning'),
-        review: count('review'),
-        total: cards.length
-      }
-    },
-
-    'quiz.create': ({ scope, mode, count, timeLimit }) => {
-      const d = scopeDoc(scope)
-      const page = scope.kind === 'page' ? scope.page : scope.kind === 'range' ? scope.from : 13
-      const questions = Array.from({ length: Math.ceil(count / 2) }, (_, i) =>
-        pageQuestions(d, page + i)
-      ).flat()
-      const session: QuizSession = {
-        id: nextId('quiz'),
-        docId: d.spec.id,
-        mode,
-        scope,
-        questions: questions.slice(0, count),
-        createdAt: now().toISOString(),
-        timeLimit
-      }
-      quizzes.set(session.id, session)
-      return session
-    },
-    'quiz.pageCheck': ({ docId, page }) => {
-      const d = getDoc(docId)
-      const session: QuizSession = {
-        id: nextId('quiz'),
-        docId,
-        mode: 'page_check',
-        scope: { kind: 'page', docId, page },
-        questions: pageQuestions(d, page),
-        createdAt: now().toISOString(),
-        timeLimit: null
-      }
-      quizzes.set(session.id, session)
-      return session
-    },
-    'quiz.answer': ({ quizId, questionId, response }) => {
-      const quiz = quizzes.get(quizId)
-      const q = quiz?.questions.find((x) => x.id === questionId)
-      if (!quiz || !q) throw new MockError('not_found', 'Question not found')
-      const result = grade(q, response)
-      answers.set(quizId, [...(answers.get(quizId) ?? []).filter((a) => a.questionId !== questionId), result])
-      return result
-    },
-    'quiz.finish': ({ quizId }) => {
-      const quiz = quizzes.get(quizId)
-      if (!quiz) throw new MockError('not_found', 'Quiz not found')
-      const attempts = answers.get(quizId) ?? []
-      const score = attempts.reduce((s, a) => s + a.score, 0)
-      const result: QuizResult = {
-        quizId,
-        score,
-        maxScore: quiz.questions.length,
-        attempts,
-        perTopic: [{ topicId: null, score, maxScore: quiz.questions.length }],
-        reviewPages: attempts.filter((a) => !a.correct).length ? (quiz.questions[0]?.sourcePages ?? []) : [],
-        finishedAt: now().toISOString()
-      }
-      return result
-    },
-    'quiz.history': ({ docId, limit }) => {
-      getDoc(docId)
-      return [...quizzes.values()]
-        .filter((q) => q.docId === docId && answers.has(q.id))
-        .slice(0, limit)
-        .map((q) => {
-          const attempts = answers.get(q.id) ?? []
-          return {
-            quizId: q.id,
-            score: attempts.reduce((s, a) => s + a.score, 0),
-            maxScore: q.questions.length,
-            attempts,
-            perTopic: [],
-            reviewPages: [],
-            finishedAt: now().toISOString()
-          }
-        })
-    },
-    'quiz.reportQuestion': () => ({ ok: true }),
+    ...study,
 
     'reading.track': ({ docId }) => {
       getDoc(docId)
@@ -748,13 +521,25 @@ export function createMockApi(options: MockOptions = {}): MockApi {
       settings = { ...settings, hasApiKey: apiKey !== null }
       return settings
     },
-    'ai.health': ({ provider }) => ({
-      ok: true,
-      provider: provider ?? settings.provider,
-      model: 'mock',
-      latencyMs: 42,
-      message: 'Mock provider is always healthy'
-    }),
+    'ai.health': ({ provider }) => {
+      const id = provider ?? settings.provider
+      if (id === 'anthropic-api' && !settings.hasApiKey) {
+        return {
+          ok: false,
+          provider: id,
+          model: null,
+          latencyMs: null,
+          message: 'No API key is saved. Add your key, then test again.'
+        }
+      }
+      return {
+        ok: true,
+        provider: id,
+        model: id === 'fake' ? 'fake' : settings.models[id].fast,
+        latencyMs: id === 'claude-code' ? 1840 : 620,
+        message: id === 'claude-code' ? 'Connected through Claude Code' : 'Connected to the Anthropic API'
+      }
+    },
 
     'jobs.list': ({ docId }) =>
       [...jobs.values()].filter(
@@ -776,12 +561,15 @@ export function createMockApi(options: MockOptions = {}): MockApi {
       return { ok: true }
     },
     'usage.summary': () => ({
-      notional: true,
+      notional: settings.provider !== 'anthropic-api',
       todayUsd: 0.42,
       monthUsd: 6.1,
       byTask: [
-        { task: 'index', usd: 4.2, calls: 61 },
-        { task: 'cards', usd: 1.9, calls: 12 }
+        { task: 'index', usd: 3.05, calls: 61 },
+        { task: 'cards', usd: 1.2, calls: 12 },
+        { task: 'page_check', usd: 0.85, calls: 34 },
+        { task: 'grade', usd: 0.6, calls: 22 },
+        { task: 'topics', usd: 0.4, calls: 2 }
       ]
     })
   }
