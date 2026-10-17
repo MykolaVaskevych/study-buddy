@@ -26,6 +26,8 @@ export default defineConfig({
   preload: {
     resolve: { alias },
     build: {
+      // Sandboxed preloads can only require('electron'): bundle everything else into the file.
+      externalizeDeps: false,
       // Sandboxed preload scripts must be CommonJS.
       rolldownOptions: {
         output: { format: 'cjs', entryFileNames: '[name].cjs' }
