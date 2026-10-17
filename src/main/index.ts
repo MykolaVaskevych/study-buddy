@@ -32,6 +32,8 @@ import { createSrs } from './srs'
  */
 
 const isSmoke = process.argv.includes('--smoke')
+/** Runs the AI connection test (settings' provider) headlessly and exits 0/1; handy for support. */
+const isCheckAi = process.argv.includes('--check-ai')
 const log = createConsoleLog('[main]')
 
 // Must run before app 'ready'.
@@ -102,6 +104,16 @@ async function bootstrap(): Promise<void> {
       })
   })
 
+  if (isCheckAi) {
+    const health = await pipelines.handlers['ai.health']({ provider: null })
+    log.info(
+      `[check-ai] ${health.ok ? 'OK' : 'FAIL'} ${health.provider} ${health.model ?? ''} ${health.latencyMs ?? ''} ms: ${health.message}`
+    )
+    await pipelines.stop()
+    app.exit(health.ok ? 0 : 1)
+    return
+  }
+
   const win = openMainWindow()
   if (isSmoke) {
     try {
@@ -123,7 +135,7 @@ async function bootstrap(): Promise<void> {
 }
 
 // Smoke runs skip the lock so they work while a dev instance is open.
-if (!isSmoke && !ensureSingleInstance(app, () => mainWindow)) {
+if (!isSmoke && !isCheckAi && !ensureSingleInstance(app, () => mainWindow)) {
   app.quit()
 } else {
   app.on('window-all-closed', () => {

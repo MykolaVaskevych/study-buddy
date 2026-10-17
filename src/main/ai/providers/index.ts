@@ -3,6 +3,7 @@ import type { Settings } from '@shared/settings'
 import { createAnthropicApiProvider } from './anthropic-api/provider'
 import { createClaudeCodeProvider } from './claude-code/provider'
 import { createFakeProvider } from './fake/provider'
+import { findClaudeExecutable } from './claude-code/locate'
 
 /**
  * Provider factory used by the composition root. Model ids come from settings per provider and
@@ -14,7 +15,7 @@ export function createProvider(settings: Settings, secrets: { apiKey: string | n
     case 'claude-code':
       return createClaudeCodeProvider({
         models: settings.models['claude-code'],
-        executablePath: settings.claudeCodePath
+        executablePath: settings.claudeCodePath ?? findClaudeExecutable()
       })
     case 'anthropic-api':
       return createAnthropicApiProvider({ apiKey: secrets.apiKey, models: settings.models['anthropic-api'] })

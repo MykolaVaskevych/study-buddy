@@ -21,10 +21,11 @@
     "test:watch": "ELECTRON_RUN_AS_NODE=1 electron ./node_modules/vitest/vitest.mjs",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test",
     "smoke": "npm run build && electron . --smoke",
-    "eval": "ELECTRON_RUN_AS_NODE=1 electron --import tsx ./scripts/eval.ts",
+    "eval": "TSX_TSCONFIG_PATH=tsconfig.node.json ELECTRON_RUN_AS_NODE=1 electron --import tsx ./scripts/eval.ts",
     "postinstall": "electron-builder install-app-deps",
-    "dist:linux": "npm run build && electron-builder --linux",
-    "dev:web": "vite --config vite.web.config.ts"
+    "dist:linux": "npm run build && electron-builder --linux AppImage pacman",
+    "dev:web": "vite --config vite.web.config.ts",
+    "dist": "npm run build && electron-builder"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.3.302",
@@ -83,5 +84,11 @@
     "esbuild@0.28.2": true,
     "better-sqlite3@13.0.3": true,
     "electron-winstaller": false
-  }
+  },
+  "homepage": "https://github.com/MykolaVaskevych/study-buddy",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MykolaVaskevych/study-buddy.git"
+  },
+  "desktopName": "study-buddy.desktop"
 }
