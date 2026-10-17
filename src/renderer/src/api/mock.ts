@@ -26,7 +26,8 @@ import type {
 } from '@shared/domain'
 import type { PublicSettings } from '@shared/settings'
 import { DEFAULT_SETTINGS } from '@shared/settings'
-import type { ExamPlan, PlanTopic, StudyDay } from '@shared/planner/types'
+import type { ExamPlan, PlanTopic } from '@shared/planner/types'
+import { buildSchedule, solvePlan } from '@shared/planner'
 import { BOOKS, flattenTopics, pageText, slideFor } from './mock-data'
 import type { BookSpec } from './mock-data'
 import { makeBookPdf } from './mock-pdf'
@@ -86,6 +87,16 @@ const CHUNK = 10
 const DAY = 86_400_000
 
 const isoDaysFrom = (now: Date, days: number): string => new Date(now.getTime() + days * DAY).toISOString()
+
+/** The local calendar day of `d` as YYYY-MM-DD (the planner counts days in the student's time zone). */
+const localDay = (d: Date): string =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+/** A YYYY-MM-DD day as an ISO timestamp at local noon, so every time zone reads the same day back. */
+const dayToIso = (day: string): string => {
+  const [y = 1970, m = 1, dd = 1] = day.split('-').map(Number)
+  return new Date(y, m - 1, dd, 12).toISOString()
+}
 
 function chunkStarts(pageCount: number, done: (p: number) => boolean): number[] {
   const out: number[] = []
@@ -217,7 +228,7 @@ export function createMockApi(options: MockOptions = {}): MockApi {
         coreFraction: spec.coreFraction,
         coreMinutes: spec.coreMinutes,
         fullMinutes: spec.fullMinutes,
-        prerequisites: []
+        prerequisites: (spec.prerequisites ?? []).map((title) => `${d.spec.id}:${title}`)
       },
       mastery: spec.mastery
     }))
@@ -402,9 +413,12 @@ export function createMockApi(options: MockOptions = {}): MockApi {
 
   // ---------------------------------------------------------------- planner
 
-  const planTopics = (d: DocState): PlanTopic[] =>
-    topicsOf(d)
-      .filter((t) => t.parentId === null && t.estimates)
+  /** The units of study are the leaf topics; chapters only group them (via parentId in topics.list). */
+  const planTopics = (d: DocState): PlanTopic[] => {
+    const all = topicsOf(d)
+    const parents = new Set(all.map((t) => t.parentId))
+    return all
+      .filter((t) => !parents.has(t.id) && t.estimates)
       .map((t) => ({
         id: t.id,
         title: t.title,
@@ -412,60 +426,42 @@ export function createMockApi(options: MockOptions = {}): MockApi {
         coreFraction: t.estimates?.coreFraction ?? 0,
         coreMinutes: t.estimates?.coreMinutes ?? 0,
         fullMinutes: t.estimates?.fullMinutes ?? 0,
-        prerequisites: [],
+        prerequisites: t.estimates?.prerequisites ?? [],
         mastery: t.mastery === null ? null : { alpha: t.mastery * 10, beta: (1 - t.mastery) * 10 },
         minutesSpent: 0
       }))
+  }
 
+  /** Solves and schedules like main does: the same pure planner, counted from the local today. */
   const buildPlan = (d: DocState, input: IpcInput<'plan.save'>['input']): ExamPlan => {
     const topics = planTopics(d)
-    const budget = (input.totalHours ?? (input.hoursPerDay ?? 2) * 7) * 60
-    let used = 0
-    const items = topics.map((t) => {
-      const level = used + t.coreMinutes <= budget ? ('core' as const) : ('skip' as const)
-      if (level === 'core') used += t.coreMinutes
-      return {
-        topicId: t.id,
-        level,
-        minutes: level === 'core' ? t.coreMinutes : 0,
-        expectedMarks: level === 'core' ? t.examWeight * t.coreFraction * 0.8 : 0,
-        reason: level === 'core' ? 'Essentials fit the time budget' : 'Skipped: no time left in the budget',
-        forcedBy: null
-      }
-    })
-    const expectedScore = items.reduce((s, i) => s + i.expectedMarks, 0)
-    const day: StudyDay = {
-      date: now().toISOString(),
-      totalMinutes: Math.min(120, used),
-      sessions: items
-        .filter((i) => i.level !== 'skip')
-        .slice(0, 2)
-        .map((i) => ({
-          kind: 'learn',
-          topicId: i.topicId,
-          minutes: i.minutes,
-          level: i.level,
-          label: 'Learn the essentials'
-        }))
-    }
+    const today = localDay(now())
+    const result = solvePlan(topics, input, { today })
+    const previous = plans.get(d.spec.id)
     return {
-      id: nextId('plan'),
+      id: previous?.id ?? nextId('plan'),
       docId: d.spec.id,
       input,
-      result: {
-        feasible: expectedScore >= input.targetScore,
-        expectedScore,
-        targetScore: input.targetScore,
-        budgetMinutes: budget,
-        reserveMinutes: 0,
-        plannedMinutes: used,
-        items,
-        notes: []
-      },
-      schedule: { days: [day] },
-      createdAt: now().toISOString(),
+      result,
+      schedule: buildSchedule(result, topics, input, today),
+      createdAt: previous?.createdAt ?? now().toISOString(),
       updatedAt: now().toISOString()
     }
+  }
+
+  // The Signals book starts with a saved plan, so browser mode shows the Today widget.
+  const seeded = docs.get('signals-systems')
+  if (seeded?.topicsBuilt && seeded.examDate) {
+    const input: IpcInput<'plan.save'>['input'] = {
+      examDate: localDay(new Date(seeded.examDate)),
+      totalHours: null,
+      hoursPerDay: 2,
+      targetScore: 0.7,
+      mode: 'max_score',
+      format: 'mixed',
+      overrides: []
+    }
+    plans.set(seeded.spec.id, buildPlan(seeded, input))
   }
 
   const scopeDoc = (scope: Scope): DocState => getDoc(scope.docId)
@@ -729,14 +725,19 @@ export function createMockApi(options: MockOptions = {}): MockApi {
     'plan.get': ({ docId }) => plans.get(docId) ?? null,
     'plan.topics': ({ docId }) => planTopics(getDoc(docId)),
     'plan.save': ({ docId, input }) => {
-      const plan = buildPlan(getDoc(docId), {
+      const d = getDoc(docId)
+      const plan = buildPlan(d, {
         ...input,
         overrides: input.overrides.map((o) => ({ ...o }))
       })
       plans.set(docId, plan)
+      d.examDate = input.examDate ? dayToIso(input.examDate) : null
       return plan
     },
-    'plan.today': ({ docId }) => plans.get(docId)?.schedule.days[0] ?? null,
+    'plan.today': ({ docId }) => {
+      const today = localDay(now())
+      return plans.get(docId)?.schedule.days.find((day) => day.date === today) ?? null
+    },
 
     'settings.get': () => settings,
     'settings.update': (patch) => {

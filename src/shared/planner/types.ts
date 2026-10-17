@@ -24,6 +24,11 @@ export interface PlanInput {
   mode: PlanMode
   format: ExamFormat
   overrides: TopicOverride[]
+  /**
+   * Share of the budget held back for page checks, spaced review and mock exams, 0..0.9.
+   * Absent means PLANNER_DEFAULTS.reserveFraction. Part of the input so a saved plan keeps it.
+   */
+  reserveFraction?: number
 }
 
 export interface TopicOverride {

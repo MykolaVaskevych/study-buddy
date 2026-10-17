@@ -3,6 +3,7 @@ import { useImportPdfs, useLibrary } from '../../api/hooks'
 import { toast } from '../../app/toasts'
 import { useShortcuts } from '../../app/shortcuts'
 import { Button, EmptyState } from '../../components'
+import { TodayPanel } from '../planner/TodayPanel'
 import { BookCard, BookCardSkeleton } from './BookCard'
 import { LibrarySearch } from './LibrarySearch'
 import { useDropImport } from './useDropImport'
@@ -123,6 +124,8 @@ export function LibraryScreen(): React.JSX.Element {
             </div>
           ) : null}
         </header>
+
+        {docs.length > 0 ? <TodayPanel docs={docs} now={now} /> : null}
 
         {library.isPending ? (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] gap-5">

@@ -19,7 +19,10 @@ export interface SolveOptions {
   budgetMinutes?: number
   /** ISO date for counting days until the exam. Without it only totalHours (or the default) can apply. */
   today?: string
-  /** Share of the budget held back for checks, review and mocks (default PLANNER_DEFAULTS.reserveFraction). */
+  /**
+   * Share of the budget held back for checks, review and mocks. Wins over `input.reserveFraction`;
+   * without either, PLANNER_DEFAULTS.reserveFraction.
+   */
   reserveFraction?: number
 }
 
@@ -168,7 +171,11 @@ export function solvePlan(topics: PlanTopic[], input: PlanInput, opts: SolveOpti
           const info = resolveBudget(input, opts.today, params)
           return { totalMinutes: info.minutes, info }
         })()
-  const reserveFraction = clamp(opts.reserveFraction ?? params.reserveFraction, 0, 0.9)
+  const reserveFraction = clamp(
+    opts.reserveFraction ?? input.reserveFraction ?? params.reserveFraction,
+    0,
+    0.9
+  )
   const reserveMinutes = Math.round(budget.totalMinutes * reserveFraction)
   const learnMinutes = budget.totalMinutes - reserveMinutes
   const budgetSlots = Math.floor(learnMinutes / slot + 1e-9)

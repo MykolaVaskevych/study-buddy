@@ -35,13 +35,6 @@ const ReviewPlaceholder = (): React.JSX.Element => (
     body="Your due flashcards from every book, scheduled so the important ones are fresh on exam day."
   />
 )
-const PlannerPlaceholder = (): React.JSX.Element => (
-  <Placeholder
-    title="Planner"
-    icon="planner"
-    body="Tell it how many hours you have; it picks what to study, what to skim and what to skip."
-  />
-)
 const SettingsPlaceholder = (): React.JSX.Element => (
   <Placeholder
     title="Settings"
@@ -63,13 +56,17 @@ export const appRoutes: AppRoute[] = [
   },
   {
     path: '/planner',
-    Component: PlannerPlaceholder,
+    lazy: () => import('../features/planner/PlannerIndexScreen').then((m) => m.PlannerIndexScreen),
     nav: { label: 'Planner', icon: 'planner', shortcut: 'Mod+3' }
   },
   {
     path: '/settings',
     Component: SettingsPlaceholder,
     nav: { label: 'Settings', icon: 'settings', shortcut: 'Mod+4' }
+  },
+  {
+    path: '/book/:docId/plan',
+    lazy: () => import('../features/planner/PlannerScreen').then((m) => m.PlannerScreen)
   }
 ]
 
