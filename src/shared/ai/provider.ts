@@ -24,6 +24,7 @@ export type AiTask =
   | 'verify'
   | 'explain'
   | 'chat'
+  | 'past_paper'
   | 'health'
 
 export type PromptPart =

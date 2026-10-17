@@ -1,9 +1,11 @@
 import type { LlmProvider } from '@shared/ai/provider'
 import { generateCards } from './study/cards'
 import { resolveOptions, type StudyAiOptions } from './study/common'
+import { chat } from './study/chat'
 import { gradeShortAnswer } from './study/grade'
 import { indexChunk } from './study/index-chunk'
 import { generateQuestions } from './study/questions'
+import { mapPastPaper } from './study/past-paper'
 import { buildTopicMap } from './study/topic-map'
 import type { StudyAi } from './types'
 
@@ -21,6 +23,8 @@ export function createStudyAi(provider: LlmProvider, opts: StudyAiOptions = {}):
     buildTopicMap: (input) => buildTopicMap(provider, input),
     generateCards: (ctx, o) => generateCards(provider, ctx, o, settings),
     generateQuestions: (ctx, o) => generateQuestions(provider, ctx, o, settings),
-    gradeShortAnswer: (input) => gradeShortAnswer(provider, input)
+    gradeShortAnswer: (input) => gradeShortAnswer(provider, input),
+    chat: (input) => chat(provider, input),
+    mapPastPaper: (input) => mapPastPaper(provider, input)
   }
 }

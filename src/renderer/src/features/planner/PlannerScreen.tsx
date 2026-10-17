@@ -1,3 +1,4 @@
+import { useToasts } from '../../app/toasts'
 import { memo, useCallback, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { formatPercent } from '@shared/planner'
@@ -9,6 +10,7 @@ import {
   usePlan,
   usePlanTopics,
   useRebuildTopics,
+  useImportPastPaper,
   useSavePlan,
   useStartIndex,
   useTopics
@@ -179,6 +181,8 @@ function PlannerEditor({ doc, planTopics, topics, saved, today }: EditorProps): 
   const pages = useMemo(() => new Map(topics.map((t) => [t.id, t.pageStart])), [topics])
   const pageOf = useCallback((topicId: string) => pages.get(topicId) ?? null, [pages])
   const save = useSavePlan()
+  const pastPaper = useImportPastPaper()
+  const pushToast = useToasts((t) => t.push)
 
   // Compare through the draft round trip so equivalent inputs never look edited.
   const savedInput = useMemo(
@@ -254,6 +258,35 @@ function PlannerEditor({ doc, planTopics, topics, saved, today }: EditorProps): 
                 Discard
               </Button>
             ) : null}
+            <Button
+              variant="secondary"
+              size="sm"
+              loading={pastPaper.isPending}
+              title="Match past exam papers to topics and recalibrate exam weights"
+              onClick={() =>
+                pastPaper.mutate(
+                  { docId: doc.id, paths: null },
+                  {
+                    onSuccess: (r) =>
+                      pushToast(
+                        r.questionsMapped === 0
+                          ? {
+                              tone: 'info',
+                              title: 'No questions matched',
+                              body: 'Pick a past paper PDF for this course.'
+                            }
+                          : {
+                              tone: 'ok',
+                              title: `Matched ${r.questionsMapped} past-paper questions`,
+                              body: 'Exam weights updated from the papers; the plan re-solved.'
+                            }
+                      )
+                  }
+                )
+              }
+            >
+              Past papers
+            </Button>
             <Button
               variant="primary"
               size="sm"

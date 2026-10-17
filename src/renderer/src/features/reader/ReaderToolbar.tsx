@@ -5,6 +5,7 @@ import { cx, Icon, IconButton, Tooltip } from '../../components'
 import { formatZoom } from './zoom'
 
 interface Props {
+  docId: string
   title: string
   page: number
   numPages: number | null
@@ -52,6 +53,7 @@ function PageBox({ page, numPages, onJump }: Pick<Props, 'page' | 'numPages' | '
 }
 
 export function ReaderToolbar({
+  docId,
   title,
   page,
   numPages,
@@ -120,6 +122,28 @@ export function ReaderToolbar({
           className={cx(fitMode && 'text-accent')}
         />
       </div>
+
+      <span aria-hidden className="mx-1 h-5 w-px bg-rule" />
+
+      <nav aria-label="Study tools" className="flex items-center gap-0.5">
+        {(
+          [
+            { to: `/book/${docId}/quiz`, icon: 'target', label: 'Quiz' },
+            { to: `/book/${docId}/plan`, icon: 'planner', label: 'Exam plan' },
+            { to: `/book/${docId}/sheet`, icon: 'notes', label: 'Cheat sheet' }
+          ] as const
+        ).map((l) => (
+          <Tooltip key={l.to} label={l.label}>
+            <Link
+              to={l.to}
+              aria-label={l.label}
+              className="inline-flex size-8 items-center justify-center rounded-md text-graphite hover:bg-sunken hover:text-ink"
+            >
+              <Icon name={l.icon} size={18} />
+            </Link>
+          </Tooltip>
+        ))}
+      </nav>
 
       <IconButton
         icon="panel-right"

@@ -356,3 +356,31 @@ export function usePageCheckReady(docId: string, page: number): boolean {
   })
   return ready.data.includes(page)
 }
+
+// ------------------------------------------------------------------ cheat sheet, export, past papers
+
+export const useCheatSheet = (docId: string) => useQuery(channelQuery('library.cheatSheet', { docId }))
+
+export const useExportAnki = () => useChannelMutation('cards.exportAnki')
+
+export const useImportPastPaper = () =>
+  useChannelMutation('plan.importPastPaper', {
+    onSuccess: (_data, { docId }, qc) =>
+      invalidate(
+        qc,
+        channelKey('plan.topics', { docId }),
+        channelKey('topics.list', { docId }),
+        channelKey('plan.get', { docId }),
+        ...docKeys(docId)
+      )
+  })
+
+/** Saves text as a file through the browser download flow (Electron shows a save dialog). */
+export function downloadText(fileName: string, content: string): void {
+  const url = URL.createObjectURL(new Blob([content], { type: 'text/plain;charset=utf-8' }))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = fileName
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}

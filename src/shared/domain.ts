@@ -309,3 +309,37 @@ export interface RateLimitInfo {
   resetAt: IsoDate | null
   message: string
 }
+
+// ---------------------------------------------------------------- chat, cheat sheet, past papers
+
+/** chat = free question; the explain modes work on the current page. */
+export type ChatMode = 'chat' | 'explain_simple' | 'explain_exam' | 'worked_example'
+
+export interface ChatTurn {
+  role: 'user' | 'assistant'
+  text: string
+}
+
+export interface CheatSheetSection {
+  topicId: TopicId | null
+  title: string
+  pageStart: number
+  pageEnd: number
+  concepts: Concept[]
+  formulas: Formula[]
+  keyFacts: string[]
+}
+
+/** One-page revision sheet built from the index (no AI call). */
+export interface CheatSheet {
+  docId: DocId
+  title: string
+  sections: CheatSheetSection[]
+}
+
+export interface PastPaperResult {
+  questionsMapped: number
+  unmapped: number
+  /** Exam-weight changes per topic, 0..1. */
+  changes: { topicId: TopicId; title: string; before: number; after: number }[]
+}

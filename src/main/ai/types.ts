@@ -1,5 +1,7 @@
 import type {
   CardType,
+  ChatMode,
+  ChatTurn,
   Concept,
   ExamSignal,
   Exercise,
@@ -162,4 +164,37 @@ export interface StudyAi {
       missingPoints: string[]
     }>
   >
+
+  /** Streamed tutor answer grounded in the given pages, citing them as [p. N]. Ends with one 'done' event. */
+  chat(input: ChatInput): AsyncIterable<ChatEvent>
+
+  /** Maps a past exam paper's questions (with marks) to course topics by key. */
+  mapPastPaper(input: {
+    topics: { key: string; title: string; pageStart: number; pageEnd: number }[]
+    paper: ChunkInfo[]
+    language: string
+    signal?: AbortSignal
+  }): Promise<WithUsage<{ summary: string; marks: number; topicKey: string | null }[]>>
 }
+
+/** A page given to chat as context: its text layer plus what the index knows about it. */
+export interface ChatContextPage {
+  page: number
+  text: string
+  summary: string | null
+  keyPoints: string[]
+  formulas: string[]
+}
+
+export interface ChatInput {
+  mode: ChatMode
+  question: string
+  history: ChatTurn[]
+  pages: ChatContextPage[]
+  /** The current page as a PDF (so diagrams and image-only slides are visible), if any. */
+  focus: ChunkInfo | null
+  language: string
+  signal?: AbortSignal
+}
+
+export type ChatEvent = { type: 'text'; text: string } | { type: 'done'; usage: UsageRecord }

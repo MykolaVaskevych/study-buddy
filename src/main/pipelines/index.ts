@@ -10,6 +10,9 @@ import { createPlanner } from './planner'
 import { PRIORITY } from './priorities'
 import { createQuestionGen } from './questions'
 import { createQuizzes } from './quizzes'
+import { createChat } from './chat'
+import { createExtras } from './extras'
+import { createPastPapers } from './past-paper'
 import { createReading } from './reading'
 import { createSettingsService } from './settings-service'
 import { createTopics } from './topics'
@@ -75,6 +78,8 @@ export function createPipelinesWith(deps: PipelineDeps, options: PipelineOptions
   const pageChecks = createPageChecks(deps, { indexing, questionGen, waiter })
   const cards = createCards(deps, { ledger, material })
   const quizzes = createQuizzes(deps, { ledger, questionGen, pageChecks, planner, waiter })
+  const chat = createChat(deps, { ledger, material })
+  const pastPapers = createPastPapers(deps, { ledger, material, planner })
 
   const handlers = guardAll({
     ...createLibraryService(deps, { indexing }).handlers,
@@ -85,7 +90,10 @@ export function createPipelinesWith(deps: PipelineDeps, options: PipelineOptions
     ...createReading(deps, { pageChecks }).handlers,
     ...planner.handlers,
     ...createSettingsService(deps).handlers,
-    ...createJobsUsage(deps).handlers
+    ...createJobsUsage(deps).handlers,
+    ...chat.handlers,
+    ...pastPapers.handlers,
+    ...createExtras(deps).handlers
   })
 
   const unsubscribe: (() => void)[] = []
