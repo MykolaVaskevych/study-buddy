@@ -12,9 +12,11 @@ const page = z.number().int().min(1)
 
 export const indexChunkPayload = z.strictObject({
   docId: id,
-  chunkIndex: z.number().int().min(0),
+  /** -1 for a retry job, which indexes a focus chunk of pages the first pass skipped. */
+  chunkIndex: z.number().int().min(-1),
   startPage: page,
-  endPage: page
+  endPage: page,
+  retry: z.boolean().optional()
 })
 export type IndexChunkPayload = z.infer<typeof indexChunkPayload>
 

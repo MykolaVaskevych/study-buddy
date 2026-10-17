@@ -40,7 +40,7 @@ export const indexDedupeKey = (docId: DocId, chunkIndex: number): string => `ind
 const contains = (c: ChunkInfo, page: number): boolean => c.startPage <= page && page <= c.endPage
 
 export function createIndexing(
-  deps: Pick<PipelineDeps, 'db' | 'queue' | 'emit'>,
+  deps: Pick<PipelineDeps, 'db' | 'queue' | 'emit' | 'library'>,
   services: {
     ledger: UsageLedger
     material: Material
@@ -124,10 +124,15 @@ export function createIndexing(
       db.documents.setIndexState(doc.id, 'running')
       emitProgress(doc.id)
     }
-    const grid = await material.grid(doc, { from: p.startPage, to: p.endPage })
-    const chunk =
-      grid.find((c) => c.startPage === p.startPage && c.endPage === p.endPage) ??
-      grid.find((c) => c.index === p.chunkIndex)
+    const chunk = p.retry
+      ? await deps.library.buildFocusChunk(doc.sha256, doc.pageCount, p.startPage, p.endPage)
+      : await (async () => {
+          const grid = await material.grid(doc, { from: p.startPage, to: p.endPage })
+          return (
+            grid.find((c) => c.startPage === p.startPage && c.endPage === p.endPage) ??
+            grid.find((c) => c.index === p.chunkIndex)
+          )
+        })()
     if (!chunk) throw fatal(`Pages ${p.startPage}–${p.endPage} are no longer a chunk of this document`)
     const pageText = material.pageText(doc.id)
     const result = await ledger.run(doc.id, (ai) => ai.indexChunk({ chunk, pageText, signal: ctx.signal }))
@@ -150,9 +155,22 @@ export function createIndexing(
       if (doc.language === null && result.language.trim() !== '')
         db.documents.setLanguage(doc.id, result.language)
     })
-    if (result.missingPages.length > 0) {
-      // Left unindexed on purpose: re-running the whole chunk costs a full call; index.start retries later.
-      console.warn(`[pipelines] index pass skipped pages ${result.missingPages.join(', ')} of ${doc.id}`)
+    if (result.missingPages.length > 0 && !p.retry) {
+      // One cheap retry with a focus chunk of just the skipped pages, instead of the whole chunk again.
+      const from = Math.min(...result.missingPages)
+      const to = Math.max(...result.missingPages)
+      queue.enqueue<IndexChunkPayload>({
+        kind: 'index_chunk',
+        docId: doc.id,
+        payload: { docId: doc.id, chunkIndex: -1, startPage: from, endPage: to, retry: true },
+        priority: PRIORITY.bulkIndex,
+        dedupeKey: `index:${doc.id}:retry:${from}-${to}`,
+        label: `Indexing skipped pages ${from}–${to}`
+      })
+    } else if (result.missingPages.length > 0) {
+      console.warn(
+        `[pipelines] index retry still skipped pages ${result.missingPages.join(', ')} of ${doc.id}`
+      )
     }
     emitProgress(doc.id)
   }

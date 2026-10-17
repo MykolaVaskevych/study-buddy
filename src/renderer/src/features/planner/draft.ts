@@ -22,6 +22,7 @@ export interface PlannerDraft {
   format: ExamFormat
   /** Share of the budget kept for checks, review and mocks, 0..1. */
   reserveFraction: number
+  pace: number
   /** Levels the student pinned, by topic id. */
   pins: Readonly<Record<string, StudyLevel>>
   /** Exam weights the student entered, by topic id, 0..1. */
@@ -33,7 +34,8 @@ export const LIMITS = {
   hoursPerDay: { min: 0.25, max: 10, step: 0.25 },
   totalHours: { min: 1, max: 120, step: 0.25 },
   target: { min: 0.5, max: 0.95 },
-  reserve: { min: 0.1, max: 0.4, step: 0.05 }
+  reserve: { min: 0.1, max: 0.4, step: 0.05 },
+  pace: { min: 0.5, max: 2, step: 0.25 }
 } as const
 
 /** Starting point when a book has no saved plan yet. */
@@ -73,6 +75,7 @@ export function defaultDraft(today: string, examDate: string | null): PlannerDra
     mode: DEFAULTS.mode,
     format: DEFAULTS.format,
     reserveFraction: PLANNER_DEFAULTS.reserveFraction,
+    pace: 1,
     pins: {},
     weights: {}
   }
@@ -103,6 +106,7 @@ export function draftFromInput(input: PlanInput, today: string): PlannerDraft {
     mode: input.mode,
     format: input.format,
     reserveFraction: input.reserveFraction ?? PLANNER_DEFAULTS.reserveFraction,
+    pace: input.pace ?? 1,
     pins,
     weights
   }
@@ -128,7 +132,8 @@ export function toPlanInput(draft: PlannerDraft): PlanInput {
     mode: draft.mode,
     format: draft.format,
     overrides,
-    reserveFraction: Math.round(draft.reserveFraction * 100) / 100
+    reserveFraction: Math.round(draft.reserveFraction * 100) / 100,
+    ...(draft.pace !== 1 ? { pace: Math.round(draft.pace * 100) / 100 } : {})
   }
 }
 
@@ -155,6 +160,7 @@ export function sameInput(a: PlanInput, b: PlanInput): boolean {
     a.mode === b.mode &&
     a.format === b.format &&
     near(reserve(a), reserve(b)) &&
+    near(a.pace ?? 1, b.pace ?? 1) &&
     canonicalOverrides(a) === canonicalOverrides(b)
   )
 }

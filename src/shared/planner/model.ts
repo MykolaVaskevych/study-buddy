@@ -220,3 +220,10 @@ export function modelTopics(
   })
   return { models, rawWeightSum: rawSum }
 }
+
+/** Scales time estimates by the student's pace (clamped to 0.5..2); 1 or absent leaves topics as they are. */
+export function withPace(topics: PlanTopic[], pace: number | undefined): PlanTopic[] {
+  const f = pace === undefined || !Number.isFinite(pace) ? 1 : Math.min(2, Math.max(0.5, pace))
+  if (f === 1) return topics
+  return topics.map((t) => ({ ...t, coreMinutes: t.coreMinutes * f, fullMinutes: t.fullMinutes * f }))
+}

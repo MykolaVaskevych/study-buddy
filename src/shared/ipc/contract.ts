@@ -67,7 +67,8 @@ export const planInputSchema = z.object({
       examWeight: z.number().min(0).max(1).optional()
     })
   ),
-  reserveFraction: z.number().min(0).max(0.9).optional()
+  reserveFraction: z.number().min(0).max(0.9).optional(),
+  pace: z.number().min(0.5).max(2).optional()
 })
 
 const none = z.object({}).strict()
