@@ -1,4 +1,4 @@
-import { useWhatsNewDialog } from '../whatsnew/whatsnew'
+import { useWhatsNewDialog } from '../whatsnew/model'
 import { useTour } from '../tour/tourStore'
 import { useId, useState } from 'react'
 import type { PublicSettings } from '@shared/settings'

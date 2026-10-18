@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { appVersion, entries } from 'virtual:whatsnew'
 import { Badge, Button, Dialog } from '../../components'
 import { useTour } from '../tour/tourStore'
-import { groupByVersion, pendingEntries, readLastSeen, useWhatsNewDialog, writeLastSeen } from './whatsnew'
+import { groupByVersion, pendingEntries, readLastSeen, useWhatsNewDialog, writeLastSeen } from './model'
 
 const MAX_ALL = 40
 

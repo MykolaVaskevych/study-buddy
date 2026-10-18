@@ -1,4 +1,4 @@
-import { groupByVersion, pendingEntries, type WhatsNewEntry } from './whatsnew'
+import { groupByVersion, pendingEntries, type WhatsNewEntry } from './model'
 
 const e = (hash: string, version: string | null, kind: 'feat' | 'fix' = 'feat'): WhatsNewEntry => ({
   hash,
