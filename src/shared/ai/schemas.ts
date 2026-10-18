@@ -174,3 +174,12 @@ export const pastPaperOutputSchema = z.strictObject({
   )
 })
 export type PastPaperOutput = z.infer<typeof pastPaperOutputSchema>
+
+// ---------------------------------------------------------------- study book lessons
+
+/** A teaching chapter for one topic, written from its pages. */
+export const lessonOutputSchema = z.strictObject({
+  sections: z.array(z.strictObject({ title: z.string(), markdown: z.string() })),
+  exercises: z.array(z.strictObject({ question: z.string(), answer: z.string() }))
+})
+export type LessonOutput = z.infer<typeof lessonOutputSchema>

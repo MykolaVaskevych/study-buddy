@@ -1,4 +1,5 @@
 import type {
+  Lesson,
   Annotation,
   AnnotationKind,
   ResetResult,
@@ -292,6 +293,13 @@ export interface ProgressRepo {
   reset(docId: DocId, scope: ProgressScope | null, now: IsoDate): ResetResult
 }
 
+export interface LessonRepo {
+  list(docId: DocId): Lesson[]
+  get(docId: DocId, topicId: TopicId): Lesson | null
+  /** Creates or replaces the topic's lesson. */
+  save(lesson: Omit<Lesson, 'createdAt'>, now: IsoDate): Lesson
+}
+
 export interface Database {
   documents: DocumentRepo
   pages: PageRepo
@@ -306,6 +314,7 @@ export interface Database {
   settings: SettingsRepo
   annotations: AnnotationRepo
   progress: ProgressRepo
+  lessons: LessonRepo
   transaction<T>(fn: () => T): T
   close(): void
 }

@@ -3,6 +3,7 @@ import { generateCards } from './study/cards'
 import { resolveOptions, type StudyAiOptions } from './study/common'
 import { chat } from './study/chat'
 import { gradeShortAnswer } from './study/grade'
+import { writeLesson } from './study/lesson'
 import { indexChunk } from './study/index-chunk'
 import { generateQuestions } from './study/questions'
 import { mapPastPaper } from './study/past-paper'
@@ -25,6 +26,7 @@ export function createStudyAi(provider: LlmProvider, opts: StudyAiOptions = {}):
     generateQuestions: (ctx, o) => generateQuestions(provider, ctx, o, settings),
     gradeShortAnswer: (input) => gradeShortAnswer(provider, input),
     chat: (input) => chat(provider, input),
+    writeLesson: (ctx, topic) => writeLesson(provider, ctx, topic, settings),
     mapPastPaper: (input) => mapPastPaper(provider, input)
   }
 }

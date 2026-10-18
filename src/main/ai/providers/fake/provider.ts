@@ -13,7 +13,15 @@ import {
   type StreamRequest,
   type Usage
 } from '@shared/ai/provider'
-import { fakeCards, fakeGrade, fakeIndex, fakeQuestions, fakeTopics, fakeVerify } from './generators'
+import {
+  fakeCards,
+  fakeGrade,
+  fakeIndex,
+  fakeLesson,
+  fakeQuestions,
+  fakeTopics,
+  fakeVerify
+} from './generators'
 
 /**
  * Offline provider for tests and the `--smoke` run. Output is a pure function of the request, so
@@ -44,7 +52,8 @@ const BY_TASK: Partial<Record<AiTask, (text: string) => unknown>> = {
   questions: fakeQuestions,
   page_check: fakeQuestions,
   verify: fakeVerify,
-  grade: fakeGrade
+  grade: fakeGrade,
+  lesson: fakeLesson
 }
 
 /** Minimal value satisfying a JSON schema; covers tasks without a dedicated generator. */

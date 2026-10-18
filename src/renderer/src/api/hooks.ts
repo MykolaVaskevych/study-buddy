@@ -288,6 +288,8 @@ export function useApiEvents({ onJobFailed }: ApiEventOptions = {}): void {
   useEffect(() => {
     const offs = [
       subscribe('jobs.changed', (job) => {
+        if (job.kind === 'write_lesson' && job.state === 'done' && job.docId)
+          void qc.invalidateQueries({ queryKey: channelKey('lessons.list', { docId: job.docId }) })
         applyJobChange(qc, job)
         if (job.state === 'failed') onJobFailed?.(job)
       }),
@@ -427,4 +429,13 @@ export const useSaveAnnotation = () =>
 export const useDeleteAnnotation = () =>
   useChannelMutation('annotations.delete', {
     onSuccess: (_data, { docId }, qc) => invalidate(qc, channelKey('annotations.list', { docId }))
+  })
+
+// ------------------------------------------------------------------ study book
+
+export const useLessons = (docId: string) => useQuery(channelQuery('lessons.list', { docId }))
+
+export const useGenerateLessons = () =>
+  useChannelMutation('lessons.generate', {
+    onSuccess: (_data, { docId }, qc) => invalidate(qc, channelKey('library.overview', { docId }))
   })

@@ -5,7 +5,8 @@ import {
   questionsOutputSchema,
   topicMapOutputSchema,
   verifyOutputSchema,
-  gradeOutputSchema
+  gradeOutputSchema,
+  lessonOutputSchema
 } from './schemas'
 
 /** Structured-output rules: every object closed and every property required (nullable, never optional). */
@@ -29,7 +30,8 @@ describe('AI output schemas', () => {
     ['cards', cardsOutputSchema],
     ['questions', questionsOutputSchema],
     ['grade', gradeOutputSchema],
-    ['verify', verifyOutputSchema]
+    ['verify', verifyOutputSchema],
+    ['lesson', lessonOutputSchema]
   ])('%s schema is structured-output compatible', (_name, schema) => {
     assertStrict(z.toJSONSchema(schema))
   })

@@ -12,7 +12,8 @@ const ALL_KINDS = [
   'generate_cards',
   'generate_questions',
   'page_check',
-  'verify_questions'
+  'verify_questions',
+  'write_lesson'
 ] as const satisfies readonly JobKind[]
 // Fails to compile if JobKind gains a member that is missing above.
 const _allKindsListed: JobKind extends (typeof ALL_KINDS)[number] ? true : never = true

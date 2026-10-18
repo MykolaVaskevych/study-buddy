@@ -114,6 +114,10 @@ export function createOverview(
               .length,
             pageChecksReady: [...perPage.values()].filter((n) => n >= PAGE_CHECK_READY).length
           },
+          studyBook: {
+            written: db.lessons.list(docId).filter((l) => leaves.some((t) => t.id === l.topicId)).length,
+            topicsTotal: leaves.length
+          },
           progress: {
             pagesRead: stats.pagesRead,
             minutesRead: Math.round(stats.secondsRead / 60),

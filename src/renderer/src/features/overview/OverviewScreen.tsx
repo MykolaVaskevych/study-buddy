@@ -105,6 +105,21 @@ function AiChecklist({ o }: { o: BookOverview }): React.JSX.Element {
         detail={`${o.cards.total} cards; essentials ready for ${o.cards.topicsCovered} of ${o.cards.topicsTotal} topics. ${o.cards.due} due now.`}
       />
       <Step
+        state={
+          o.studyBook.topicsTotal > 0 && o.studyBook.written >= o.studyBook.topicsTotal
+            ? 'done'
+            : o.jobs.some((j) => j.kind === 'write_lesson')
+              ? 'working'
+              : 'todo'
+        }
+        title="Study book (optional)"
+        detail={`${o.studyBook.written} of ${o.studyBook.topicsTotal} chapters written: explanations, worked examples, exam traps and exercises per topic.`}
+      >
+        <Link to={`/book/${o.docId}/studybook`} className="text-sm text-accent hover:underline">
+          Open the study book
+        </Link>
+      </Step>
+      <Step
         state={o.questions.pageChecksReady > 0 ? 'done' : 'todo'}
         title="Quick tests"
         detail={`${o.questions.total} questions made; ${o.questions.pageChecksReady} ${o.questions.pageChecksReady === 1 ? 'page has' : 'pages have'} a "Test me" ready. More are prepared while you read.`}

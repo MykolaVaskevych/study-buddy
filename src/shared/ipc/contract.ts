@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type {
+  Lesson,
   Annotation,
   BookOverview,
   ResetResult,
@@ -110,6 +111,10 @@ export const ipcContract = {
   'library.prepare': route<{ queued: number; message: string }>()(z.object({ docId: id })),
   /** Clears the student's progress for a topic (and its subtopics) or the whole book; AI content stays. */
   'progress.reset': route<ResetResult>()(z.object({ docId: id, topicId: id.nullable() })),
+  /** Study-book chapters written so far. */
+  'lessons.list': route<Lesson[]>()(z.object({ docId: id })),
+  /** Writes (or rewrites) the chapter for a topic, or for every leaf topic without one (topicId null). */
+  'lessons.generate': route<{ queued: number }>()(z.object({ docId: id, topicId: id.nullable() })),
   'annotations.list': route<Annotation[]>()(z.object({ docId: id })),
   /** Creates or replaces the page's bookmark or note. */
   'annotations.save': route<Annotation>()(
