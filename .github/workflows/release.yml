@@ -97,4 +97,4 @@ jobs:
           ls -R dist
           gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --generate-notes \
             --title "Study Buddy $GITHUB_REF_NAME" \
-            dist/linux/* dist/windows/* $(find dist -name '*.flatpak')
+            dist/linux/* dist/windows/* $(find dist -type f -name '*.flatpak')
