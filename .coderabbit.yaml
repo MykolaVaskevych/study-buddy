@@ -1,0 +1,51 @@
+# CodeRabbit review settings. Reviews run on PRs to main once the CodeRabbit GitHub App is
+# installed for this repository. The repo rules live in CLAUDE.md; CodeRabbit reads them as guidelines.
+language: 'en-US'
+
+reviews:
+  profile: 'chill'
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  path_filters:
+    - '!out/**'
+    - '!dist/**'
+    - '!release/**'
+    - '!docs/media/**'
+    - '!drizzle/meta/**'
+    - '!package-lock.json'
+  path_instructions:
+    - path: 'src/shared/**'
+      instructions: |
+        Pure TypeScript only: no Node, Electron, React, database or AI SDK imports. Contract changes
+        (IPC contract, settings, provider interface) must be additive. Zod schemas for model output
+        use z.strictObject and .nullable(), never .optional().
+    - path: 'src/main/**'
+      instructions: |
+        Layering: only src/main/ai imports AI SDKs, only src/main/db imports the database, only
+        src/main/ipc uses ipcMain. Errors are typed (AiError, LibraryError, ServiceError). Dependencies
+        (clock, ids, provider, db) are injected; no singletons. API keys must never be logged or put in
+        error messages. Page numbers are 1-based absolute PDF pages; dates are ISO strings across IPC.
+    - path: 'src/renderer/**'
+      instructions: |
+        The renderer talks to main only through api/client.ts and the hooks in api/hooks.ts. Check
+        accessibility (labels, roles, keyboard use) and that new visible features add a tour step in
+        features/tour/tours.ts.
+    - path: '**/*.test.{ts,tsx}'
+      instructions: |
+        No network and no Playwright. Integration tests use :memory: SQLite, the generated fixture PDF and
+        the fake provider. UI tests use @testing-library/react with happy-dom.
+  auto_review:
+    enabled: true
+    drafts: false
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - 'CLAUDE.md'
+      - 'docs/ARCHITECTURE.md'

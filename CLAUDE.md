@@ -36,4 +36,5 @@ Read `docs/ARCHITECTURE.md` first. Below are the rules every contributor and age
 
 - Branch `feat/<area>` or `fix/<topic>` from `main`. Use Conventional Commits (`feat(planner): ...`).
 - Open the PR with `gh pr create --base main`. Link the issue (`Closes #N`) and describe what / why / how it was tested.
+- CodeRabbit reviews PRs (`.coderabbit.yaml`). Until the repo has 10 stars it only reviews on request, so after opening a PR comment `@coderabbitai review`. Address its findings, or reply with the reason you didn't, before merging.
 - Squash-merge after review and green CI. When a subagent team works on the repo, the lead reviews and merges agent PRs. When one agent works alone, it self-reviews the diff and merges its own PR once CI is green.

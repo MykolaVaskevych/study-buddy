@@ -12,6 +12,7 @@
   <a href="https://github.com/MykolaVaskevych/study-buddy/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/MykolaVaskevych/study-buddy/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Platforms" src="https://img.shields.io/badge/platforms-Linux%20%C2%B7%20Windows-informational">
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/MykolaVaskevych/study-buddy"></a>
+  <a href="https://coderabbit.ai"><img alt="CodeRabbit Pull Request Reviews" src="https://img.shields.io/coderabbit/prs/github/MykolaVaskevych/study-buddy?utm_source=oss&utm_medium=github&utm_campaign=MykolaVaskevych%2Fstudy-buddy&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews"></a>
 </p>
 
 <p align="center">
