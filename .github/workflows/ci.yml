@@ -19,6 +19,9 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history and tags: the app's "What's new" is generated from them.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24

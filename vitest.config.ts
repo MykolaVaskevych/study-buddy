@@ -1,6 +1,7 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
+import { whatsnew } from './build-tools/whatsnew'
 
 const alias = {
   '@shared': resolve(import.meta.dirname, 'src/shared'),
@@ -19,13 +20,18 @@ export default defineConfig({
         test: {
           name: 'node',
           environment: 'node',
-          include: ['src/main/**/*.test.ts', 'src/shared/**/*.test.ts', 'tests/**/*.test.ts'],
+          include: [
+            'src/main/**/*.test.ts',
+            'src/shared/**/*.test.ts',
+            'tests/**/*.test.ts',
+            'build-tools/**/*.test.ts'
+          ],
           testTimeout: 20_000
         }
       },
       {
         resolve: { alias },
-        plugins: [react()],
+        plugins: [react(), whatsnew(import.meta.dirname)],
         test: {
           name: 'renderer',
           environment: 'happy-dom',

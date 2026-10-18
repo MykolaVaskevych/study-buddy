@@ -3,6 +3,7 @@ import { defineConfig } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { pdfjsAssets } from './build-tools/pdfjs-assets'
+import { whatsnew } from './build-tools/whatsnew'
 
 const alias = {
   '@shared': resolve(import.meta.dirname, 'src/shared'),
@@ -36,6 +37,6 @@ export default defineConfig({
   },
   renderer: {
     resolve: { alias },
-    plugins: [react(), tailwindcss(), pdfjsAssets(import.meta.dirname)]
+    plugins: [react(), tailwindcss(), pdfjsAssets(import.meta.dirname), whatsnew(import.meta.dirname)]
   }
 })

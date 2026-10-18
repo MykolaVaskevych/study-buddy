@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Button } from '../../components'
 import { useTour } from './tourStore'
-import { tours, type TourStep } from './tours'
+import type { TourStep } from './tours'
 
 export interface Rect {
   top: number
@@ -56,7 +56,7 @@ export function TourOverlay(): React.JSX.Element | null {
   const [rect, setRect] = useState<Rect | null>(null)
   const [pos, setPos] = useState<{ top: number; left: number }>({ top: -9999, left: -9999 })
 
-  const steps = active ? tours[active.id] : []
+  const steps = active?.steps ?? []
   const step = active ? steps[active.step] : undefined
 
   // Skip optional steps whose element is not on this screen (e.g. no books imported yet).
@@ -149,7 +149,7 @@ export function TourOverlay(): React.JSX.Element | null {
         style={{ top: pos.top, left: pos.left }}
       >
         <p className="mb-1 text-xs font-semibold tracking-wide text-graphite uppercase">
-          Step {active.step + 1} of {steps.length}
+          {active.onlyNew ? 'New · ' : ''}Step {active.step + 1} of {steps.length}
         </p>
         <h2 id="tour-title" className="mb-2 font-serif text-lg font-semibold">
           {step.title}

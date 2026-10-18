@@ -196,6 +196,14 @@ export const tours: Record<TourId, TourStep[]> = {
   ]
 }
 
+/**
+ * Stable identity of a step: its target (or title for centred steps). Rewording a step does not
+ * make it "new"; adding one does, so returning users see it automatically.
+ */
+export function stepKey(tour: TourId, step: TourStep): string {
+  return `${tour}:${step.target ?? `title:${step.title}`}`
+}
+
 /** Which tour belongs to a route (the ? button). */
 export function tourForPath(pathname: string): TourId {
   if (/^\/book\/[^/]+\/plan/.test(pathname)) return 'planner'

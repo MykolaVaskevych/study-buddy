@@ -1,3 +1,4 @@
+import { useWhatsNewDialog } from '../whatsnew/whatsnew'
 import { useTour } from '../tour/tourStore'
 import { useId, useState } from 'react'
 import type { PublicSettings } from '@shared/settings'
@@ -118,6 +119,7 @@ export function WorkSection({ settings }: { settings: PublicSettings }): React.J
 export function AppearanceSection({ settings }: { settings: PublicSettings }): React.JSX.Element {
   const update = useUpdateSettings()
   const resetTours = useTour((t) => t.reset)
+  const showWhatsNew = useWhatsNewDialog((w) => w.show)
   const languageId = useId()
   const known = LANGUAGES.some(([code]) => code === settings.contentLanguage)
   const languages = known ? LANGUAGES : [...LANGUAGES, [settings.contentLanguage, settings.contentLanguage]]
@@ -142,9 +144,14 @@ export function AppearanceSection({ settings }: { settings: PublicSettings }): R
         </select>
       </SettingRow>
       <SettingRow label="Tutorials" description="Show the guided tour again on every screen.">
-        <Button size="sm" variant="secondary" onClick={() => resetTours()}>
-          Replay tutorials
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="secondary" onClick={() => resetTours()}>
+            Replay tutorials
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => showWhatsNew('all')}>
+            What&apos;s new
+          </Button>
+        </div>
       </SettingRow>
       <SettingRow label="Theme" description="Dark is easier on the eyes for late-night study.">
         <Segmented

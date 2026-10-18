@@ -1,3 +1,4 @@
+import { WhatsNew } from '../features/whatsnew/WhatsNew'
 import { TourOverlay } from '../features/tour/TourOverlay'
 import { useMemo } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router'
@@ -39,6 +40,7 @@ export function Layout(): React.JSX.Element {
       </div>
       <Toaster />
       <TourOverlay />
+      <WhatsNew />
     </div>
   )
 }

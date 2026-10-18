@@ -27,6 +27,11 @@ Read `docs/ARCHITECTURE.md` first. Below are the rules every contributor and age
 - Every new piece of logic gets unit tests next to it (`*.test.ts`).
 - Integration tests use `:memory:` SQLite, the fixture PDF and the `fake` provider. No network in tests. Live AI tests run only with `LIVE=1`.
 
+## What's new and tours (automatic, keep it that way)
+
+- The in-app "What's new" is generated at build time from `feat:`/`fix:` commits (`build-tools/whatsnew.ts`), grouped by `v*` tags. Write the squash-merge subject for users, and add a line `What's new: <one friendly sentence>` to the body of user-facing changes. Plumbing goes under internal scopes (`app`, `main`, `ci`, `build`, `release`, …), which are hidden.
+- Every new visible feature gets a tour step (`features/tour/tours.ts`). Returning users are shown only the steps they haven't seen; nothing else is needed.
+
 ## Git workflow
 
 - Branch `feat/<area>` or `fix/<topic>` from `main`. Use Conventional Commits (`feat(planner): ...`).
