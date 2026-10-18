@@ -1,3 +1,4 @@
+import { DeckChips, inDeck, type DeckFilter } from '../study/DeckChips'
 import { useAutoTour } from '../tour/useAutoTour'
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
@@ -27,6 +28,7 @@ export function ReviewScreen(): React.JSX.Element {
   const library = useLibrary()
   const due = useDueCards(docId, 200)
   const exportAnki = useExportAnki()
+  const [deck, setDeck] = useState<DeckFilter>('all')
   useAutoTour('review', !due.isPending)
   const [round, setRound] = useState(0)
   const books = useMemo(() => library.data ?? [], [library.data])
@@ -67,15 +69,17 @@ export function ReviewScreen(): React.JSX.Element {
           </label>
         </header>
 
+        {due.data ? <DeckChips cards={due.data} value={deck} onChange={setDeck} /> : null}
+
         {due.isPending ? (
           <SessionSkeleton />
         ) : due.data ? (
           <ReviewSession
-            key={`${docId ?? 'all'}:${round}`}
-            initial={due.data}
+            key={`${docId ?? 'all'}:${deck}:${round}`}
+            initial={due.data.filter((c) => inDeck(c, deck))}
             docId={docId}
             bookTitles={titles}
-            dueNow={due.data.length}
+            dueNow={due.data.filter((c) => inDeck(c, deck)).length}
             onRestart={() => setRound((r) => r + 1)}
           />
         ) : (

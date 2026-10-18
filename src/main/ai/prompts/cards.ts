@@ -1,6 +1,7 @@
 import type { GenerationContext } from '../types'
 import { FOCUS_PAGES_KEY, formatRange, headerLines, languageInstruction } from './common'
 import { formatManifest, manifestEntries } from './manifest'
+import { cardGuidance } from './exam-profile'
 import { formatNotes } from './notes'
 import { STUDY_SYSTEM } from './study'
 
@@ -12,9 +13,9 @@ export const CARDS_SYSTEM = STUDY_SYSTEM
 export const MAX_LISTED_EXISTING = 40
 
 const RULES = `Flashcard rules:
-- Card types: basic (a question on the front, the answer on the back); cloze (the front is a sentence with gaps written {{c1::answer}}, {{c2::answer}}; the back repeats the full sentence or adds context); formula (the front asks for a formula or what it means; the back gives it as $LaTeX$ and explains every symbol); contrast (the front asks for the difference between two related concepts).
+- Card types: basic (a question on the front, the answer on the back); cloze (the front is a sentence with gaps written {{c1::answer}}, {{c2::answer}}; the back repeats the full sentence or adds context); why (the front asks why something happens, what causes it, or what changes when a quantity changes; the back gives the reasoning); contrast (the front asks for the difference between two related concepts); formula (the front asks for a formula or what it means; the back gives it as $LaTeX$ and explains every symbol).
 - One idea per card. The front must make sense without seeing the slide. The back is concise (at most about 40 words) and complete.
-- Cover what an exam asks: definitions, relationships, formulas and when to use them, typical calculations, classic traps. Skip trivia.
+- Cover what this exam asks (see the exam profile below): definitions, relationships, reasoning, classic traps. Skip trivia.
 - Do not repeat cards listed under "Already covered".
 - essential: true for the must-know core (definitions, key formulas, classic exam facts), false for supporting detail.
 - source_pages: the page-stamp numbers the card is based on, all inside the focus pages.
@@ -38,6 +39,7 @@ export function buildCardsUser(
     languageInstruction(ctx.language),
     RULES,
     ...(opts.essentialsOnly ? [ESSENTIALS] : []),
+    ...(ctx.exam ? [`Exam profile:\n${cardGuidance(ctx.exam)}`] : []),
     formatManifest(manifestEntries(ctx.pageFrom, ctx.pageTo, ctx.pageText, 0)),
     formatNotes(ctx.notes),
     existing.length > 0

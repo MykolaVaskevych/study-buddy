@@ -74,7 +74,14 @@ describe('mock api', () => {
       'progress.reset': { docId, topicId: null },
       'annotations.save': { docId, page: 3, kind: 'bookmark', text: '' },
       'annotations.delete': { docId, page: 3, kind: 'bookmark' },
-      'lessons.generate': { docId, topicId: null }
+      'lessons.generate': { docId, topicId: null },
+      'exam.saveProfile': {
+        docId,
+        formats: { mcq: 1, written: 0, numeric: 0 },
+        formulas: 'none',
+        formulaSheet: false
+      },
+      'cards.rebuildForExam': { docId }
     }
     const docChannels = [
       'library.get',
@@ -90,7 +97,8 @@ describe('mock api', () => {
       'library.overview',
       'library.prepare',
       'annotations.list',
-      'lessons.list'
+      'lessons.list',
+      'exam.getProfile'
     ]
     const empty = ['app.info', 'library.list', 'settings.get', 'usage.summary']
     for (const channel of contractChannels) {

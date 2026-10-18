@@ -110,6 +110,11 @@ export const tours: Record<TourId, TourStep[]> = {
   ],
   overview: [
     {
+      target: '[data-tour="exam-profile"]',
+      title: 'Tell it about your exam',
+      body: 'Multiple choice, written or calculations? Formulas needed? Upload a past paper and it learns this for you. Flashcards, quick tests and the study book follow it.'
+    },
+    {
       target: '[data-tour="ai-status"]',
       title: 'What the AI has done',
       body: 'A checklist of everything prepared for this book: pages read, course map, plan, flashcards and quick tests, plus what is running right now.'

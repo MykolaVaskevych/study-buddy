@@ -1,4 +1,4 @@
-import type { Annotation, Lesson } from '@shared/domain'
+import type { Annotation, ExamProfile, Lesson } from '@shared/domain'
 import { ipcContract } from '@shared/ipc/contract'
 import type {
   IpcChannel,
@@ -130,6 +130,7 @@ export function createMockApi(options: MockOptions = {}): MockApi {
   let settings: PublicSettings = { ...DEFAULT_SETTINGS, hasApiKey: false }
   let seq = 0
   const annotations: Annotation[] = []
+  const profiles = new Map<string, ExamProfile>()
   const nextId = (prefix: string): string => `${prefix}-${++seq}`
 
   const listeners: { [E in IpcEvent]: Set<(payload: IpcEvents[E]) => void> } = {
@@ -568,7 +569,7 @@ export function createMockApi(options: MockOptions = {}): MockApi {
       return { requestId }
     },
     'chat.cancel': () => ({ ok: true }),
-    'plan.importPastPaper': () => ({ questionsMapped: 0, unmapped: 0, changes: [] }),
+    'plan.importPastPaper': () => ({ questionsMapped: 0, unmapped: 0, changes: [], profile: null }),
     'library.overview': ({ docId }) => {
       const d = getDoc(docId)
       const status = indexStatus(d)
@@ -591,7 +592,37 @@ export function createMockApi(options: MockOptions = {}): MockApi {
         preparing: false
       }
     },
-    'library.prepare': () => ({ queued: 5, message: 'Making essentials flashcards for 5 topics.' }),
+    'library.prepare': ({ docId, force }) =>
+      !force && !profiles.has(docId)
+        ? { queued: 0, needsProfile: true, message: 'Tell Study Buddy what your exam looks like first.' }
+        : { queued: 5, needsProfile: false, message: 'Making essentials flashcards for 5 topics.' },
+    'exam.getProfile': ({ docId }) =>
+      profiles.get(docId) ?? {
+        docId,
+        formats: { mcq: 0.4, written: 0.3, numeric: 0.3 },
+        formulas: 'apply',
+        formulaSheet: false,
+        style: '',
+        examples: [],
+        source: 'default',
+        updatedAt: null
+      },
+    'exam.saveProfile': ({ docId, formats, formulas, formulaSheet }) => {
+      const sum = formats.mcq + formats.written + formats.numeric || 1
+      const saved: ExamProfile = {
+        docId,
+        formats: { mcq: formats.mcq / sum, written: formats.written / sum, numeric: formats.numeric / sum },
+        formulas,
+        formulaSheet,
+        style: '',
+        examples: [],
+        source: 'user',
+        updatedAt: now().toISOString()
+      }
+      profiles.set(docId, saved)
+      return saved
+    },
+    'cards.rebuildForExam': () => ({ suspended: 3, queued: 6 }),
     'progress.reset': () => ({ cards: 12, attempts: 4, readingPages: 14 }),
     'lessons.list': ({ docId }) => {
       const all = topicsOf(getDoc(docId))

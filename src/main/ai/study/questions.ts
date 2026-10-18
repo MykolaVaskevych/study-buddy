@@ -1,3 +1,4 @@
+import { questionTypesFor } from '../prompts/exam-profile'
 import type { QuestionType } from '@shared/domain'
 import type { LlmProvider, PromptPart } from '@shared/ai/provider'
 import { questionsOutputSchema, verifyOutputSchema } from '@shared/ai/schemas'
@@ -70,7 +71,8 @@ export async function generateQuestions(
   const range = { from: ctx.pageFrom, to: ctx.pageTo }
   const drafts: QuestionDraft[] = []
   for (const raw of res.data.questions) {
-    const converted = convertQuestion(raw, opts.types)
+    // Types the exam does not use are dropped even if the model produced them.
+    const converted = convertQuestion(raw, opts.types ?? (ctx.exam ? questionTypesFor(ctx.exam) : null))
     if (converted === null) continue
     const grounded = groundItem(converted, range, ctx.pageText, settings.groundingThreshold)
     if (grounded !== null) drafts.push({ ...converted, ...grounded })

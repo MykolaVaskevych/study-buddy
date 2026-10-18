@@ -88,7 +88,7 @@ export type TopicMapOutput = z.infer<typeof topicMapOutputSchema>
 
 // ---------------------------------------------------------------- flashcards
 
-export const cardTypeSchema = z.enum(['basic', 'cloze', 'formula', 'contrast'])
+export const cardTypeSchema = z.enum(['basic', 'cloze', 'formula', 'contrast', 'why'])
 
 export const cardsOutputSchema = z.strictObject({
   cards: z.array(
@@ -169,9 +169,19 @@ export const pastPaperOutputSchema = z.strictObject({
       /** Marks printed on the paper, else an estimate (1 per sub-question). */
       marks: z.number(),
       /** Key of the best matching topic, null if none fits. */
-      topic_key: z.string().nullable()
+      topic_key: z.string().nullable(),
+      /** mcq = choose among options (incl. true/false), written = explain in words, numeric = calculate. */
+      format: z.enum(['mcq', 'written', 'numeric']),
+      /** The question needs a formula (to calculate, or to know what it says). */
+      uses_formula: z.boolean()
     })
-  )
+  ),
+  /** 1-2 sentences on the exam's style: what it tests and how (e.g. conceptual MCQs on trade-offs). */
+  style_summary: z.string(),
+  /** Whether the paper says a formula sheet is provided; null if it does not say. */
+  formula_sheet: z.boolean().nullable(),
+  /** Up to 5 representative questions copied verbatim (with their options for MCQs). */
+  examples: z.array(z.string())
 })
 export type PastPaperOutput = z.infer<typeof pastPaperOutputSchema>
 

@@ -88,7 +88,8 @@ describe('generation prompts', () => {
     pageTo: 4,
     notes: [],
     pageText,
-    language: 'auto'
+    language: 'auto',
+    exam: null
   }
 
   it('cards: focus range, count, essentials and existing fronts', () => {

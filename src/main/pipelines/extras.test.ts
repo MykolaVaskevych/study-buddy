@@ -117,9 +117,12 @@ describe('chat, cheat sheet, anki, past papers through the handlers', () => {
         if (req.task !== 'past_paper') return fake.generate(req)
         const data = {
           questions: [
-            { summary: 'Power budget', marks: 10, topic_key: 't1' },
-            { summary: '?', marks: 2, topic_key: 'nope' }
-          ]
+            { summary: 'Power budget', marks: 10, topic_key: 't1', format: 'mcq', uses_formula: false },
+            { summary: '?', marks: 2, topic_key: 'nope', format: 'mcq', uses_formula: false }
+          ],
+          style_summary: 'Conceptual multiple choice; no calculations.',
+          formula_sheet: null,
+          examples: ['Which technique reduces multipath fading? A. diversity B. higher power']
         }
         return { data: req.schema.parse(data), usage: (await fake.generate(req)).usage, model: 'fake' }
       }
@@ -133,5 +136,9 @@ describe('chat, cheat sheet, anki, past papers through the handlers', () => {
     if (result.changes.length > 1) expect(first?.after).toBeGreaterThan(first?.before ?? 1)
     const sum = result.changes.reduce((s, c) => s + c.after, 0)
     expect(sum).toBeCloseTo(1)
+    // The paper also teaches the exam's shape: all MCQ, no formulas, its style and an example.
+    expect(result.profile).toMatchObject({ source: 'past_paper', formulas: 'none', formats: { mcq: 1 } })
+    expect(result.profile?.examples).toHaveLength(1)
+    expect((await harness.h['exam.getProfile']({ docId })).style).toMatch(/Conceptual/)
   })
 })

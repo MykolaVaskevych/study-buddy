@@ -1,3 +1,4 @@
+import { DeckChips, inDeck, type DeckFilter } from './DeckChips'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import type { Card, Scope, Topic } from '@shared/domain'
@@ -93,7 +94,9 @@ export function CardsTab({ docId, page, onCitation }: StudyTabProps): React.JSX.
   const range = parsed ?? { from: settled, to: settled }
   const scope = scopeOf(effective, docId, settled, topic, range)
   const cards = useCards(scope, true)
-  const list = cards.data ?? []
+  const [deck, setDeck] = useState<DeckFilter>('all')
+  const all = cards.data ?? []
+  const list = all.filter((c) => inDeck(c, deck))
   const label =
     effective === 'topic' && topic
       ? topic.title
@@ -140,6 +143,7 @@ export function CardsTab({ docId, page, onCitation }: StudyTabProps): React.JSX.
           </h2>
           {list.length > active ? <span className="text-sm text-graphite">{active} in reviews</span> : null}
         </header>
+        <DeckChips cards={all} value={deck} onChange={setDeck} />
         {cards.isPending ? (
           <div className="flex flex-col gap-3">
             <Skeleton className="h-24 w-full rounded-lg" />

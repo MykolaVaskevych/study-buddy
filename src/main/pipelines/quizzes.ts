@@ -320,6 +320,34 @@ export function createQuizzes(
     }
   }
 
+  /**
+   * A wrong answer becomes a "My mistakes" flashcard (no AI call): the question on the front, the
+   * right answer and the explanation on the back. The gaps a student actually has get reviewed.
+   */
+  const addMistakeCard = (question: Question, correctAnswer: string): void => {
+    const front = question.options
+      ? `${question.stem}\n\n${question.options.map((o, i) => `${String.fromCharCode(65 + i)}. ${o}`).join('\n')}`
+      : question.stem
+    if (db.cards.fronts(question.docId).some((f) => normStem(f) === normStem(front))) return
+    db.cards.insertMany(
+      [
+        {
+          docId: question.docId,
+          topicId: resolveTopic(db, question),
+          type: 'mistake',
+          front,
+          back: `${correctAnswer}\n\n${question.explanation}`.trim(),
+          essential: true,
+          sourcePages: question.sourcePages,
+          evidence: question.evidence,
+          verification: question.verification
+        }
+      ],
+      nowIso()
+    )
+    deps.emit('cards.changed', { docId: question.docId })
+  }
+
   return {
     handlers: {
       'quiz.create': async (input) => {
@@ -355,6 +383,7 @@ export function createQuizzes(
         db.quizzes.saveAttempt(quizId, result, response, elapsedMs, nowIso())
         // A changed answer within the same quiz is not new evidence.
         if (!answeredBefore) addEvidence(db, resolveTopic(db, question), result.score >= 0.5)
+        if (!answeredBefore && result.score < 0.5) addMistakeCard(question, result.correctAnswer)
         return result
       },
 

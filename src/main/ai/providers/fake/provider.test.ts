@@ -42,7 +42,8 @@ const ctx: GenerationContext = {
   pageTo: 14,
   notes: [note(12), note(14)],
   pageText,
-  language: 'auto'
+  language: 'auto',
+  exam: null
 }
 
 const fake: LlmProvider = createFakeProvider({ checkFile: async () => undefined })

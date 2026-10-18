@@ -14,6 +14,7 @@ import { createChat } from './chat'
 import { createExtras } from './extras'
 import { createPastPapers } from './past-paper'
 import { createLessons } from './lessons'
+import { createExamProfiles } from './exam-profile'
 import { createOverview } from './overview'
 import { createReading } from './reading'
 import { createSettingsService } from './settings-service'
@@ -87,6 +88,7 @@ export function createPipelinesWith(deps: PipelineDeps, options: PipelineOptions
   const quizzes = createQuizzes(deps, { ledger, questionGen, pageChecks, planner, waiter })
   const chat = createChat(deps, { ledger, material })
   const lessons = createLessons(deps, { ledger, material })
+  const examProfiles = createExamProfiles(deps, { generateCards: cards.handlers['cards.generate'] })
   const pastPapers = createPastPapers(deps, { ledger, material, planner })
   const overview = createOverview(deps, {
     indexing,
@@ -108,6 +110,7 @@ export function createPipelinesWith(deps: PipelineDeps, options: PipelineOptions
     ...createJobsUsage(deps).handlers,
     ...chat.handlers,
     ...lessons.handlers,
+    ...examProfiles.handlers,
     ...pastPapers.handlers,
     ...createExtras(deps).handlers,
     ...overview.handlers

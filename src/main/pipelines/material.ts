@@ -1,3 +1,4 @@
+import { resolveExamProfile } from './exam-profile'
 import { stat } from 'node:fs/promises'
 import type { PageNotes } from '@shared/domain'
 import type { GenerationContext, IndexedPage, PageTextLookup } from '../ai/types'
@@ -144,6 +145,7 @@ export function createMaterial(
           .map(toIndexedPage),
         pageText: pageText(doc.id),
         language: language(doc),
+        exam: resolveExamProfile(db, doc.id),
         ...(signal === undefined ? {} : { signal })
       }
     }

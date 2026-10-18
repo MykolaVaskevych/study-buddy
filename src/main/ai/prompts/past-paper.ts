@@ -11,6 +11,11 @@ Your task: read a past exam paper and map each question (or sub-question with it
 - summary: what the question asks, in at most 15 words.
 - marks: the marks printed on the paper for that question; if none are printed, estimate 1 per sub-question.
 - topic_key: the key of the single best matching topic from the list, or null if no topic fits.
+- format: mcq (choose among given options, including true/false), written (explain in words) or numeric (calculate a value).
+- uses_formula: true if answering needs a formula (to calculate, or to know what it states).
+- style_summary: 1-2 sentences on what the exam tests and how, e.g. "Conceptual multiple choice on trade-offs between techniques; no calculations."
+- formula_sheet: true or false if the paper says whether a formula sheet is provided, else null.
+- examples: up to 5 representative questions copied verbatim, with their options for multiple choice.
 - Skip instructions, cover pages and formula sheets; they are not questions.`
 
 export function buildPastPaperUser(input: {

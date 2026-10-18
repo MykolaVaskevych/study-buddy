@@ -1,3 +1,4 @@
+import { ExamProfilePanel } from './ExamProfilePanel'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import type { BookOverview, Topic } from '@shared/domain'
@@ -188,6 +189,7 @@ export function OverviewScreen(): React.JSX.Element {
   const reset = useResetProgress()
   const push = useToasts((t) => t.push)
   const [confirm, setConfirm] = useState<{ topic: Topic | null } | null>(null)
+  const [askProfile, setAskProfile] = useState(false)
   useAutoTour('overview', overview.isSuccess)
   const o = overview.data
 
@@ -210,7 +212,17 @@ export function OverviewScreen(): React.JSX.Element {
             onClick={() =>
               prepare.mutate(
                 { docId },
-                { onSuccess: (r) => push({ tone: 'ok', title: 'Preparing', body: r.message }) }
+                {
+                  onSuccess: (r) => {
+                    if (r.needsProfile) {
+                      setAskProfile(true)
+                      document
+                        .getElementById('exam-profile')
+                        ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                      push({ tone: 'info', title: 'First: your exam', body: r.message })
+                    } else push({ tone: 'ok', title: 'Preparing', body: r.message })
+                  }
+                }
               )
             }
           >
@@ -229,6 +241,8 @@ export function OverviewScreen(): React.JSX.Element {
           )
         ) : (
           <>
+            <ExamProfilePanel docId={docId} highlight={askProfile} />
+
             <section data-tour="ai-status" className="rounded-lg border border-rule bg-sheet p-5">
               <h2 className="mb-1 font-serif text-lg font-semibold">What the AI has prepared</h2>
               <p className="mb-2 text-sm text-graphite">
