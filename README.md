@@ -29,10 +29,17 @@ npm run smoke    # build and launch once
 
 To use the Claude subscription provider, install [Claude Code](https://claude.com/claude-code) and log in once (`claude`).
 
-## Install (Linux)
+## Install
 
-Download the AppImage, `.deb` or `.pacman` from [Releases](https://github.com/MykolaVaskevych/study-buddy/releases). On Arch: `sudo pacman -U study-buddy-*.pacman`.
+From [Releases](https://github.com/MykolaVaskevych/study-buddy/releases):
 
-The default AI provider uses your Claude subscription through an installed, logged-in [Claude Code](https://claude.com/claude-code). Check it with `study-buddy --check-ai`. You can switch to an Anthropic API key in Settings instead.
+- **Linux**: `.flatpak` (open it with Discover / GNOME Software, or `flatpak install --user study-buddy.flatpak`), AppImage, `.deb`, or `.pacman` (Arch: `sudo pacman -U study-buddy-*.pacman`).
+- **Windows**: `Study Buddy Setup *.exe` (unsigned, so SmartScreen asks once: _More info → Run anyway_).
+
+The default AI provider uses your Claude subscription through an installed, logged-in [Claude Code](https://claude.com/claude-code); check it with `study-buddy --check-ai`. You can switch to an Anthropic API key in Settings instead.
 
 Build packages yourself: `npm run dist:linux` (AppImage + pacman in `release/`).
+
+## License
+
+GPL-3.0-or-later. See [LICENSE](LICENSE).

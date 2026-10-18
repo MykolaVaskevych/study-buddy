@@ -11,8 +11,12 @@ concurrency:
 
 jobs:
   check:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -28,8 +32,13 @@ jobs:
         run: npm run format:check
       - name: Unit + integration tests
         run: npm test
-      - name: Smoke (real Electron app under xvfb)
+      - name: Build
+        run: npm run build
+      - name: Smoke (real Electron app, Linux under xvfb)
+        if: runner.os == 'Linux'
         run: |
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-          npm run build
           xvfb-run -a npx electron . --smoke
+      - name: Smoke (real Electron app, Windows)
+        if: runner.os == 'Windows'
+        run: npx electron . --smoke

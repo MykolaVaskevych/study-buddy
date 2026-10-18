@@ -1,0 +1,47 @@
+# Flatpak bundle built from the electron-builder output (release/linux-unpacked.tar.gz), used by the
+# release workflow. A Flathub submission needs a from-source variant (flatpak-node-generator); see
+# flatpak/README.md.
+app-id: io.github.mykolavaskevych.StudyBuddy
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+base: org.electronjs.Electron2.BaseApp
+base-version: '25.08'
+command: study-buddy
+separate-locales: false
+finish-args:
+  - --share=ipc
+  - --share=network
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  # Read PDFs dropped from the file manager; the file picker works through portals anyway.
+  - --filesystem=xdg-documents:ro
+  - --filesystem=xdg-download:ro
+  # Subscription mode runs the user's own Claude Code on the host (flatpak/claude-host.sh).
+  - --talk-name=org.freedesktop.Flatpak
+  - --env=ELECTRON_TRASH=gio
+modules:
+  - name: study-buddy
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/lib && tar --no-same-owner -xzf linux-unpacked.tar.gz -C /app/lib && mv /app/lib/linux-unpacked /app/lib/study-buddy
+      - install -Dm755 study-buddy.sh /app/bin/study-buddy
+      - install -Dm755 claude-host.sh /app/bin/claude-host
+      - install -Dm644 icon-512.png /app/share/icons/hicolor/512x512/apps/io.github.mykolavaskevych.StudyBuddy.png
+      - install -Dm644 io.github.mykolavaskevych.StudyBuddy.desktop -t /app/share/applications
+      - install -Dm644 io.github.mykolavaskevych.StudyBuddy.metainfo.xml -t /app/share/metainfo
+    sources:
+      # tar keeps the executable bits that CI artifacts would drop.
+      - type: file
+        path: ../release/linux-unpacked.tar.gz
+      - type: file
+        path: study-buddy.sh
+      - type: file
+        path: claude-host.sh
+      - type: file
+        path: ../build/icon-512.png
+      - type: file
+        path: io.github.mykolavaskevych.StudyBuddy.desktop
+      - type: file
+        path: io.github.mykolavaskevych.StudyBuddy.metainfo.xml
