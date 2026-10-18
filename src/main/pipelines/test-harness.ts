@@ -5,6 +5,7 @@ import type { AiTask, GenerateRequest, GenerateResult, LlmProvider, PromptPart }
 import type { DocId, Question, QuestionResponse } from '@shared/domain'
 import type { IpcEvent, IpcEvents } from '@shared/ipc/contract'
 import { writeFixturePdf } from '../../../tests/fixtures/make-fixture-pdf'
+import { createClaudeAuth } from '../ai/providers/claude-code/auth'
 import { createFakeProvider } from '../ai/providers/fake/provider'
 import { createStudyAi } from '../ai/study-ai'
 import { openDatabase } from '../db'
@@ -15,7 +16,7 @@ import { DEFAULT_CHUNK_OPTIONS, createPdfLibrary } from '../library'
 import type { PdfLibrary } from '../library/types'
 import { createSrs } from '../srs'
 import { DEFAULT_PIPELINE_OPTIONS, createPipelinesWith, type PipelineOptions } from './index'
-import type { Handlers, Pipelines, SecretStore } from './types'
+import type { Connections, Handlers, Pipelines, SecretStore } from './types'
 
 /**
  * Test-only (imported by *.test.ts): the pipelines over REAL modules. In-memory SQLite, the library
@@ -45,6 +46,8 @@ export interface Harness {
 }
 
 export interface HarnessOptions {
+  /** Claude login and model discovery; defaults to "Claude Code not installed" and no models. */
+  connections?: Connections
   provider?: LlmProvider
   options?: Partial<PipelineOptions>
   /** Call pipelines.start() (default true). */
@@ -83,6 +86,13 @@ export async function createHarness(opts: HarnessOptions = {}): Promise<Harness>
       apiKey = key
     }
   }
+  let openAiKey: string | null = null
+  const openAiSecrets: SecretStore = {
+    getApiKey: () => openAiKey,
+    setApiKey: (key) => {
+      openAiKey = key
+    }
+  }
   const events: Harness['events'] = []
   const pipelines = createPipelinesWith(
     {
@@ -92,6 +102,11 @@ export async function createHarness(opts: HarnessOptions = {}): Promise<Harness>
       srs: createSrs({ fuzz: false }),
       aiFor: () => ai,
       secrets,
+      openAiSecrets,
+      connections: opts.connections ?? {
+        claude: createClaudeAuth({ executable: () => null }),
+        listModels: async () => []
+      },
       emit: (event, payload) => {
         events.push({ event, payload })
       },

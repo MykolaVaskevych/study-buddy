@@ -47,6 +47,12 @@ export const tours: Record<TourId, TourStep[]> = {
       body: 'Flashcards come back here on a spaced-repetition schedule timed to your exam. A few minutes a day keeps everything fresh.'
     },
     {
+      target: '[data-tour="provider-switch"]',
+      title: 'Which AI does the work',
+      body: 'Your Claude subscription, an Anthropic API key, or a free model on this computer (Ollama, LM Studio). Switch here in one click, for example when the subscription hits its limit. Sign-in and setup live in Settings.',
+      optional: true
+    },
+    {
       target: '[data-tour="help"]',
       title: 'Help is always here',
       body: 'Every screen has its own short tour. Press ? whenever you are unsure what to do.'

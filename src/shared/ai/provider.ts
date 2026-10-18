@@ -4,9 +4,10 @@ import type { z } from 'zod'
  * Provider-neutral LLM contract. Implementations live in src/main/ai/providers.
  *  - 'claude-code'   : the user's Claude subscription via the local Claude Code runtime (Agent SDK)
  *  - 'anthropic-api' : bring-your-own Anthropic API key
+ *  - 'openai-compatible' : any server speaking the OpenAI chat API (Ollama, LM Studio, DeepSeek, ...)
  *  - 'fake'          : deterministic provider for tests and the smoke run
  */
-export type ProviderId = 'claude-code' | 'anthropic-api' | 'fake'
+export type ProviderId = 'claude-code' | 'anthropic-api' | 'openai-compatible' | 'fake'
 
 /** 'fast' = bulk/cheap work (indexing), 'smart' = generation, grading, chat. */
 export type ModelTier = 'fast' | 'smart'

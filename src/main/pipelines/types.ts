@@ -1,5 +1,6 @@
 import type { ProviderId } from '@shared/ai/provider'
 import type { IpcChannel, IpcEvent, IpcEvents, IpcOutput, IpcParsedInput } from '@shared/ipc/contract'
+import type { ClaudeAuth } from '../ai/providers/claude-code/auth'
 import type { StudyAi } from '../ai/types'
 import type { Database } from '../db/types'
 import type { JobQueue } from '../jobs/types'
@@ -24,6 +25,11 @@ export interface SecretStore {
   setApiKey(key: string | null): void
 }
 
+export interface Connections {
+  claude: ClaudeAuth
+  listModels(baseUrl: string, apiKey: string | null): Promise<string[]>
+}
+
 export interface PipelineDeps {
   db: Database
   library: PdfLibrary
@@ -34,7 +40,12 @@ export interface PipelineDeps {
    * The composition root caches instances and rebuilds them when settings or the API key change.
    */
   aiFor(provider?: ProviderId): StudyAi
+  /** Anthropic API key. */
   secrets: SecretStore
+  /** Key for the OpenAI-compatible server (hosted ones such as DeepSeek; local servers need none). */
+  openAiSecrets: SecretStore
+  /** Login and discovery for the settings screen; the providers themselves live behind aiFor. */
+  connections: Connections
   emit: EmitEvent
   now(): Date
   /** Native "open PDFs" dialog; resolves [] when cancelled. */

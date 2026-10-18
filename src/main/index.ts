@@ -2,13 +2,14 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app, BrowserWindow, ipcMain, protocol, safeStorage } from 'electron'
-import { createProvider, createStudyAi } from './ai'
+import { createClaudeAuth, createProvider, createStudyAi, findClaudeExecutable, listModels } from './ai'
 import {
   createAiRegistry,
   createConsoleLog,
   createMainWindow,
   createSecretStore,
   ensureSingleInstance,
+  OPENAI_COMPATIBLE_KEY_SECRET,
   isAppUrl,
   pickPdfs,
   registerPdfProtocol,
@@ -68,20 +69,35 @@ async function bootstrap(): Promise<void> {
   const now = (): Date => new Date()
   const db = openDatabase(join(dataDir, 'study-buddy.db'), { now })
   const secrets = createSecretStore(db.settings, safeStorage, { log })
+  const openAiSecrets = createSecretStore(db.settings, safeStorage, {
+    log,
+    name: OPENAI_COMPATIBLE_KEY_SECRET
+  })
+  const library = createPdfLibrary({ rootDir: join(dataDir, 'library'), chunk: DEFAULT_CHUNK_OPTIONS })
   const ai = createAiRegistry({
     getSettings: () => db.settings.get(),
     secrets,
-    createProvider,
+    openAiSecrets,
+    // Text-only models get chunk PDFs as page text, read by the library's PDF worker.
+    createProvider: (settings, keys) =>
+      createProvider(settings, keys, { pdfText: (path) => library.pageTexts(path) }),
     createStudyAi,
     forceProvider: isSmoke ? 'fake' : undefined
   })
   const pipelines = createPipelines({
     db,
-    library: createPdfLibrary({ rootDir: join(dataDir, 'library'), chunk: DEFAULT_CHUNK_OPTIONS }),
+    library,
     queue: createJobQueue({ repo: db.jobs, concurrency: db.settings.get().aiConcurrency, now }),
     srs: createSrs(),
     aiFor: (provider) => ai.aiFor(provider),
     secrets,
+    openAiSecrets,
+    connections: {
+      claude: createClaudeAuth({
+        executable: () => db.settings.get().claudeCodePath ?? findClaudeExecutable()
+      }),
+      listModels: (baseUrl, apiKey) => listModels({ baseUrl, apiKey })
+    },
     emit: createEmitter(() => BrowserWindow.getAllWindows(), log),
     now,
     pickPdfs: () => pickPdfs(mainWindow),

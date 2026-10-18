@@ -1,15 +1,47 @@
 import { useEffect, useState } from 'react'
-import { useRateLimit } from '../api/hooks'
-import { Icon } from '../components'
+import { presetFor } from '@shared/ai/connections'
+import type { PublicSettings } from '@shared/settings'
+import { useRateLimit, useServerModels, useSettings, useUpdateSettings } from '../api/hooks'
+import { Button, Icon } from '../components'
+import { notReady } from '../features/settings/providers'
+
+/** The other providers that would work right now: a saved API key, a local server that answers. */
+function Alternatives({ settings }: { settings: PublicSettings }): React.JSX.Element {
+  const update = useUpdateSettings()
+  const server = useServerModels(
+    notReady('openai-compatible', settings) === null ? settings.openaiBaseUrl : null
+  )
+  const preset = presetFor(settings.openaiBaseUrl)
+  const localUp = (server.data?.models.length ?? 0) > 0
+  return (
+    <span className="ml-auto flex shrink-0 gap-2">
+      {settings.hasApiKey ? (
+        <Button size="sm" onClick={() => update.mutate({ provider: 'anthropic-api' })}>
+          Use my API key meanwhile
+        </Button>
+      ) : null}
+      {localUp ? (
+        <Button size="sm" onClick={() => update.mutate({ provider: 'openai-compatible' })}>
+          Use {preset.id === 'custom' ? 'the local model' : preset.label} meanwhile
+        </Button>
+      ) : null}
+    </span>
+  )
+}
 
 /** "14:30" in the user's locale. Exported for tests. */
 export function formatResetTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-/** Shown while Claude's usage limit is hit; hides itself once the reset time has passed. */
+/**
+ * Shown while the AI's usage limit is hit; hides itself once the reset time has passed. On the
+ * subscription it offers the other providers that are set up: switching resumes work at once
+ * (the status bar switches back later).
+ */
 export function RateLimitBanner(): React.JSX.Element | null {
   const { data: info } = useRateLimit()
+  const { data: settings } = useSettings()
   const [expiredAt, setExpiredAt] = useState<string | null>(null)
   const resetAt = info?.resetAt ?? null
 
@@ -33,6 +65,7 @@ export function RateLimitBanner(): React.JSX.Element | null {
         </span>{' '}
         <span className="text-graphite">Background work is paused. Reading and reviewing still work.</span>
       </p>
+      {settings?.provider === 'claude-code' ? <Alternatives settings={settings} /> : null}
     </div>
   )
 }

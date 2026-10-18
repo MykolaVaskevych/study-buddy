@@ -22,6 +22,7 @@ import type {
   Topic,
   UsageSummary
 } from '../domain'
+import type { ClaudeAccount, ClaudeLoginStart } from '../ai/connections'
 import type { HealthResult } from '../ai/provider'
 import type { PublicSettings } from '../settings'
 import { settingsSchema, providerIdSchema } from '../settings'
@@ -244,9 +245,29 @@ export const ipcContract = {
   // ------------------------------------------------------------ settings & AI
   'settings.get': route<PublicSettings>()(none),
   'settings.update': route<PublicSettings>()(settingsSchema.partial()),
-  /** null removes the stored key. Stored encrypted with the OS keychain (safeStorage). */
-  'settings.setApiKey': route<PublicSettings>()(z.object({ apiKey: z.string().min(10).nullable() })),
+  /**
+   * null removes the stored key. Stored encrypted with the OS keychain (safeStorage). `provider`
+   * picks whose key: the Anthropic API (default) or the OpenAI-compatible server.
+   */
+  'settings.setApiKey': route<PublicSettings>()(
+    z.object({
+      apiKey: z.string().min(10).nullable(),
+      provider: z.enum(['anthropic-api', 'openai-compatible']).default('anthropic-api')
+    })
+  ),
   'ai.health': route<HealthResult>()(z.object({ provider: providerIdSchema.nullable() })),
+  /** Claude Code's login on this computer (`claude auth status`). */
+  'ai.claudeAccount': route<ClaudeAccount>()(none),
+  /** Starts a Claude Code sign-in: the browser opens; the page then shows a code for `ai.claudeLoginCode`. */
+  'ai.claudeLogin': route<ClaudeLoginStart>()(z.object({ method: z.enum(['claudeai', 'console']) })),
+  'ai.claudeLoginCode': route<ClaudeAccount>()(z.object({ code: z.string().max(2000) })),
+  'ai.claudeLoginCancel': route<{ ok: true }>()(none),
+  /** Signs Claude Code out on this computer, terminal included. */
+  'ai.claudeLogout': route<ClaudeAccount>()(none),
+  /** Models an OpenAI-compatible server offers; uses the stored key for that server, if any. */
+  'ai.listModels': route<{ models: string[]; error: string | null }>()(
+    z.object({ baseUrl: z.url({ protocol: /^https?$/ }) })
+  ),
 
   // ------------------------------------------------------------ jobs & usage
   'jobs.list': route<JobInfo[]>()(z.object({ docId: id.nullable() })),

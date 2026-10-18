@@ -30,6 +30,8 @@ export interface AppSecretStore extends SecretStore {
 }
 
 export const API_KEY_SECRET = 'anthropicApiKey'
+/** Key for an OpenAI-compatible server (DeepSeek, OpenRouter, ...). */
+export const OPENAI_COMPATIBLE_KEY_SECRET = 'openaiCompatibleApiKey'
 
 const ENCRYPTED = 0x01
 const PLAIN = 0x00

@@ -10,6 +10,7 @@ import {
 import type { QueryClient, QueryKey } from '@tanstack/react-query'
 import type { IpcChannel, IpcInput, IpcOutput } from '@shared/ipc/contract'
 import type { DocumentSummary, IndexStatus, JobInfo, RateLimitInfo, Scope } from '@shared/domain'
+import type { ClaudeAccount } from '@shared/ai/connections'
 import { call, subscribe } from './client'
 
 /**
@@ -219,6 +220,28 @@ export const useSetApiKey = () =>
 
 /** Health check is an explicit action ("Test connection"), not something to poll. */
 export const useCheckAiHealth = () => useChannelMutation('ai.health')
+
+const accountKey: QueryKey = ['ai.claudeAccount', {}]
+const setAccount = (a: ClaudeAccount, _i: unknown, qc: QueryClient): void => {
+  qc.setQueryData(accountKey, a)
+}
+
+/** Claude Code's login; asking runs the CLI, so it is cached for a while and refreshed on focus. */
+export const useClaudeAccount = (enabled = true) =>
+  useQuery({ ...channelQuery('ai.claudeAccount', {}), enabled, staleTime: 60_000 })
+export const useClaudeLogin = () => useChannelMutation('ai.claudeLogin')
+export const useClaudeLoginCode = () => useChannelMutation('ai.claudeLoginCode', { onSuccess: setAccount })
+export const useClaudeLoginCancel = () => useChannelMutation('ai.claudeLoginCancel', { silent: true })
+export const useClaudeLogout = () => useChannelMutation('ai.claudeLogout', { onSuccess: setAccount })
+
+/** Models on an OpenAI-compatible server; a failure comes back as `error`, not as a thrown error. */
+export const useServerModels = (baseUrl: string | null) =>
+  useQuery({
+    ...channelQuery('ai.listModels', { baseUrl: baseUrl ?? '' }),
+    enabled: baseUrl !== null,
+    staleTime: 30_000,
+    retry: false
+  })
 
 // ------------------------------------------------------------------ jobs & usage
 

@@ -14,7 +14,7 @@ Turn theory-heavy PDFs (lecture slides, notes, textbooks) into an exam plan you 
 - **Cheat sheet:** a printable one-page summary of the core formulas and concepts per topic.
 - **Anki export** of your cards (Basic + Cloze, math included).
 
-Works with your **Claude subscription** through a local Claude Code login, so there are no API costs. You can also use your own Anthropic API key.
+Works with your **Claude subscription** through a local Claude Code login, so there are no API costs. You can also use your own Anthropic API key, or a free model on your own computer (Ollama, LM Studio, llama.cpp) or any OpenAI-compatible service such as DeepSeek. Switch between them from the status bar.
 
 > Status: v0.1, usable. [Project overview](docs/OVERVIEW.md) · [Architecture](docs/ARCHITECTURE.md)
 
@@ -27,7 +27,7 @@ npm run check    # typecheck + lint + format + tests
 npm run smoke    # build and launch once
 ```
 
-To use the Claude subscription provider, install [Claude Code](https://claude.com/claude-code) and log in once (`claude`).
+To use the Claude subscription provider, install [Claude Code](https://claude.com/claude-code), then sign in from Settings → AI connection (or run `claude auth login`).
 
 ## Install
 
@@ -36,7 +36,7 @@ From [Releases](https://github.com/MykolaVaskevych/study-buddy/releases):
 - **Linux**: `.flatpak` (open it with Discover / GNOME Software, or `flatpak install --user study-buddy.flatpak`), AppImage, `.deb`, or `.pacman` (Arch: `sudo pacman -U study-buddy-*.pacman`).
 - **Windows**: `Study Buddy Setup *.exe` (unsigned, so SmartScreen asks once: _More info → Run anyway_).
 
-The default AI provider uses your Claude subscription through an installed, logged-in [Claude Code](https://claude.com/claude-code); check it with `study-buddy --check-ai`. You can switch to an Anthropic API key in Settings instead.
+The default AI provider uses your Claude subscription through an installed, logged-in [Claude Code](https://claude.com/claude-code); check it with `study-buddy --check-ai`. You can switch to an Anthropic API key or a local model in Settings instead. For a local model, install [Ollama](https://ollama.com), run `ollama pull qwen3.6:27b` (fits a 24 GB GPU; `gpt-oss:20b` for less), and start it with `OLLAMA_CONTEXT_LENGTH=32768` so a whole 10-page chunk fits. Local models read the text of each page only, so image-only slides are skipped.
 
 Build packages yourself: `npm run dist:linux` (AppImage + pacman in `release/`).
 

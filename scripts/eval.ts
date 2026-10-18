@@ -15,7 +15,7 @@ import { parseArgs } from 'node:util'
 import type { ProviderId } from '@shared/ai/provider'
 import type { Card, Question } from '@shared/domain'
 import { DEFAULT_SETTINGS } from '@shared/settings'
-import { createProvider, createStudyAi } from '../src/main/ai'
+import { createClaudeAuth, createProvider, createStudyAi } from '../src/main/ai'
 import { openDatabase } from '../src/main/db'
 import { createJobQueue } from '../src/main/jobs'
 import { createPdfLibrary, DEFAULT_CHUNK_OPTIONS } from '../src/main/library'
@@ -33,28 +33,43 @@ const { values, positionals } = parseArgs({
 const pdf = positionals[0]
 if (!pdf) {
   console.error(
-    'usage: npm run eval -- <file.pdf> [--provider claude-code|anthropic-api] [--page N] [--hours H]'
+    'usage: npm run eval -- <file.pdf> [--provider claude-code|anthropic-api|openai-compatible] [--page N] [--hours H]\n' +
+      '  openai-compatible reads OPENAI_BASE_URL (default Ollama) and OPENAI_API_KEY'
   )
   process.exit(2)
 }
 const provider = values.provider as ProviderId
-const apiKey = process.env['ANTHROPIC_API_KEY'] ?? null
+const apiKey =
+  (provider === 'openai-compatible' ? process.env['OPENAI_API_KEY'] : process.env['ANTHROPIC_API_KEY']) ??
+  null
 
 const dir = mkdtempSync(join(tmpdir(), 'sb-eval-'))
 const db = openDatabase(join(dir, 'eval.db'))
-db.settings.update({ provider })
-const ai = createStudyAi(createProvider({ ...DEFAULT_SETTINGS, provider }, { apiKey }))
+db.settings.update({
+  provider,
+  openaiBaseUrl: process.env['OPENAI_BASE_URL'] ?? DEFAULT_SETTINGS.openaiBaseUrl
+})
+const library = createPdfLibrary(
+  { rootDir: join(dir, 'library'), chunk: DEFAULT_CHUNK_OPTIONS },
+  { inWorker: false }
+)
+const settings = {
+  ...DEFAULT_SETTINGS,
+  provider,
+  openaiBaseUrl: process.env['OPENAI_BASE_URL'] ?? DEFAULT_SETTINGS.openaiBaseUrl
+}
+const ai = createStudyAi(createProvider(settings, { apiKey }, { pdfText: (path) => library.pageTexts(path) }))
 const queue = createJobQueue({ repo: db.jobs, concurrency: 3 })
+const noKey = { getApiKey: () => null, setApiKey: () => undefined }
 const pipelines = createPipelines({
   db,
-  library: createPdfLibrary(
-    { rootDir: join(dir, 'library'), chunk: DEFAULT_CHUNK_OPTIONS },
-    { inWorker: false }
-  ),
+  library,
   queue,
   srs: createSrs(),
   aiFor: () => ai,
   secrets: { getApiKey: () => apiKey, setApiKey: () => undefined },
+  openAiSecrets: noKey,
+  connections: { claude: createClaudeAuth({ executable: () => null }), listModels: async () => [] },
   emit: (event, payload) => {
     if (event === 'ai.rateLimited' && payload) console.warn('rate limited:', payload)
   },

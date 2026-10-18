@@ -7,6 +7,12 @@ export {
   createProvider,
   createAnthropicApiProvider,
   createClaudeCodeProvider,
-  createFakeProvider
+  createFakeProvider,
+  createClaudeAuth,
+  createOpenAiCompatibleProvider,
+  findClaudeExecutable,
+  listModels,
+  type ClaudeAuth,
+  type PdfTextFn
 } from './providers'
 export type * from './types'

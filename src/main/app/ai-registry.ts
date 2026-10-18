@@ -13,6 +13,8 @@ import type { SecretStore } from '../pipelines/types'
 export interface AiRegistryDeps {
   getSettings(): Settings
   secrets: Pick<SecretStore, 'getApiKey'>
+  /** Key for the OpenAI-compatible server. */
+  openAiSecrets: Pick<SecretStore, 'getApiKey'>
   createProvider(settings: Settings, secrets: { apiKey: string | null }): LlmProvider
   createStudyAi(provider: LlmProvider): StudyAi
   /** Serve this provider for every lookup, whatever is asked or configured (smoke runs use 'fake'). */
@@ -33,6 +35,8 @@ export function providerFingerprint(provider: ProviderId, settings: Settings): s
       return JSON.stringify([provider, settings.models['claude-code'], settings.claudeCodePath])
     case 'anthropic-api':
       return JSON.stringify([provider, settings.models['anthropic-api']])
+    case 'openai-compatible':
+      return JSON.stringify([provider, settings.models['openai-compatible'], settings.openaiBaseUrl])
     case 'fake':
       return provider
   }
@@ -52,8 +56,13 @@ export function createAiRegistry(deps: AiRegistryDeps): AiRegistry {
     aiFor(requested) {
       const settings = deps.getSettings()
       const provider = deps.forceProvider ?? requested ?? settings.provider
-      // Only the API provider needs the key; skip the keyring otherwise.
-      const apiKey = provider === 'anthropic-api' ? deps.secrets.getApiKey() : null
+      // Only key-based providers read the keyring.
+      const apiKey =
+        provider === 'anthropic-api'
+          ? deps.secrets.getApiKey()
+          : provider === 'openai-compatible'
+            ? deps.openAiSecrets.getApiKey()
+            : null
       const fingerprint = providerFingerprint(provider, settings)
       const hit = cache.get(provider)
       if (hit && hit.fingerprint === fingerprint && hit.apiKey === apiKey) return hit.ai
