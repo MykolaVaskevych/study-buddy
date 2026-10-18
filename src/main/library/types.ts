@@ -26,6 +26,16 @@ export interface ChunkInfo {
   bytes: number
 }
 
+/** One page of a library PDF (usually a chunk) as plain text, for models that cannot read PDFs. */
+export interface ChunkPageText {
+  /** Absolute page number from the page's SB-PAGE stamp; null when the file carries no stamp. */
+  page: number | null
+  /** Text layer with the stamp removed. */
+  text: string
+  /** False for image-only pages: the text says nothing about what is on them. */
+  hasTextLayer: boolean
+}
+
 export interface ImportedPdf {
   sha256: string
   /** Copy of the PDF inside the library directory. */
@@ -71,6 +81,11 @@ export interface PdfLibrary {
    * `index` -1: it is not a position in the grid.
    */
   buildFocusChunk(sha256: string, pageCount: number, from: number, to: number): Promise<ChunkInfo>
+  /**
+   * Text of every page of a PDF in the library (a chunk or focus file), in file order, read in the
+   * worker. Text-only models (local servers) get chunks this way. Cached per file version.
+   */
+  pageTexts(path: string): Promise<ChunkPageText[]>
   /** Absolute path of the stored PDF for a document hash. */
   storedPath(sha256: string): string
   /** Remove stored PDF and chunks. */

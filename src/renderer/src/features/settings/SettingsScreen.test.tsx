@@ -19,7 +19,9 @@ describe('SettingsScreen', () => {
     await user.type(field, KEY)
     await user.click(screen.getByRole('button', { name: 'Save key' }))
 
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('settings.setApiKey', { apiKey: KEY }))
+    await waitFor(() =>
+      expect(invoke).toHaveBeenCalledWith('settings.setApiKey', { apiKey: KEY, provider: 'anthropic-api' })
+    )
     expect(await screen.findByText('Key saved')).toBeTruthy()
     expect(screen.queryByDisplayValue(KEY)).toBeNull()
     expect(container.innerHTML).not.toContain(KEY)
@@ -48,7 +50,8 @@ describe('SettingsScreen', () => {
       expect(invoke).toHaveBeenCalledWith('settings.update', {
         models: {
           'claude-code': { fast: 'haiku', smart: 'sonnet' },
-          'anthropic-api': { fast: 'claude-haiku-5-5', smart: 'claude-opus-5-5' }
+          'anthropic-api': { fast: 'claude-haiku-5-5', smart: 'claude-opus-5-5' },
+          'openai-compatible': { fast: 'qwen3.6:27b', smart: 'qwen3.6:27b' }
         }
       })
     )

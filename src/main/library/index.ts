@@ -1,5 +1,6 @@
 import { rm, stat } from 'node:fs/promises'
 import { basename } from 'node:path'
+import { PAGE_STAMP_PREFIX } from './chunk-plan'
 import { readCompleteChunkGrid } from './chunks'
 import { io } from './errors'
 import { readExtractCache, writeExtractCache } from './extract-cache'
@@ -7,10 +8,12 @@ import { FOCUS_CHUNK_INDEX, writeFocusChunk } from './focus'
 import type { PdfJob } from './job'
 import { assertSha256, chunksDir, documentDir, extractCachePath, focusFilePath, storedPdfPath } from './paths'
 import { storeSourcePdf } from './store'
+import { hasTextLayer } from './text'
 import {
   LibraryError,
   type ChunkInfo,
   type ChunkOptions,
+  type ChunkPageText,
   type ImportedPdf,
   type LibraryConfig,
   type PdfLibrary
@@ -23,6 +26,20 @@ export { hasTextLayer } from './text'
 
 /** 10 pages keeps a chunk well inside one model call; 20 MB leaves headroom under the 32 MB API limit. */
 export const DEFAULT_CHUNK_OPTIONS: ChunkOptions = { pagesPerChunk: 10, maxChunkBytes: 20 * 1024 * 1024 }
+
+/** Page texts kept in memory: a few books' worth of chunks, so retries and follow-ups skip the worker. */
+const PAGE_TEXT_CACHE_SIZE = 64
+
+const STAMP = new RegExp(`\\s*${PAGE_STAMP_PREFIX} (\\d+)\\s*`)
+
+/** Splits the SB-PAGE stamp from a chunk page's text. */
+export function splitStamp(text: string): ChunkPageText {
+  const match = STAMP.exec(text)
+  const rest = match
+    ? `${text.slice(0, match.index)} ${text.slice(match.index + match[0].length)}`.trim()
+    : text
+  return { page: match?.[1] ? Number(match[1]) : null, text: rest, hasTextLayer: hasTextLayer(rest) }
+}
 
 /** Larger files are almost always scans or media dumps that would take minutes and gigabytes to process. */
 export const DEFAULT_MAX_PDF_BYTES = 500 * 1024 * 1024
@@ -49,6 +66,27 @@ export function createPdfLibrary(config: LibraryConfig, runtime: LibraryRuntimeO
   const processing: ProcessOptions = {
     inWorker: runtime.inWorker ?? true,
     timeoutMs: runtime.workerTimeoutMs ?? DEFAULT_WORKER_TIMEOUT_MS
+  }
+
+  const pageTextCache = new Map<string, ChunkPageText[]>()
+
+  async function pageTexts(path: string): Promise<ChunkPageText[]> {
+    const info = await io(`Cannot read ${basename(path)}`, () => stat(path))
+    const key = `${path}|${info.size}|${info.mtimeMs}`
+    const hit = pageTextCache.get(key)
+    if (hit) return hit
+    const result = await processPdf(
+      { pdfPath: path, extract: { fileName: basename(path) }, chunks: null },
+      processing
+    )
+    if (!result.extract) throw new LibraryError('io', 'PDF processing returned no text')
+    const pages = result.extract.pages.map((p) => splitStamp(p.text))
+    if (pageTextCache.size >= PAGE_TEXT_CACHE_SIZE) {
+      const oldest = pageTextCache.keys().next()
+      if (!oldest.done) pageTextCache.delete(oldest.value)
+    }
+    pageTextCache.set(key, pages)
+    return pages
   }
 
   async function removeFiles(sha256: string): Promise<void> {
@@ -142,6 +180,7 @@ export function createPdfLibrary(config: LibraryConfig, runtime: LibraryRuntimeO
     importPdf,
     ensureChunks,
     buildFocusChunk,
+    pageTexts,
     storedPath(sha256) {
       assertSha256(sha256)
       return storedPdfPath(root, sha256)

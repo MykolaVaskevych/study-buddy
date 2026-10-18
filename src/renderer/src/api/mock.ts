@@ -20,6 +20,7 @@ import type {
   SearchHit,
   Topic
 } from '@shared/domain'
+import type { ClaudeAccount } from '@shared/ai/connections'
 import type { PublicSettings } from '@shared/settings'
 import { DEFAULT_SETTINGS } from '@shared/settings'
 import type { ExamPlan, PlanTopic } from '@shared/planner/types'
@@ -127,7 +128,15 @@ export function createMockApi(options: MockOptions = {}): MockApi {
   const plans = new Map<string, ExamPlan>()
   const pdfCache = new Map<string, Promise<Uint8Array>>()
   const timers = new Set<ReturnType<typeof setInterval>>()
-  let settings: PublicSettings = { ...DEFAULT_SETTINGS, hasApiKey: false }
+  let settings: PublicSettings = { ...DEFAULT_SETTINGS, hasApiKey: false, hasOpenAiCompatibleKey: false }
+  let claudeAccount: ClaudeAccount = {
+    installed: true,
+    loggedIn: true,
+    method: 'claude.ai',
+    email: 'student@example.com',
+    plan: 'pro',
+    problem: null
+  }
   let seq = 0
   const annotations: Annotation[] = []
   const profiles = new Map<string, ExamProfile>()
@@ -653,10 +662,32 @@ export function createMockApi(options: MockOptions = {}): MockApi {
       settings = { ...settings, ...patch }
       return settings
     },
-    'settings.setApiKey': ({ apiKey }) => {
-      settings = { ...settings, hasApiKey: apiKey !== null }
+    'settings.setApiKey': ({ apiKey, provider }) => {
+      settings =
+        provider === 'openai-compatible'
+          ? { ...settings, hasOpenAiCompatibleKey: apiKey !== null }
+          : { ...settings, hasApiKey: apiKey !== null }
       return settings
     },
+    'ai.claudeAccount': () => claudeAccount,
+    'ai.claudeLogin': () => ({ url: 'https://claude.com/cai/oauth/authorize?code=true&mock=1' }),
+    'ai.claudeLoginCode': ({ code }) => {
+      if (code.trim() === '') throw new Error('Sign-in failed: no code')
+      claudeAccount = { ...claudeAccount, loggedIn: true, email: 'student@example.com', plan: 'pro' }
+      return claudeAccount
+    },
+    'ai.claudeLoginCancel': () => ({ ok: true }),
+    'ai.claudeLogout': () => {
+      claudeAccount = { ...claudeAccount, loggedIn: false, method: null, email: null, plan: null }
+      return claudeAccount
+    },
+    'ai.listModels': ({ baseUrl }) =>
+      baseUrl.includes('11434')
+        ? { models: ['gpt-oss:20b', 'qwen3.6:27b'], error: null }
+        : {
+            models: [],
+            error: `Cannot reach the server at ${baseUrl} (ECONNREFUSED). Is the server running?`
+          },
     'ai.health': ({ provider }) => {
       const id = provider ?? settings.provider
       if (id === 'anthropic-api' && !settings.hasApiKey) {
@@ -673,7 +704,12 @@ export function createMockApi(options: MockOptions = {}): MockApi {
         provider: id,
         model: id === 'fake' ? 'fake' : settings.models[id].fast,
         latencyMs: id === 'claude-code' ? 1840 : 620,
-        message: id === 'claude-code' ? 'Connected through Claude Code' : 'Connected to the Anthropic API'
+        message:
+          id === 'claude-code'
+            ? 'Connected through Claude Code'
+            : id === 'openai-compatible'
+              ? 'Ollama reachable'
+              : 'Connected to the Anthropic API'
       }
     },
 

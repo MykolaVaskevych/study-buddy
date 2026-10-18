@@ -5,7 +5,7 @@ import { ModelsSection } from './ModelsSection'
 import { UsageSection } from './UsageSection'
 import { AppearanceSection, WorkSection } from './WorkSection'
 
-/** Settings: Claude connection, models, background work, language and theme, usage. Saved as you go. */
+/** Settings: AI connection, models, background work, language and theme, usage. Saved as you go. */
 export function SettingsScreen(): React.JSX.Element {
   const settings = useSettings()
   const s = settings.data

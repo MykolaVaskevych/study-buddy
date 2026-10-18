@@ -1,12 +1,13 @@
 import { useId, useState } from 'react'
+import { presetFor } from '@shared/ai/connections'
 import { DEFAULT_SETTINGS } from '@shared/settings'
 import type { PublicSettings } from '@shared/settings'
-import { useUpdateSettings } from '../../api/hooks'
+import { useServerModels, useUpdateSettings } from '../../api/hooks'
 import { Button, cx } from '../../components'
 import { fieldClass } from '../study/form'
 import { SettingRow, SettingsSection } from './layout'
 
-type Provider = 'claude-code' | 'anthropic-api'
+type Provider = 'claude-code' | 'anthropic-api' | 'openai-compatible'
 type Tier = 'fast' | 'smart'
 
 const TIERS: { tier: Tier; label: string; description: string }[] = [
@@ -70,11 +71,20 @@ function ModelField({
 /** Which model each tier uses, for the provider in use. Presets come from DEFAULT_SETTINGS. */
 export function ModelsSection({ settings }: { settings: PublicSettings }): React.JSX.Element | null {
   const update = useUpdateSettings()
+  const local = settings.provider === 'openai-compatible'
+  // Same query (and cache) as the connection panel: the server's installed models come first.
+  const server = useServerModels(local ? settings.openaiBaseUrl : null)
   if (settings.provider === 'fake') return null
   const provider: Provider = settings.provider
   const current = settings.models[provider]
   const defaults = DEFAULT_SETTINGS.models[provider]
-  const presets = [...new Set([defaults.fast, defaults.smart])]
+  const presets = [
+    ...new Set([
+      ...(local ? [...(server.data?.models ?? []), ...presetFor(settings.openaiBaseUrl).models] : []),
+      defaults.fast,
+      defaults.smart
+    ])
+  ]
   const isDefault = current.fast === defaults.fast && current.smart === defaults.smart
   const save = (tier: Tier, model: string): void =>
     update.mutate({ models: { ...settings.models, [provider]: { ...current, [tier]: model } } })
@@ -85,7 +95,9 @@ export function ModelsSection({ settings }: { settings: PublicSettings }): React
       description={
         provider === 'claude-code'
           ? 'Claude Code accepts short names such as haiku or opus.'
-          : 'Full model ids from the Anthropic API.'
+          : provider === 'openai-compatible'
+            ? 'Model names as the server lists them (for Ollama, e.g. qwen3.6:27b). One model for both is fastest on a single graphics card.'
+            : 'Full model ids from the Anthropic API.'
       }
     >
       {TIERS.map(({ tier, label, description }) => (

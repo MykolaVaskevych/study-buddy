@@ -65,6 +65,9 @@ describe('mock api', () => {
       'settings.update': { theme: 'dark' },
       'settings.setApiKey': { apiKey: null },
       'ai.health': { provider: null },
+      'ai.claudeLogin': { method: 'claudeai' },
+      'ai.claudeLoginCode': { code: 'abc' },
+      'ai.listModels': { baseUrl: 'http://localhost:11434/v1' },
       'jobs.list': { docId: null },
       'jobs.cancel': { jobId: 'none' },
       'cards.exportAnki': { docId: null },
@@ -100,7 +103,15 @@ describe('mock api', () => {
       'lessons.list',
       'exam.getProfile'
     ]
-    const empty = ['app.info', 'library.list', 'settings.get', 'usage.summary']
+    const empty = [
+      'app.info',
+      'library.list',
+      'settings.get',
+      'usage.summary',
+      'ai.claudeAccount',
+      'ai.claudeLoginCancel',
+      'ai.claudeLogout'
+    ]
     for (const channel of contractChannels) {
       if (channel === 'quiz.answer' || channel === 'quiz.finish') continue
       const input =

@@ -7,7 +7,9 @@ import { createAiRegistry, providerFingerprint } from './ai-registry'
 function setup(initial: Partial<Settings> = {}, opts: { forceProvider?: 'fake' } = {}) {
   let settings: Settings = { ...DEFAULT_SETTINGS, ...initial }
   let apiKey: string | null = 'sk-ant-first-key'
+  let openAiKey: string | null = null
   const getApiKey = vi.fn(() => apiKey)
+  const getOpenAiKey = vi.fn(() => openAiKey)
   const createProvider = vi.fn(
     (s: Settings, secrets: { apiKey: string | null }) =>
       ({ id: s.provider, builtWith: { settings: s, apiKey: secrets.apiKey } }) as unknown as LlmProvider
@@ -16,6 +18,7 @@ function setup(initial: Partial<Settings> = {}, opts: { forceProvider?: 'fake' }
   const registry = createAiRegistry({
     getSettings: () => settings,
     secrets: { getApiKey },
+    openAiSecrets: { getApiKey: getOpenAiKey },
     createProvider,
     createStudyAi,
     ...opts
@@ -29,7 +32,11 @@ function setup(initial: Partial<Settings> = {}, opts: { forceProvider?: 'fake' }
     },
     setKey: (key: string | null) => {
       apiKey = key
-    }
+    },
+    setOpenAiKey: (key: string | null) => {
+      openAiKey = key
+    },
+    getOpenAiKey
   }
 }
 
@@ -127,5 +134,26 @@ describe('providerFingerprint', () => {
       'anthropic-api': { fast: 'claude-haiku-5-5', smart: 'claude-sonnet-5' }
     }
     expect(providerFingerprint('anthropic-api', { ...DEFAULT_SETTINGS, models })).not.toBe(base)
+  })
+
+  it('gives the OpenAI-compatible provider its own key and rebuilds on a new URL or key', () => {
+    const { registry, createProvider, update, setOpenAiKey, getApiKey } = setup({
+      provider: 'openai-compatible'
+    })
+    const first = registry.aiFor()
+    expect(createProvider).toHaveBeenLastCalledWith(
+      expect.objectContaining({ provider: 'openai-compatible' }),
+      {
+        apiKey: null
+      }
+    )
+    expect(getApiKey).not.toHaveBeenCalled()
+    expect(registry.aiFor()).toBe(first)
+    update({ openaiBaseUrl: 'http://localhost:1234/v1' })
+    const second = registry.aiFor()
+    expect(second).not.toBe(first)
+    setOpenAiKey('sk-deepseek-key')
+    expect(registry.aiFor()).not.toBe(second)
+    expect(createProvider).toHaveBeenLastCalledWith(expect.anything(), { apiKey: 'sk-deepseek-key' })
   })
 })

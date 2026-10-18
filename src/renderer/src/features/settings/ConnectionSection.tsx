@@ -1,126 +1,12 @@
-import { useId, useState } from 'react'
+import { useId } from 'react'
 import type { PublicSettings } from '@shared/settings'
-import { useCheckAiHealth, useSetApiKey, useUpdateSettings } from '../../api/hooks'
-import { toast } from '../../app/toasts'
-import { Badge, Button, cx, Icon } from '../../components'
-import { fieldClass } from '../study/form'
+import { useCheckAiHealth, useUpdateSettings } from '../../api/hooks'
+import { Button, cx, Icon } from '../../components'
+import { ApiKeyField } from './ApiKeyField'
+import { ClaudeAccountPanel } from './ClaudeAccountPanel'
+import { LocalServerPanel } from './LocalServerPanel'
 import { SettingsSection } from './layout'
-
-type ChoosableProvider = 'claude-code' | 'anthropic-api'
-
-const PROVIDERS: { id: ChoosableProvider; title: string; body: string }[] = [
-  {
-    id: 'claude-code',
-    title: 'Claude subscription (Claude Code)',
-    body: 'Uses your Claude Pro or Max plan through Claude Code on this computer. Nothing is billed per request.'
-  },
-  {
-    id: 'anthropic-api',
-    title: 'Anthropic API key',
-    body: 'Pay per request with your own key from the Anthropic Console. Set a monthly budget below.'
-  }
-]
-
-function ApiKeyField({ hasKey }: { hasKey: boolean }): React.JSX.Element {
-  const setKey = useSetApiKey()
-  const [replacing, setReplacing] = useState(false)
-  const [value, setValue] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const inputId = useId()
-
-  const save = (): void => {
-    const key = value.trim()
-    if (key.length < 10) {
-      setError('That is too short to be an API key. Keys start with "sk-ant-".')
-      return
-    }
-    // Clear the field before sending: the key should not linger in the page.
-    setValue('')
-    setError(null)
-    setKey.mutate(
-      { apiKey: key },
-      {
-        onSuccess: () => {
-          setReplacing(false)
-          toast({
-            tone: 'ok',
-            title: 'API key saved',
-            body: 'It is stored encrypted by your system keychain.'
-          })
-        }
-      }
-    )
-  }
-
-  if (hasKey && !replacing) {
-    return (
-      <div className="flex flex-wrap items-center gap-3">
-        <Badge tone="ok" icon="check">
-          Key saved
-        </Badge>
-        <span className="text-sm text-graphite">Stored encrypted on this computer.</span>
-        <span className="ml-auto flex gap-2">
-          <Button size="sm" onClick={() => setReplacing(true)}>
-            Replace key
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            loading={setKey.isPending}
-            onClick={() =>
-              setKey.mutate(
-                { apiKey: null },
-                { onSuccess: () => toast({ tone: 'ok', title: 'API key removed' }) }
-              )
-            }
-          >
-            Remove key
-          </Button>
-        </span>
-      </div>
-    )
-  }
-
-  return (
-    <form
-      className="flex flex-col gap-2"
-      onSubmit={(e) => {
-        e.preventDefault()
-        save()
-      }}
-    >
-      <label htmlFor={inputId} className="font-semibold">
-        API key
-      </label>
-      <div className="flex flex-wrap gap-2">
-        <input
-          id={inputId}
-          type="password"
-          name="anthropic-api-key"
-          autoComplete="off"
-          spellCheck={false}
-          placeholder="sk-ant-…"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          aria-invalid={error !== null || undefined}
-          aria-describedby={`${inputId}-help`}
-          className={cx(fieldClass, 'min-w-0 flex-1 font-mono text-sm')}
-        />
-        <Button type="submit" variant="primary" loading={setKey.isPending} disabled={value.trim() === ''}>
-          Save key
-        </Button>
-        {replacing ? (
-          <Button variant="ghost" onClick={() => setReplacing(false)}>
-            Cancel
-          </Button>
-        ) : null}
-      </div>
-      <p id={`${inputId}-help`} className={cx('text-sm', error ? 'text-redpen' : 'text-graphite')}>
-        {error ?? 'Stored encrypted by your system keychain and only ever sent to Anthropic.'}
-      </p>
-    </form>
-  )
-}
+import { PROVIDERS } from './providers'
 
 function ConnectionTest({ provider }: { provider: PublicSettings['provider'] }): React.JSX.Element {
   const health = useCheckAiHealth()
@@ -157,15 +43,18 @@ function ConnectionTest({ provider }: { provider: PublicSettings['provider'] }):
   )
 }
 
-/** Which Claude to use, the API key (never shown once saved), and a connection test. */
+/**
+ * Which AI to use: the Claude subscription (with sign-in), an Anthropic API key, or a local /
+ * OpenAI-compatible server. Picking a card switches at once; the status bar switches too.
+ */
 export function ConnectionSection({ settings }: { settings: PublicSettings }): React.JSX.Element {
   const update = useUpdateSettings()
   const name = useId()
   return (
-    <SettingsSection title="Claude connection">
+    <SettingsSection title="AI connection">
       <fieldset className="flex flex-col gap-3">
         <legend className="sr-only">Connect with</legend>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div data-tour="ai-connection" className="grid gap-3 sm:grid-cols-3">
           {PROVIDERS.map((p) => {
             const checked = settings.provider === p.id
             return (
@@ -204,7 +93,9 @@ export function ConnectionSection({ settings }: { settings: PublicSettings }): R
           <p className="text-sm text-graphite">The test provider is active (no real Claude calls).</p>
         ) : null}
       </fieldset>
+      {settings.provider === 'claude-code' ? <ClaudeAccountPanel /> : null}
       {settings.provider === 'anthropic-api' ? <ApiKeyField hasKey={settings.hasApiKey} /> : null}
+      {settings.provider === 'openai-compatible' ? <LocalServerPanel settings={settings} /> : null}
       <ConnectionTest key={settings.provider} provider={settings.provider} />
     </SettingsSection>
   )

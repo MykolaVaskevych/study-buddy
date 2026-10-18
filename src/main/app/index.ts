@@ -14,7 +14,13 @@ export {
   PDF_SCHEME_PRIVILEGES,
   type PdfFiles
 } from './pdf-protocol'
-export { createSecretStore, API_KEY_SECRET, type AppSecretStore, type SecretCrypto } from './secrets'
+export {
+  createSecretStore,
+  API_KEY_SECRET,
+  OPENAI_COMPATIBLE_KEY_SECRET,
+  type AppSecretStore,
+  type SecretCrypto
+} from './secrets'
 export { ensureSingleInstance } from './single-instance'
 export {
   runSmoke,
