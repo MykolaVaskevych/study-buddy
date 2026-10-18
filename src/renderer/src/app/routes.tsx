@@ -53,6 +53,10 @@ export const appRoutes: AppRoute[] = [
     lazy: () => import('../features/planner/PlannerScreen').then((m) => m.PlannerScreen)
   },
   {
+    path: '/book/:docId/overview',
+    lazy: () => import('../features/overview/OverviewScreen').then((m) => m.OverviewScreen)
+  },
+  {
     path: '/book/:docId/sheet',
     lazy: () => import('../features/sheet/CheatSheetScreen').then((m) => m.CheatSheetScreen)
   },

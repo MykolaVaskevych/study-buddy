@@ -1,4 +1,7 @@
 import type {
+  Annotation,
+  AnnotationKind,
+  ResetResult,
   AttemptResult,
   Card,
   CardId,
@@ -259,6 +262,36 @@ export interface SettingsRepo {
   setSecret(name: string, value: Buffer | null): void
 }
 
+export interface AnnotationRepo {
+  list(docId: DocId): Annotation[]
+  /** Creates or replaces the page's bookmark/note (one of each per page). */
+  upsert(input: { docId: DocId; page: number; kind: AnnotationKind; text: string }, now: IsoDate): Annotation
+  remove(docId: DocId, page: number, kind: AnnotationKind): void
+}
+
+export interface ProgressStats {
+  /** Pages read for at least a few seconds. */
+  pagesRead: number
+  secondsRead: number
+  reviews: number
+  quizzesFinished: number
+}
+
+/** Pages and topics a reset applies to; null = the whole book. */
+export interface ProgressScope {
+  topicIds: TopicId[]
+  ranges: { from: number; to: number }[]
+}
+
+export interface ProgressRepo {
+  stats(docId: DocId): ProgressStats
+  /**
+   * Clears the student's progress, keeping everything the AI made: cards go back to new (reviews
+   * deleted), quiz attempts and topic mastery are removed, reading time is cleared.
+   */
+  reset(docId: DocId, scope: ProgressScope | null, now: IsoDate): ResetResult
+}
+
 export interface Database {
   documents: DocumentRepo
   pages: PageRepo
@@ -271,6 +304,8 @@ export interface Database {
   jobs: JobRepo
   usage: UsageRepo
   settings: SettingsRepo
+  annotations: AnnotationRepo
+  progress: ProgressRepo
   transaction<T>(fn: () => T): T
   close(): void
 }

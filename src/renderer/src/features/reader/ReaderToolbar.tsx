@@ -1,3 +1,4 @@
+import { BookmarkButton } from './Bookmarks'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { useUiStore } from '../../app/uiStore'
@@ -123,11 +124,14 @@ export function ReaderToolbar({
         />
       </div>
 
+      <BookmarkButton docId={docId} page={page} />
+
       <span aria-hidden className="mx-1 h-5 w-px bg-rule" />
 
       <nav data-tour="study-tools" aria-label="Study tools" className="flex items-center gap-0.5">
         {(
           [
+            { to: `/book/${docId}/overview`, icon: 'sparkle', label: 'Overview: AI status & progress' },
             { to: `/book/${docId}/quiz`, icon: 'target', label: 'Quiz' },
             { to: `/book/${docId}/plan`, icon: 'planner', label: 'Exam plan' },
             { to: `/book/${docId}/sheet`, icon: 'notes', label: 'Cheat sheet' }

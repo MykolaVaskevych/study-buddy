@@ -70,7 +70,10 @@ describe('mock api', () => {
       'cards.exportAnki': { docId: null },
       'chat.ask': { docId, page: 12, question: 'Why light?', history: [], mode: 'chat' },
       'chat.cancel': { requestId: 'none' },
-      'plan.importPastPaper': { docId, paths: [] }
+      'plan.importPastPaper': { docId, paths: [] },
+      'progress.reset': { docId, topicId: null },
+      'annotations.save': { docId, page: 3, kind: 'bookmark', text: '' },
+      'annotations.delete': { docId, page: 3, kind: 'bookmark' }
     }
     const docChannels = [
       'library.get',
@@ -82,7 +85,10 @@ describe('mock api', () => {
       'plan.get',
       'plan.topics',
       'plan.today',
-      'library.cheatSheet'
+      'library.cheatSheet',
+      'library.overview',
+      'library.prepare',
+      'annotations.list'
     ]
     const empty = ['app.info', 'library.list', 'settings.get', 'usage.summary']
     for (const channel of contractChannels) {

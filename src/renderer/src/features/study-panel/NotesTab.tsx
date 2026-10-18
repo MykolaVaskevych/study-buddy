@@ -1,3 +1,4 @@
+import { MyNote } from './MyNote'
 import { useEffect, useState } from 'react'
 import type { IndexStatus, PageNotes } from '@shared/domain'
 import { usePageNotes, usePrefetchPageNotes, useStartIndex } from '../../api/hooks'
@@ -167,6 +168,7 @@ export function NotesTab({ docId, page, index, onCitation }: StudyTabProps): Rea
           <span className="ml-auto text-sm text-graphite">{kindLabel[data.kind]}</span>
         ) : null}
       </header>
+      <MyNote docId={docId} page={page} />
       {notes.isPending || settled !== page ? (
         <NotesSkeleton />
       ) : notes.isError ? (

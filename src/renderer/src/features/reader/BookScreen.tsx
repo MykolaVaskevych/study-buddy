@@ -1,3 +1,4 @@
+import { BookmarkList, useBookmarkToggle } from './Bookmarks'
 import { useAutoTour } from '../tour/useAutoTour'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useParams, useSearchParams } from 'react-router'
@@ -86,10 +87,12 @@ export function BookScreen(): React.JSX.Element {
   )
   const fit = useCallback(() => setZoom({ mode: 'fit' }), [setZoom])
 
+  const bookmark = useBookmarkToggle(docId, currentPage)
   useReaderKeys((action: ReaderAction) => {
     if (action.type === 'zoom') zoomBy(action.dir)
     else if (action.type === 'fitWidth') fit()
     else if (action.type === 'togglePane') togglePane(action.side)
+    else if (action.type === 'bookmark') bookmark.toggle()
     else if (action.type === 'tab') {
       const tab = studyTabs[action.index]
       if (tab) setStudyTab(tab.id)
@@ -133,7 +136,14 @@ export function BookScreen(): React.JSX.Element {
         {panes.left.open ? (
           <>
             <aside aria-label="Course map" className="shrink-0 bg-paper" style={{ width: panes.left.width }}>
-              {doc && index ? <CourseMap doc={doc} index={index} page={currentPage} onJump={jumpTo} /> : null}
+              <div className="flex h-full flex-col">
+                <BookmarkList docId={docId} page={currentPage} onJump={jumpTo} />
+                <div className="min-h-0 flex-1">
+                  {doc && index ? (
+                    <CourseMap doc={doc} index={index} page={currentPage} onJump={jumpTo} />
+                  ) : null}
+                </div>
+              </div>
             </aside>
             <ResizeHandle side="left" label="Resize course map" />
           </>

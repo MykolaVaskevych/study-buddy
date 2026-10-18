@@ -2,7 +2,7 @@
  * Guided tours, one per screen. Steps point at elements marked with data-tour="…" (or another
  * selector). `optional` steps are skipped when their element is not on screen (e.g. no books yet).
  */
-export type TourId = 'library' | 'book' | 'planner' | 'review' | 'quiz'
+export type TourId = 'library' | 'book' | 'planner' | 'review' | 'quiz' | 'overview'
 
 export interface TourStep {
   /** CSS selector of the element to highlight; omit for a centred card. */
@@ -27,7 +27,7 @@ export const tours: Record<TourId, TourStep[]> = {
     {
       target: '[data-tour="book-card"]',
       title: 'Your books',
-      body: 'Each book shows how much is indexed, your mastery, cards due and the exam countdown. Click a book to open it.',
+      body: 'Each book shows how much the AI has read, your mastery, cards due and the exam countdown. Click a book to open it, or “AI status” to see what is prepared.',
       optional: true
     },
     {
@@ -85,9 +85,31 @@ export const tours: Record<TourId, TourStep[]> = {
       body: 'Ask anything about the book, or press Explain simply / Exam answer / Worked example for this page. Answers cite pages you can click.'
     },
     {
+      target: '[data-tour="bookmark"]',
+      title: 'Bookmarks and your notes',
+      body: 'Press b (or this button) to bookmark a page. Your own notes for a page go at the top of the Notes tab. Both are listed above the course map.'
+    },
+    {
       target: '[data-tour="study-tools"]',
-      title: 'Quiz, plan, cheat sheet',
-      body: 'Topic quizzes and timed mock exams, your exam plan, and a printable one-page cheat sheet.'
+      title: 'Overview, quiz, plan, cheat sheet',
+      body: 'What the AI has prepared (with “Prepare everything” and progress resets), topic quizzes and mock exams, your exam plan, and a printable cheat sheet.'
+    }
+  ],
+  overview: [
+    {
+      target: '[data-tour="ai-status"]',
+      title: 'What the AI has done',
+      body: 'A checklist of everything prepared for this book: pages read, course map, plan, flashcards and quick tests, plus what is running right now.'
+    },
+    {
+      target: '[data-tour="prepare"]',
+      title: 'Prepare everything',
+      body: 'One click: read the whole book, build the course map, then make essentials flashcards for every topic you plan to study. Keep studying while it works.'
+    },
+    {
+      target: '[data-tour="my-progress"]',
+      title: 'Your progress',
+      body: 'Pages read, reviews and quizzes, mastery per topic. Reset a topic or the whole book to start over; the AI-made material stays.'
     }
   ],
   planner: [
@@ -160,6 +182,7 @@ export const tours: Record<TourId, TourStep[]> = {
 export function tourForPath(pathname: string): TourId {
   if (/^\/book\/[^/]+\/plan/.test(pathname)) return 'planner'
   if (/^\/book\/[^/]+\/quiz/.test(pathname)) return 'quiz'
+  if (/^\/book\/[^/]+\/overview/.test(pathname)) return 'overview'
   if (/^\/book\/[^/]+\/?$/.test(pathname)) return 'book'
   if (pathname.startsWith('/review')) return 'review'
   return 'library'

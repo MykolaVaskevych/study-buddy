@@ -50,5 +50,12 @@ export const MIGRATIONS: readonly EmbeddedMigration[] = [
       "CREATE TRIGGER `pages_fts_au` AFTER UPDATE OF `text`, `summary`, `key_points` ON `pages` BEGIN\n\tUPDATE `pages_fts` SET\n\t\t`text` = new.`text`,\n\t\t`summary` = coalesce(new.`summary`, ''),\n\t\t`key_points` = (SELECT coalesce(group_concat(`value`, ' · '), '') FROM json_each(new.`key_points`))\n\tWHERE `rowid` = new.`id`;\nEND;",
       'CREATE TRIGGER `pages_fts_ad` AFTER DELETE ON `pages` BEGIN\n\tDELETE FROM `pages_fts` WHERE `rowid` = old.`id`;\nEND;'
     ]
+  },
+  {
+    tag: '0002_annotations',
+    statements: [
+      "CREATE TABLE `annotations` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`doc_id` text NOT NULL,\n\t`page` integer NOT NULL,\n\t`kind` text NOT NULL,\n\t`text` text DEFAULT '' NOT NULL,\n\t`created_at` text NOT NULL,\n\t`updated_at` text NOT NULL,\n\tFOREIGN KEY (`doc_id`) REFERENCES `documents`(`id`) ON UPDATE no action ON DELETE cascade\n);",
+      'CREATE UNIQUE INDEX `annotations_doc_page_kind` ON `annotations` (`doc_id`,`page`,`kind`);'
+    ]
   }
 ]

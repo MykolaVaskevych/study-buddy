@@ -343,3 +343,48 @@ export interface PastPaperResult {
   /** Exam-weight changes per topic, 0..1. */
   changes: { topicId: TopicId; title: string; before: number; after: number }[]
 }
+
+// ---------------------------------------------------------------- annotations, overview, progress
+
+export type AnnotationKind = 'bookmark' | 'note'
+
+/** The student's own bookmark or note on a page. */
+export interface Annotation {
+  id: string
+  docId: DocId
+  page: number
+  kind: AnnotationKind
+  text: string
+  createdAt: IsoDate
+  updatedAt: IsoDate
+}
+
+/** Where a book stands: what the AI has prepared and what the student has done. */
+export interface BookOverview {
+  docId: DocId
+  title: string
+  pageCount: number
+  index: IndexStatus
+  /** waiting = pages still being read; building = course map job running. */
+  topics: { state: 'waiting' | 'building' | 'ready'; count: number }
+  plan: { saved: boolean; examDate: IsoDate | null; expectedScore: number | null }
+  cards: { total: number; due: number; topicsCovered: number; topicsTotal: number }
+  questions: { total: number; pageChecksReady: number }
+  progress: {
+    pagesRead: number
+    minutesRead: number
+    reviews: number
+    quizzes: number
+    mastery: number | null
+  }
+  /** Background work for this book right now. */
+  jobs: JobInfo[]
+  /** A "Prepare everything" request is still working through its steps. */
+  preparing: boolean
+}
+
+export interface ResetResult {
+  cards: number
+  attempts: number
+  readingPages: number
+}

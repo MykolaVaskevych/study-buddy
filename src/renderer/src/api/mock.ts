@@ -1,3 +1,4 @@
+import type { Annotation } from '@shared/domain'
 import { ipcContract } from '@shared/ipc/contract'
 import type {
   IpcChannel,
@@ -128,6 +129,7 @@ export function createMockApi(options: MockOptions = {}): MockApi {
   const timers = new Set<ReturnType<typeof setInterval>>()
   let settings: PublicSettings = { ...DEFAULT_SETTINGS, hasApiKey: false }
   let seq = 0
+  const annotations: Annotation[] = []
   const nextId = (prefix: string): string => `${prefix}-${++seq}`
 
   const listeners: { [E in IpcEvent]: Set<(payload: IpcEvents[E]) => void> } = {
@@ -567,6 +569,47 @@ export function createMockApi(options: MockOptions = {}): MockApi {
     },
     'chat.cancel': () => ({ ok: true }),
     'plan.importPastPaper': () => ({ questionsMapped: 0, unmapped: 0, changes: [] }),
+    'library.overview': ({ docId }) => {
+      const d = getDoc(docId)
+      const status = indexStatus(d)
+      return {
+        docId,
+        title: d.spec.title,
+        pageCount: d.spec.pageCount,
+        index: status,
+        topics: { state: status.state === 'done' ? 'ready' : 'waiting', count: 8 },
+        plan: {
+          saved: plans.has(docId),
+          examDate: plans.get(docId)?.input.examDate ?? null,
+          expectedScore: plans.get(docId)?.result.expectedScore ?? null
+        },
+        cards: { total: 12, due: 4, topicsCovered: 3, topicsTotal: 8 },
+        questions: { total: 20, pageChecksReady: 5 },
+        progress: { pagesRead: 14, minutesRead: 38, reviews: 9, quizzes: 1, mastery: 0.56 },
+        jobs: [],
+        preparing: false
+      }
+    },
+    'library.prepare': () => ({ queued: 5, message: 'Making essentials flashcards for 5 topics.' }),
+    'progress.reset': () => ({ cards: 12, attempts: 4, readingPages: 14 }),
+    'annotations.list': ({ docId }) => annotations.filter((a) => a.docId === docId),
+    'annotations.save': ({ docId, page, kind, text }) => {
+      const at = now().toISOString()
+      const existing = annotations.find((a) => a.docId === docId && a.page === page && a.kind === kind)
+      if (existing) {
+        existing.text = text
+        existing.updatedAt = at
+        return { ...existing }
+      }
+      const created = { id: nextId('ann'), docId, page, kind, text, createdAt: at, updatedAt: at }
+      annotations.push(created)
+      return { ...created }
+    },
+    'annotations.delete': ({ docId, page, kind }) => {
+      const i = annotations.findIndex((a) => a.docId === docId && a.page === page && a.kind === kind)
+      if (i >= 0) annotations.splice(i, 1)
+      return { ok: true }
+    },
     'settings.get': () => settings,
     'settings.update': (patch) => {
       settings = { ...settings, ...patch }
