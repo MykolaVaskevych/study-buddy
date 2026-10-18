@@ -3,14 +3,14 @@ import { FLATPAK_CLAUDE_WRAPPER, findClaudeExecutable } from './locate'
 
 describe('findClaudeExecutable', () => {
   it('prefers PATH, then well-known install locations', () => {
-    const present = new Set(['/home/u/.local/bin/claude', '/opt/x/claude'])
-    const exists = (p: string): boolean => present.has(p)
-    expect(findClaudeExecutable({ PATH: '/opt/x:/usr/bin' }, exists, '/home/u', 'linux')).toBe(
-      '/opt/x/claude'
-    )
-    expect(findClaudeExecutable({ PATH: '/usr/bin' }, exists, '/home/u', 'linux')).toBe(
-      '/home/u/.local/bin/claude'
-    )
+    // join/delimiter keep the test valid on Windows runners too.
+    const home = join('home', 'u')
+    const local = join(home, '.local', 'bin', 'claude')
+    const opt = join('opt', 'x', 'claude')
+    const exists = (p: string): boolean => p === local || p === opt
+    const path = [join('opt', 'x'), 'usr'].join(delimiter)
+    expect(findClaudeExecutable({ PATH: path }, exists, home, 'linux')).toBe(opt)
+    expect(findClaudeExecutable({ PATH: 'usr' }, exists, home, 'linux')).toBe(local)
   })
 
   it('uses the host wrapper inside the Flatpak sandbox', () => {
