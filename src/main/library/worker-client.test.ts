@@ -27,17 +27,13 @@ describe('locateWorkerEntry', () => {
       paths.includes(p)
 
   it('prefers the bundled sibling, then the parent dir, then the TS source', () => {
-    expect(locateWorkerEntry('/app/out/main', only('/app/out/main/pdf-worker.js'))).toEqual({
-      kind: 'bundled',
-      path: '/app/out/main/pdf-worker.js'
-    })
-    expect(locateWorkerEntry('/app/out/main/chunks', only('/app/out/main/pdf-worker.js'))?.kind).toBe(
-      'bundled'
-    )
-    expect(locateWorkerEntry('/src/lib', only('/src/lib/pdf-worker.ts'))).toEqual({
-      kind: 'source',
-      path: '/src/lib/pdf-worker.ts'
-    })
+    // join keeps the expectations valid on Windows (backslash separators).
+    const main = join('app', 'out', 'main')
+    const bundled = join(main, 'pdf-worker.js')
+    expect(locateWorkerEntry(main, only(bundled))).toEqual({ kind: 'bundled', path: bundled })
+    expect(locateWorkerEntry(join(main, 'chunks'), only(bundled))?.kind).toBe('bundled')
+    const source = join('src', 'lib', 'pdf-worker.ts')
+    expect(locateWorkerEntry(join('src', 'lib'), only(source))).toEqual({ kind: 'source', path: source })
     expect(locateWorkerEntry('/nowhere', only())).toBeNull()
   })
 })

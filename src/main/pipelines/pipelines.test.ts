@@ -63,7 +63,7 @@ describe('token efficiency', () => {
     const pdfs = check?.parts.filter((p) => p.type === 'pdf') ?? []
     expect(pdfs).toHaveLength(1)
     const path = pdfs[0]?.type === 'pdf' ? pdfs[0].path : ''
-    expect(path).toMatch(/\/focus\/1-3\.pdf$/)
+    expect(path).toMatch(/[\\/]focus[\\/]1-3\.pdf$/)
     expect(await stampsOf(path)).toEqual([1, 2, 3])
     expect(check?.focus).toEqual({ from: 2, to: 2 })
     // The blind verification pass re-sends the same small file (prompt-cache friendly).
@@ -79,7 +79,7 @@ describe('token efficiency', () => {
     await t.queue.wait(jobId)
     const cardCall = rec.calls.find((c) => c.task === 'cards')
     const cardPdf = cardCall?.parts.find((p) => p.type === 'pdf')
-    expect(cardPdf?.type === 'pdf' ? cardPdf.path : '').toMatch(/\/focus\/1-6\.pdf$/)
+    expect(cardPdf?.type === 'pdf' ? cardPdf.path : '').toMatch(/[\\/]focus[\\/]1-6\.pdf$/)
   })
 
   it('a continuing page is checked together with the page before it', async () => {
@@ -91,7 +91,7 @@ describe('token efficiency', () => {
     const check = rec.calls.find((c) => c.task === 'page_check')
     expect(check?.focus).toEqual({ from: 2, to: 3 })
     const pdf = check?.parts.find((p) => p.type === 'pdf')
-    expect(pdf?.type === 'pdf' ? pdf.path : '').toMatch(/\/focus\/1-4\.pdf$/)
+    expect(pdf?.type === 'pdf' ? pdf.path : '').toMatch(/[\\/]focus[\\/]1-4\.pdf$/)
   })
 
   it('large scopes are split: the document per topic, ranges into windows that fit', async () => {
