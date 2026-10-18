@@ -57,7 +57,7 @@ export function StatusBar(): React.JSX.Element {
   }, [open])
 
   return (
-    <footer className="flex h-7 shrink-0 items-center gap-4 border-t border-rule bg-paper px-3 text-xs text-graphite">
+    <footer className="flex h-7 max-h-7 shrink-0 items-center gap-4 overflow-visible border-t border-rule bg-paper px-3 text-xs whitespace-nowrap text-graphite">
       <div ref={ref} className="relative flex min-w-0 items-center">
         {first ? (
           <button
@@ -81,7 +81,7 @@ export function StatusBar(): React.JSX.Element {
           <div
             role="dialog"
             aria-label="Background jobs"
-            className="absolute bottom-8 left-0 z-30 w-96 rounded-lg border border-rule bg-sheet px-4 py-2 text-ink shadow-pop"
+            className="absolute bottom-8 left-0 z-30 max-h-[60vh] w-96 overflow-y-auto rounded-lg border border-rule bg-sheet px-4 py-2 whitespace-normal text-ink shadow-pop"
           >
             <ul className="divide-y divide-rule">
               {active.map((j) => (

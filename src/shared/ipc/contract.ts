@@ -1,5 +1,8 @@
 import { z } from 'zod'
 import type {
+  Annotation,
+  BookOverview,
+  ResetResult,
   AttemptResult,
   Card,
   CheatSheet,
@@ -98,6 +101,23 @@ export const ipcContract = {
     })
   ),
   'library.pageNotes': route<PageNotes>()(z.object({ docId: id, page })),
+  /** What the AI has prepared for a book and what the student has done (overview page). */
+  'library.overview': route<BookOverview>()(z.object({ docId: id })),
+  /**
+   * "Prepare everything": read every page, build the course map, then essentials flashcards for
+   * every topic the saved plan does not skip (all topics without a plan). Steps already done are skipped.
+   */
+  'library.prepare': route<{ queued: number; message: string }>()(z.object({ docId: id })),
+  /** Clears the student's progress for a topic (and its subtopics) or the whole book; AI content stays. */
+  'progress.reset': route<ResetResult>()(z.object({ docId: id, topicId: id.nullable() })),
+  'annotations.list': route<Annotation[]>()(z.object({ docId: id })),
+  /** Creates or replaces the page's bookmark or note. */
+  'annotations.save': route<Annotation>()(
+    z.object({ docId: id, page, kind: z.enum(['bookmark', 'note']), text: z.string().max(20_000) })
+  ),
+  'annotations.delete': route<{ ok: true }>()(
+    z.object({ docId: id, page, kind: z.enum(['bookmark', 'note']) })
+  ),
   /** Revision sheet from the index: core concepts and formulas per topic (no AI call). */
   'library.cheatSheet': route<CheatSheet>()(z.object({ docId: id })),
 

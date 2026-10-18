@@ -13,6 +13,8 @@ import { createQuestionRepo } from './repos/questions'
 import { createQuizRepo } from './repos/quizzes'
 import { createReadingRepo } from './repos/reading'
 import { createSettingsRepo } from './repos/settings'
+import { createAnnotationRepo } from './repos/annotations'
+import { createProgressRepo } from './repos/progress'
 import { createTopicRepo } from './repos/topics'
 import { createUsageRepo } from './repos/usage'
 import type { Database, OpenDatabase } from './types'
@@ -70,6 +72,8 @@ export function openDatabase(file: string, options: OpenDatabaseOptions = {}): D
       jobs: createJobRepo(ctx),
       usage: createUsageRepo(ctx),
       settings: createSettingsRepo(ctx),
+      annotations: createAnnotationRepo(ctx),
+      progress: createProgressRepo(ctx),
       transaction: ctx.tx,
       close: () => {
         if (sqlite.open) sqlite.close()

@@ -20,8 +20,8 @@ export function Layout(): React.JSX.Element {
   useShortcuts(shortcuts)
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex min-h-0 flex-1">
+    <div className="flex h-screen max-h-screen flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         <div className="contents print:hidden">
           <NavRail />
         </div>

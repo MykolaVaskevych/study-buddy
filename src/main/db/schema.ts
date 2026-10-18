@@ -347,3 +347,20 @@ export const secrets = sqliteTable('secrets', {
   value: blob('value', { mode: 'buffer' }).notNull(),
   updatedAt: text('updated_at').notNull()
 })
+
+/** The student's own marks on pages: one bookmark and one note per page (text optional for bookmarks). */
+export const annotations = sqliteTable(
+  'annotations',
+  {
+    id: text('id').primaryKey(),
+    docId: text('doc_id')
+      .notNull()
+      .references(() => documents.id, { onDelete: 'cascade' }),
+    page: integer('page').notNull(),
+    kind: text('kind').$type<'bookmark' | 'note'>().notNull(),
+    text: text('text').notNull().default(''),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull()
+  },
+  (t) => [uniqueIndex('annotations_doc_page_kind').on(t.docId, t.page, t.kind)]
+)

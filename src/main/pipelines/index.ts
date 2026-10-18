@@ -13,6 +13,7 @@ import { createQuizzes } from './quizzes'
 import { createChat } from './chat'
 import { createExtras } from './extras'
 import { createPastPapers } from './past-paper'
+import { createOverview } from './overview'
 import { createReading } from './reading'
 import { createSettingsService } from './settings-service'
 import { createTopics } from './topics'
@@ -63,10 +64,15 @@ export function createPipelinesWith(deps: PipelineDeps, options: PipelineOptions
   const ledger = createUsageLedger(deps)
   const material = createMaterial(deps, options)
   const planner = createPlanner(deps)
+  // The overview is created after the services it drives; the topic-map callback reaches it here.
+  const topicsReady: { notify?: (docId: string) => void } = {}
   const topics = createTopics(deps, {
     ledger,
     material,
-    onTopicsReplaced: (docId) => planner.replanIfSaved(docId)
+    onTopicsReplaced: (docId) => {
+      planner.replanIfSaved(docId)
+      topicsReady.notify?.(docId)
+    }
   })
   const indexing = createIndexing(deps, {
     ledger,
@@ -80,6 +86,13 @@ export function createPipelinesWith(deps: PipelineDeps, options: PipelineOptions
   const quizzes = createQuizzes(deps, { ledger, questionGen, pageChecks, planner, waiter })
   const chat = createChat(deps, { ledger, material })
   const pastPapers = createPastPapers(deps, { ledger, material, planner })
+  const overview = createOverview(deps, {
+    indexing,
+    topics,
+    planner,
+    generateCards: cards.handlers['cards.generate']
+  })
+  topicsReady.notify = overview.onTopicsReady
 
   const handlers = guardAll({
     ...createLibraryService(deps, { indexing }).handlers,
@@ -93,7 +106,8 @@ export function createPipelinesWith(deps: PipelineDeps, options: PipelineOptions
     ...createJobsUsage(deps).handlers,
     ...chat.handlers,
     ...pastPapers.handlers,
-    ...createExtras(deps).handlers
+    ...createExtras(deps).handlers,
+    ...overview.handlers
   })
 
   const unsubscribe: (() => void)[] = []

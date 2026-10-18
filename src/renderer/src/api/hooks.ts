@@ -384,3 +384,47 @@ export function downloadText(fileName: string, content: string): void {
   a.click()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
+
+// ------------------------------------------------------------------ overview, progress, annotations
+
+/** Polls quickly while the AI is working on the book, slowly otherwise. */
+export const useOverview = (docId: string) =>
+  useQuery({
+    ...channelQuery('library.overview', { docId }),
+    refetchInterval: (q) =>
+      q.state.data && (q.state.data.preparing || q.state.data.jobs.length > 0) ? 2000 : 15_000
+  })
+
+export const usePrepare = () =>
+  useChannelMutation('library.prepare', {
+    onSuccess: (_data, { docId }, qc) =>
+      invalidate(qc, channelKey('library.overview', { docId }), ...docKeys(docId))
+  })
+
+export const useResetProgress = () =>
+  useChannelMutation('progress.reset', {
+    onSuccess: (_data, { docId }, qc) => {
+      invalidate(
+        qc,
+        channelKey('library.overview', { docId }),
+        channelKey('plan.get', { docId }),
+        channelKey('plan.topics', { docId }),
+        channelKey('topics.list', { docId }),
+        ...docKeys(docId)
+      )
+      invalidateCards(qc)
+    }
+  })
+
+export const useAnnotations = (docId: string) => useQuery(channelQuery('annotations.list', { docId }))
+
+export const useSaveAnnotation = () =>
+  useChannelMutation('annotations.save', {
+    silent: true,
+    onSuccess: (_data, { docId }, qc) => invalidate(qc, channelKey('annotations.list', { docId }))
+  })
+
+export const useDeleteAnnotation = () =>
+  useChannelMutation('annotations.delete', {
+    onSuccess: (_data, { docId }, qc) => invalidate(qc, channelKey('annotations.list', { docId }))
+  })

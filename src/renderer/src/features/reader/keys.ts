@@ -8,6 +8,7 @@ export type ReaderAction =
   | { type: 'fitWidth' }
   | { type: 'togglePane'; side: 'left' | 'right' }
   | { type: 'tab'; index: number }
+  | { type: 'bookmark' }
 
 /**
  * Where the key was pressed. 'editable' = a text field (ignore everything), 'panel' = a side pane
@@ -43,6 +44,8 @@ export function readerKeyAction(e: KeyLike, context: KeyContext): ReaderAction |
       return { type: 'togglePane', side: 'left' }
     case ']':
       return { type: 'togglePane', side: 'right' }
+    case 'b':
+      return { type: 'bookmark' }
   }
   if (/^[1-9]$/.test(e.key)) return { type: 'tab', index: Number(e.key) - 1 }
   return null

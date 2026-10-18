@@ -74,6 +74,13 @@ export function BookCard({ doc, now }: { doc: DocumentSummary; now: Date }): Rea
         </div>
 
         <IndexLine doc={doc} />
+        {/* Above the card-wide title link (z-10), so it stays clickable on its own. */}
+        <Link
+          to={`/book/${encodeURIComponent(doc.id)}/overview`}
+          className="relative z-10 -mt-2 self-start text-sm text-accent hover:underline"
+        >
+          AI status &amp; progress →
+        </Link>
 
         <div className="flex flex-col gap-1.5">
           <p className="text-sm text-graphite">
