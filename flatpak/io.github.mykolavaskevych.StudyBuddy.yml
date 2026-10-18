@@ -25,7 +25,7 @@ modules:
   - name: study-buddy
     buildsystem: simple
     build-commands:
-      - mkdir -p /app/lib && tar -xzf linux-unpacked.tar.gz -C /app/lib && mv /app/lib/linux-unpacked /app/lib/study-buddy
+      - mkdir -p /app/lib && tar --no-same-owner -xzf linux-unpacked.tar.gz -C /app/lib && mv /app/lib/linux-unpacked /app/lib/study-buddy
       - install -Dm755 study-buddy.sh /app/bin/study-buddy
       - install -Dm755 claude-host.sh /app/bin/claude-host
       - install -Dm644 icon-512.png /app/share/icons/hicolor/512x512/apps/io.github.mykolavaskevych.StudyBuddy.png
