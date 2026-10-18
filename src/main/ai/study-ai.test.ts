@@ -50,7 +50,8 @@ function context(notes: IndexedPage[], from = 2, to = 5): GenerationContext {
     pageTo: to,
     notes: notes.filter((n) => n.page >= from && n.page <= to),
     pageText,
-    language: 'auto'
+    language: 'auto',
+    exam: null
   }
 }
 

@@ -370,6 +370,7 @@ export const useImportPastPaper = () =>
     onSuccess: (_data, { docId }, qc) =>
       invalidate(
         qc,
+        channelKey('exam.getProfile', { docId }),
         channelKey('plan.topics', { docId }),
         channelKey('topics.list', { docId }),
         channelKey('plan.get', { docId }),
@@ -438,4 +439,22 @@ export const useLessons = (docId: string) => useQuery(channelQuery('lessons.list
 export const useGenerateLessons = () =>
   useChannelMutation('lessons.generate', {
     onSuccess: (_data, { docId }, qc) => invalidate(qc, channelKey('library.overview', { docId }))
+  })
+
+// ------------------------------------------------------------------ exam profile
+
+export const useExamProfile = (docId: string) => useQuery(channelQuery('exam.getProfile', { docId }))
+
+export const useSaveExamProfile = () =>
+  useChannelMutation('exam.saveProfile', {
+    onSuccess: (_data, { docId }, qc) =>
+      invalidate(qc, channelKey('exam.getProfile', { docId }), channelKey('library.overview', { docId }))
+  })
+
+export const useRebuildCards = () =>
+  useChannelMutation('cards.rebuildForExam', {
+    onSuccess: (_data, { docId }, qc) => {
+      invalidate(qc, channelKey('library.overview', { docId }))
+      invalidateCards(qc)
+    }
   })

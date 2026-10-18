@@ -1,3 +1,4 @@
+import { resolveExamProfile } from './exam-profile'
 import type { BookOverview, DocId, TopicId } from '@shared/domain'
 import type { Indexing } from './indexing'
 import type { Planner } from './planner'
@@ -130,24 +131,37 @@ export function createOverview(
         }
       },
 
-      async 'library.prepare'({ docId }) {
+      async 'library.prepare'({ docId, force }) {
         const doc = requireDoc(db, docId)
+        // Flashcards must fit the exam: ask about it before generating anything (unless told to go on).
+        if (!force && resolveExamProfile(db, docId).source === 'default')
+          return {
+            queued: 0,
+            needsProfile: true,
+            message: 'Tell Study Buddy what your exam looks like first, so the flashcards fit it.'
+          }
         if (doc.index.state !== 'done') {
           pending.add(docId)
           await services.indexing.start(docId)
           return {
             queued: 1,
+            needsProfile: false,
             message: 'Reading the book first. The course map and flashcards follow automatically.'
           }
         }
         if (db.topics.list(docId).length === 0) {
           pending.add(docId)
           services.topics.enqueue(docId, PRIORITY.requested)
-          return { queued: 1, message: 'Building the course map. Flashcards follow automatically.' }
+          return {
+            queued: 1,
+            needsProfile: false,
+            message: 'Building the course map. Flashcards follow automatically.'
+          }
         }
         const queued = await queueCards(docId)
         return {
           queued,
+          needsProfile: false,
           message:
             queued === 0
               ? 'Everything is already prepared.'

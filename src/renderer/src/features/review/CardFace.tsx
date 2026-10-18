@@ -7,7 +7,9 @@ export const cardTypeLabel: Record<CardType, string> = {
   basic: 'Question',
   cloze: 'Fill the gap',
   formula: 'Formula',
-  contrast: 'Compare'
+  contrast: 'Compare',
+  why: 'Why & how',
+  mistake: 'My mistake'
 }
 
 interface CardBodyProps {

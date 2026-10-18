@@ -29,6 +29,13 @@
       "when": 1792317946930,
       "tag": "0003_lessons",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792321015601,
+      "tag": "0004_exam_profiles",
+      "breakpoints": true
     }
   ]
 }

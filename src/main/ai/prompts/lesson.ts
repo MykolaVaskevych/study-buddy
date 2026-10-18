@@ -8,6 +8,7 @@ import {
   languageInstruction
 } from './common'
 import { formatManifest, manifestEntries } from './manifest'
+import { lessonGuidance } from './exam-profile'
 import { formatNotes } from './notes'
 
 /** Study-book chapters: teaching pages written around the lecture slides (smart tier). */
@@ -39,6 +40,7 @@ export function buildLessonUser(
       ? `Learning objectives:\n${topic.objectives.map((o) => `- ${o}`).join('\n')}`
       : '',
     languageInstruction(ctx.language),
+    ctx.exam ? lessonGuidance(ctx.exam) : '',
     formatManifest(manifestEntries(ctx.pageFrom, ctx.pageTo, ctx.pageText, 0)),
     formatNotes(ctx.notes)
   ]

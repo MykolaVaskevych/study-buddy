@@ -12,13 +12,13 @@ describe('overview, prepare, reset, annotations', () => {
     expect(before.topics.state).toBe('ready')
     expect(before.cards.total).toBe(0)
 
-    const res = await harness.h['library.prepare']({ docId })
+    const res = await harness.h['library.prepare']({ docId, force: true })
     expect(res.queued).toBeGreaterThan(0)
     await harness.waitIdle()
     const after = await harness.h['library.overview']({ docId })
     expect(after.cards.topicsCovered).toBe(after.cards.topicsTotal)
     expect(after.preparing).toBe(false)
-    expect((await harness.h['library.prepare']({ docId })).queued).toBe(0)
+    expect((await harness.h['library.prepare']({ docId, force: true })).queued).toBe(0)
   })
 
   it('prepare on an unread book reads it, builds the map, then makes cards', async () => {
@@ -26,7 +26,7 @@ describe('overview, prepare, reset, annotations', () => {
     const [doc] = await harness.h['library.import']({ paths: [harness.fixture] })
     await harness.h['index.pause']({ docId: doc!.id })
     await harness.waitIdle()
-    await harness.h['library.prepare']({ docId: doc!.id })
+    await harness.h['library.prepare']({ docId: doc!.id, force: true })
     await harness.waitIdle()
     // The topic-map callback continues the request into card generation.
     await vi.waitFor(async () => {

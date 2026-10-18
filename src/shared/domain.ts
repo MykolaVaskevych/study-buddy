@@ -152,7 +152,8 @@ export type Scope =
 
 // ---------------------------------------------------------------- flashcards
 
-export type CardType = 'basic' | 'cloze' | 'formula' | 'contrast'
+/** basic/cloze = concepts, why = reasoning (cause, effect, trade-offs), mistake = from a wrong answer. */
+export type CardType = 'basic' | 'cloze' | 'formula' | 'contrast' | 'why' | 'mistake'
 export type Verification = 'verified' | 'unverified' | 'not_applicable'
 export type ItemStatus = 'active' | 'suspended' | 'reported'
 
@@ -346,6 +347,8 @@ export interface CheatSheet {
 export interface PastPaperResult {
   questionsMapped: number
   unmapped: number
+  /** The exam profile learnt from the paper (format mix, formula use, style, examples); null if nothing mapped. */
+  profile: ExamProfile | null
   /** Exam-weight changes per topic, 0..1. */
   changes: { topicId: TopicId; title: string; before: number; after: number }[]
 }
@@ -417,4 +420,26 @@ export interface Lesson {
   sections: LessonSection[]
   exercises: LessonExercise[]
   createdAt: IsoDate
+}
+
+// ---------------------------------------------------------------- exam profile
+
+/** How the exam uses formulas: not at all, knowing what they mean, or calculating with them. */
+export type FormulaUse = 'none' | 'recognise' | 'apply'
+
+/** What the exam looks like; every generator (cards, questions, study book) follows it. */
+export interface ExamProfile {
+  docId: DocId
+  /** Share of marks by question format, 0..1, summing to 1. */
+  formats: { mcq: number; written: number; numeric: number }
+  formulas: FormulaUse
+  /** A formula sheet is provided in the exam: understand formulas, don't memorise them. */
+  formulaSheet: boolean
+  /** Short description of the exam's style (from a past paper), used in prompts. */
+  style: string
+  /** A few real past exam questions to imitate. */
+  examples: string[]
+  /** default = nothing known yet; user = set by the student; past_paper = learnt from a paper. */
+  source: 'default' | 'user' | 'past_paper'
+  updatedAt: IsoDate | null
 }

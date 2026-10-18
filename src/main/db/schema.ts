@@ -381,3 +381,19 @@ export const lessons = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.docId, t.topicId] })]
 )
+
+/** What each book's exam looks like (one row per document); see ExamProfile. */
+export const examProfiles = sqliteTable('exam_profiles', {
+  docId: text('doc_id')
+    .primaryKey()
+    .references(() => documents.id, { onDelete: 'cascade' }),
+  profile: json<{
+    formats: { mcq: number; written: number; numeric: number }
+    formulas: 'none' | 'recognise' | 'apply'
+    formulaSheet: boolean
+    style: string
+    examples: string[]
+    source: 'user' | 'past_paper'
+  }>('profile').notNull(),
+  updatedAt: text('updated_at').notNull()
+})

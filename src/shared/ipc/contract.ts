@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type {
+  ExamProfile,
   Lesson,
   Annotation,
   BookOverview,
@@ -108,9 +109,26 @@ export const ipcContract = {
    * "Prepare everything": read every page, build the course map, then essentials flashcards for
    * every topic the saved plan does not skip (all topics without a plan). Steps already done are skipped.
    */
-  'library.prepare': route<{ queued: number; message: string }>()(z.object({ docId: id })),
+  'library.prepare': route<{ queued: number; message: string; needsProfile: boolean }>()(
+    z.object({ docId: id, force: z.boolean().optional() })
+  ),
   /** Clears the student's progress for a topic (and its subtopics) or the whole book; AI content stays. */
   'progress.reset': route<ResetResult>()(z.object({ docId: id, topicId: id.nullable() })),
+  /** What the book's exam looks like (stored, else derived from the plan's exam format). */
+  'exam.getProfile': route<ExamProfile>()(z.object({ docId: id })),
+  'exam.saveProfile': route<ExamProfile>()(
+    z.object({
+      docId: id,
+      formats: z.object({ mcq: z.number().min(0), written: z.number().min(0), numeric: z.number().min(0) }),
+      formulas: z.enum(['none', 'recognise', 'apply']),
+      formulaSheet: z.boolean()
+    })
+  ),
+  /**
+   * Re-fits the flashcards to the exam profile: suspends cards that do not fit (e.g. formula cards
+   * for an exam without formulas) and writes new essentials decks per topic.
+   */
+  'cards.rebuildForExam': route<{ suspended: number; queued: number }>()(z.object({ docId: id })),
   /** Study-book chapters written so far. */
   'lessons.list': route<Lesson[]>()(z.object({ docId: id })),
   /** Writes (or rewrites) the chapter for a topic, or for every leaf topic without one (topicId null). */

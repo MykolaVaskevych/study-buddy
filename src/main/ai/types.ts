@@ -1,4 +1,5 @@
 import type {
+  ExamProfile,
   CardType,
   ChatMode,
   ChatTurn,
@@ -103,6 +104,8 @@ export interface GenerationContext {
   pageText: PageTextLookup
   /** 'auto' or a language code/name for generated text. */
   language: string
+  /** What the exam looks like; generation follows it (card mix, question types, style). */
+  exam: ExamProfile | null
   signal?: AbortSignal
 }
 
@@ -176,13 +179,13 @@ export interface StudyAi {
   /** Streamed tutor answer grounded in the given pages, citing them as [p. N]. Ends with one 'done' event. */
   chat(input: ChatInput): AsyncIterable<ChatEvent>
 
-  /** Maps a past exam paper's questions (with marks) to course topics by key. */
+  /** Maps a past exam paper's questions (with marks) to course topics by key, and reads its style. */
   mapPastPaper(input: {
     topics: { key: string; title: string; pageStart: number; pageEnd: number }[]
     paper: ChunkInfo[]
     language: string
     signal?: AbortSignal
-  }): Promise<WithUsage<{ summary: string; marks: number; topicKey: string | null }[]>>
+  }): Promise<WithUsage<PastPaperAnalysis>>
 }
 
 /** A page given to chat as context: its text layer plus what the index knows about it. */
@@ -206,3 +209,16 @@ export interface ChatInput {
 }
 
 export type ChatEvent = { type: 'text'; text: string } | { type: 'done'; usage: UsageRecord }
+
+export interface PastPaperAnalysis {
+  questions: {
+    summary: string
+    marks: number
+    topicKey: string | null
+    format: 'mcq' | 'written' | 'numeric'
+    usesFormula: boolean
+  }[]
+  style: string
+  formulaSheet: boolean | null
+  examples: string[]
+}

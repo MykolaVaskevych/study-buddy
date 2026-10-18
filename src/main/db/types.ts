@@ -1,4 +1,5 @@
 import type {
+  ExamProfile,
   Lesson,
   Annotation,
   AnnotationKind,
@@ -300,6 +301,12 @@ export interface LessonRepo {
   save(lesson: Omit<Lesson, 'createdAt'>, now: IsoDate): Lesson
 }
 
+export interface ExamProfileRepo {
+  /** The stored profile, or null when nothing is known yet (callers derive a default). */
+  get(docId: DocId): ExamProfile | null
+  save(profile: ExamProfile, now: IsoDate): ExamProfile
+}
+
 export interface Database {
   documents: DocumentRepo
   pages: PageRepo
@@ -315,6 +322,7 @@ export interface Database {
   annotations: AnnotationRepo
   progress: ProgressRepo
   lessons: LessonRepo
+  examProfiles: ExamProfileRepo
   transaction<T>(fn: () => T): T
   close(): void
 }

@@ -2,6 +2,7 @@ import type { QuestionType } from '@shared/domain'
 import type { GenerationContext } from '../types'
 import { FOCUS_PAGES_KEY, formatRange, headerLines, languageInstruction } from './common'
 import { formatManifest, manifestEntries } from './manifest'
+import { questionGuidance, questionTypesFor } from './exam-profile'
 import { formatNotes } from './notes'
 import { STUDY_SYSTEM } from './study'
 
@@ -49,7 +50,13 @@ export function buildQuestionsUser(
     existingStems: readonly string[]
   }
 ): string {
-  const types = opts.types === null || opts.types.length === 0 ? ALL_QUESTION_TYPES : opts.types
+  // Without explicit types, the exam profile decides (an MCQ-only exam gets no numeric questions).
+  const types =
+    opts.types !== null && opts.types.length > 0
+      ? opts.types
+      : ctx.exam
+        ? questionTypesFor(ctx.exam)
+        : ALL_QUESTION_TYPES
   const existing = opts.existingStems.slice(0, MAX_LISTED_EXISTING)
   return [
     headerLines({
@@ -63,6 +70,7 @@ export function buildQuestionsUser(
     PURPOSE[opts.purpose],
     languageInstruction(ctx.language),
     RULES,
+    ...(ctx.exam ? [`Exam profile:\n${questionGuidance(ctx.exam)}`] : []),
     formatManifest(manifestEntries(ctx.pageFrom, ctx.pageTo, ctx.pageText, 0)),
     formatNotes(ctx.notes),
     existing.length > 0
