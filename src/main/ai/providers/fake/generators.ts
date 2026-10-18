@@ -1,4 +1,5 @@
 import type {
+  LessonOutput,
   CardsOutput,
   GradeOutput,
   IndexChunkOutput,
@@ -322,5 +323,24 @@ export function fakeGrade(text: string): GradeOutput {
     verdict: score >= 0.8 ? 'correct' : score <= 0.2 ? 'incorrect' : 'partial',
     feedback: `Matched ${hit} of ${expected.size} key words of the model answer.`,
     missing_points: missing
+  }
+}
+
+/** A short chapter built from the focus pages' notes, with page citations. */
+export function fakeLesson(text: string): LessonOutput {
+  const pages = sourcePages(text)
+  const cite = (p: NotePage): string => `[p. ${p.page}]`
+  return {
+    sections: [
+      {
+        title: 'The idea',
+        markdown: pages.map((p) => `${p.summary} ${cite(p)}`).join('\n\n') || 'Offline fake chapter.'
+      },
+      {
+        title: 'In one minute',
+        markdown: pages.map((p) => `- ${p.term} ${cite(p)}`).join('\n') || '- Offline'
+      }
+    ],
+    exercises: pages.slice(0, 2).map((p) => ({ question: `Explain ${p.term}.`, answer: p.summary }))
   }
 }

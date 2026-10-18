@@ -132,6 +132,7 @@ export function ReaderToolbar({
         {(
           [
             { to: `/book/${docId}/overview`, icon: 'sparkle', label: 'Overview: AI status & progress' },
+            { to: `/book/${docId}/studybook`, icon: 'book', label: 'Study book' },
             { to: `/book/${docId}/quiz`, icon: 'target', label: 'Quiz' },
             { to: `/book/${docId}/plan`, icon: 'planner', label: 'Exam plan' },
             { to: `/book/${docId}/sheet`, icon: 'notes', label: 'Cheat sheet' }

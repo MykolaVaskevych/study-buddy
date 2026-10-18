@@ -2,6 +2,8 @@ import type {
   CardType,
   ChatMode,
   ChatTurn,
+  LessonExercise,
+  LessonSection,
   Concept,
   ExamSignal,
   Exercise,
@@ -164,6 +166,12 @@ export interface StudyAi {
       missingPoints: string[]
     }>
   >
+
+  /** A study-book chapter for one topic, written from its pages (sections + exercises). */
+  writeLesson(
+    ctx: GenerationContext,
+    topic: { title: string; objectives: string[] }
+  ): Promise<WithUsage<{ sections: LessonSection[]; exercises: LessonExercise[] }>>
 
   /** Streamed tutor answer grounded in the given pages, citing them as [p. N]. Ends with one 'done' event. */
   chat(input: ChatInput): AsyncIterable<ChatEvent>

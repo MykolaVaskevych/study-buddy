@@ -1,4 +1,4 @@
-import type { Annotation } from '@shared/domain'
+import type { Annotation, Lesson } from '@shared/domain'
 import { ipcContract } from '@shared/ipc/contract'
 import type {
   IpcChannel,
@@ -585,6 +585,7 @@ export function createMockApi(options: MockOptions = {}): MockApi {
         },
         cards: { total: 12, due: 4, topicsCovered: 3, topicsTotal: 8 },
         questions: { total: 20, pageChecksReady: 5 },
+        studyBook: { written: 2, topicsTotal: 8 },
         progress: { pagesRead: 14, minutesRead: 38, reviews: 9, quizzes: 1, mastery: 0.56 },
         jobs: [],
         preparing: false
@@ -592,6 +593,12 @@ export function createMockApi(options: MockOptions = {}): MockApi {
     },
     'library.prepare': () => ({ queued: 5, message: 'Making essentials flashcards for 5 topics.' }),
     'progress.reset': () => ({ cards: 12, attempts: 4, readingPages: 14 }),
+    'lessons.list': ({ docId }) => {
+      const all = topicsOf(getDoc(docId))
+      const leaf = all.find((t) => !all.some((c) => c.parentId === t.id))
+      return leaf ? [mockLesson(docId, leaf.id)] : []
+    },
+    'lessons.generate': ({ topicId }) => ({ queued: topicId === null ? 6 : 1 }),
     'annotations.list': ({ docId }) => annotations.filter((a) => a.docId === docId),
     'annotations.save': ({ docId, page, kind, text }) => {
       const at = now().toISOString()
@@ -728,3 +735,17 @@ export function createMockApi(options: MockOptions = {}): MockApi {
 
 /** Every channel in the contract, for the completeness test. */
 export const contractChannels = Object.keys(ipcContract) as IpcChannel[]
+
+/** A short study-book chapter for browser mode and tests. */
+function mockLesson(docId: string, topicId: string): Lesson {
+  return {
+    docId,
+    topicId,
+    sections: [
+      { title: 'The idea', markdown: 'Received power is launch power minus every loss in dB [p. 12].' },
+      { title: 'Every formula', markdown: '$$P_{rx} = P_{tx} - \\alpha L$$' }
+    ],
+    exercises: [{ question: 'A 50 km link at 0.2 dB/km: fibre loss?', answer: '$0.2 \\times 50 = 10$ dB' }],
+    createdAt: '2026-10-18T09:00:00.000Z'
+  }
+}

@@ -5,7 +5,7 @@ import { cleanup } from '@testing-library/react'
 // (Tour tests opt back in via useTour.setState.)
 localStorage.setItem(
   'sb.tours.seen',
-  JSON.stringify(['library', 'book', 'planner', 'review', 'quiz', 'overview'])
+  JSON.stringify(['library', 'book', 'planner', 'review', 'quiz', 'overview', 'studybook'])
 )
 
 afterEach(() => {

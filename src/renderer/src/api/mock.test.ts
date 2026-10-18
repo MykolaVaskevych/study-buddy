@@ -73,7 +73,8 @@ describe('mock api', () => {
       'plan.importPastPaper': { docId, paths: [] },
       'progress.reset': { docId, topicId: null },
       'annotations.save': { docId, page: 3, kind: 'bookmark', text: '' },
-      'annotations.delete': { docId, page: 3, kind: 'bookmark' }
+      'annotations.delete': { docId, page: 3, kind: 'bookmark' },
+      'lessons.generate': { docId, topicId: null }
     }
     const docChannels = [
       'library.get',
@@ -88,7 +89,8 @@ describe('mock api', () => {
       'library.cheatSheet',
       'library.overview',
       'library.prepare',
-      'annotations.list'
+      'annotations.list',
+      'lessons.list'
     ]
     const empty = ['app.info', 'library.list', 'settings.get', 'usage.summary']
     for (const channel of contractChannels) {

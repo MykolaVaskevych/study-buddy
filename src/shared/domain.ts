@@ -278,7 +278,13 @@ export interface QuizResult {
 // ---------------------------------------------------------------- jobs & usage
 
 export type JobKind =
-  'index_chunk' | 'topic_map' | 'generate_cards' | 'generate_questions' | 'page_check' | 'verify_questions'
+  | 'index_chunk'
+  | 'topic_map'
+  | 'generate_cards'
+  | 'generate_questions'
+  | 'page_check'
+  | 'verify_questions'
+  | 'write_lesson'
 
 export type JobState = 'queued' | 'running' | 'paused' | 'done' | 'failed' | 'cancelled'
 
@@ -370,6 +376,8 @@ export interface BookOverview {
   plan: { saved: boolean; examDate: IsoDate | null; expectedScore: number | null }
   cards: { total: number; due: number; topicsCovered: number; topicsTotal: number }
   questions: { total: number; pageChecksReady: number }
+  /** Study-book chapters written, out of leaf topics. */
+  studyBook: { written: number; topicsTotal: number }
   progress: {
     pagesRead: number
     minutesRead: number
@@ -387,4 +395,26 @@ export interface ResetResult {
   cards: number
   attempts: number
   readingPages: number
+}
+
+// ---------------------------------------------------------------- study book
+
+export interface LessonSection {
+  title: string
+  /** Markdown with $LaTeX$ and [p. N] citations. */
+  markdown: string
+}
+
+export interface LessonExercise {
+  question: string
+  answer: string
+}
+
+/** A study-book chapter the AI wrote for one topic: explanations, worked examples, traps, exercises. */
+export interface Lesson {
+  docId: DocId
+  topicId: TopicId
+  sections: LessonSection[]
+  exercises: LessonExercise[]
+  createdAt: IsoDate
 }

@@ -23,6 +23,9 @@ export type IndexChunkPayload = z.infer<typeof indexChunkPayload>
 export const topicMapPayload = z.strictObject({ docId: id })
 export type TopicMapPayload = z.infer<typeof topicMapPayload>
 
+export const writeLessonPayload = z.strictObject({ docId: id, topicId: id })
+export type WriteLessonPayload = z.infer<typeof writeLessonPayload>
+
 export const generateCardsPayload = z.strictObject({
   scope: scopeSchema,
   essentialsOnly: z.boolean(),

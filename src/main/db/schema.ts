@@ -364,3 +364,20 @@ export const annotations = sqliteTable(
   },
   (t) => [uniqueIndex('annotations_doc_page_kind').on(t.docId, t.page, t.kind)]
 )
+
+/** Study-book chapters the AI wrote, one per topic (rewritten in place when regenerated). */
+export const lessons = sqliteTable(
+  'lessons',
+  {
+    docId: text('doc_id')
+      .notNull()
+      .references(() => documents.id, { onDelete: 'cascade' }),
+    topicId: text('topic_id')
+      .notNull()
+      .references(() => topics.id, { onDelete: 'cascade' }),
+    sections: json<{ title: string; markdown: string }[]>('sections').notNull(),
+    exercises: json<{ question: string; answer: string }[]>('exercises').notNull(),
+    createdAt: text('created_at').notNull()
+  },
+  (t) => [primaryKey({ columns: [t.docId, t.topicId] })]
+)

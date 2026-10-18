@@ -2,7 +2,7 @@
  * Guided tours, one per screen. Steps point at elements marked with data-tour="…" (or another
  * selector). `optional` steps are skipped when their element is not on screen (e.g. no books yet).
  */
-export type TourId = 'library' | 'book' | 'planner' | 'review' | 'quiz' | 'overview'
+export type TourId = 'library' | 'book' | 'planner' | 'review' | 'quiz' | 'overview' | 'studybook'
 
 export interface TourStep {
   /** CSS selector of the element to highlight; omit for a centred card. */
@@ -91,8 +91,21 @@ export const tours: Record<TourId, TourStep[]> = {
     },
     {
       target: '[data-tour="study-tools"]',
-      title: 'Overview, quiz, plan, cheat sheet',
-      body: 'What the AI has prepared (with “Prepare everything” and progress resets), topic quizzes and mock exams, your exam plan, and a printable cheat sheet.'
+      title: 'Overview, study book, quiz, plan, cheat sheet',
+      body: 'What the AI has prepared (with “Prepare everything” and progress resets), an AI-written study book, topic quizzes and mock exams, your exam plan, and a printable cheat sheet.'
+    }
+  ],
+  studybook: [
+    {
+      target: '[data-tour="studybook-toc"]',
+      title: 'Your study book',
+      body: 'One chapter per topic, written from your slides: the idea in plain words, every formula with its symbols, a worked example, exam traps and Try-it exercises. Citations jump to the slide.',
+      optional: true
+    },
+    {
+      target: '[data-tour="write-all"]',
+      title: 'Write it',
+      body: 'Write all missing chapters (one AI request each), or one at a time with the button under each topic. Print / PDF gives you a paper copy.'
     }
   ],
   overview: [
@@ -183,6 +196,7 @@ export function tourForPath(pathname: string): TourId {
   if (/^\/book\/[^/]+\/plan/.test(pathname)) return 'planner'
   if (/^\/book\/[^/]+\/quiz/.test(pathname)) return 'quiz'
   if (/^\/book\/[^/]+\/overview/.test(pathname)) return 'overview'
+  if (/^\/book\/[^/]+\/studybook/.test(pathname)) return 'studybook'
   if (/^\/book\/[^/]+\/?$/.test(pathname)) return 'book'
   if (pathname.startsWith('/review')) return 'review'
   return 'library'

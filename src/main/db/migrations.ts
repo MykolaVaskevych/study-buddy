@@ -57,5 +57,11 @@ export const MIGRATIONS: readonly EmbeddedMigration[] = [
       "CREATE TABLE `annotations` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`doc_id` text NOT NULL,\n\t`page` integer NOT NULL,\n\t`kind` text NOT NULL,\n\t`text` text DEFAULT '' NOT NULL,\n\t`created_at` text NOT NULL,\n\t`updated_at` text NOT NULL,\n\tFOREIGN KEY (`doc_id`) REFERENCES `documents`(`id`) ON UPDATE no action ON DELETE cascade\n);",
       'CREATE UNIQUE INDEX `annotations_doc_page_kind` ON `annotations` (`doc_id`,`page`,`kind`);'
     ]
+  },
+  {
+    tag: '0003_lessons',
+    statements: [
+      'CREATE TABLE `lessons` (\n\t`doc_id` text NOT NULL,\n\t`topic_id` text NOT NULL,\n\t`sections` text NOT NULL,\n\t`exercises` text NOT NULL,\n\t`created_at` text NOT NULL,\n\tPRIMARY KEY(`doc_id`, `topic_id`),\n\tFOREIGN KEY (`doc_id`) REFERENCES `documents`(`id`) ON UPDATE no action ON DELETE cascade,\n\tFOREIGN KEY (`topic_id`) REFERENCES `topics`(`id`) ON UPDATE no action ON DELETE cascade\n);'
+    ]
   }
 ]

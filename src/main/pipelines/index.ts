@@ -13,6 +13,7 @@ import { createQuizzes } from './quizzes'
 import { createChat } from './chat'
 import { createExtras } from './extras'
 import { createPastPapers } from './past-paper'
+import { createLessons } from './lessons'
 import { createOverview } from './overview'
 import { createReading } from './reading'
 import { createSettingsService } from './settings-service'
@@ -85,6 +86,7 @@ export function createPipelinesWith(deps: PipelineDeps, options: PipelineOptions
   const cards = createCards(deps, { ledger, material })
   const quizzes = createQuizzes(deps, { ledger, questionGen, pageChecks, planner, waiter })
   const chat = createChat(deps, { ledger, material })
+  const lessons = createLessons(deps, { ledger, material })
   const pastPapers = createPastPapers(deps, { ledger, material, planner })
   const overview = createOverview(deps, {
     indexing,
@@ -105,6 +107,7 @@ export function createPipelinesWith(deps: PipelineDeps, options: PipelineOptions
     ...createSettingsService(deps).handlers,
     ...createJobsUsage(deps).handlers,
     ...chat.handlers,
+    ...lessons.handlers,
     ...pastPapers.handlers,
     ...createExtras(deps).handlers,
     ...overview.handlers
@@ -124,6 +127,7 @@ export function createPipelinesWith(deps: PipelineDeps, options: PipelineOptions
       queue.register('generate_cards', cards.runJob)
       queue.register('generate_questions', questionGen.runGenerate)
       queue.register('page_check', questionGen.runPageCheck)
+      queue.register('write_lesson', lessons.runJob)
       unsubscribe.push(
         queue.onChange((job) => {
           deps.emit('jobs.changed', job)
