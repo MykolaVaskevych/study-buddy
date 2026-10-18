@@ -2,6 +2,9 @@ import { existsSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { delimiter, join } from 'node:path'
 
+/** Installed by the Flatpak manifest. */
+export const FLATPAK_CLAUDE_WRAPPER = '/app/bin/claude-host'
+
 /**
  * Finds the user's installed Claude Code executable. The subscription provider needs a logged-in
  * Claude Code anyway, and the packaged app does not ship the SDK's 270 MB bundled binary.
@@ -14,6 +17,9 @@ export function findClaudeExecutable(
   home: string = homedir(),
   platform: NodeJS.Platform = process.platform
 ): string | null {
+  // Inside the Flatpak sandbox the user's Claude Code lives on the host; the bundle ships a
+  // wrapper that runs it there via flatpak-spawn --host (see flatpak/claude-host.sh).
+  if (env['FLATPAK_ID'] && exists(FLATPAK_CLAUDE_WRAPPER)) return FLATPAK_CLAUDE_WRAPPER
   const names = platform === 'win32' ? ['claude.exe', 'claude.cmd'] : ['claude']
   const dirs = [
     ...(env['PATH'] ?? '').split(delimiter).filter(Boolean),

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Study Buddy
+GenericName=Exam preparation
+Comment=Turn lecture PDFs into notes, quick tests, flashcards and an exam plan
+Exec=study-buddy %F
+Icon=io.github.mykolavaskevych.StudyBuddy
+Terminal=false
+Categories=Education;
+Keywords=study;exam;pdf;flashcards;quiz;spaced repetition;
+MimeType=application/pdf;
+StartupWMClass=study-buddy

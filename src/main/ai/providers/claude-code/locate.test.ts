@@ -1,4 +1,5 @@
-import { findClaudeExecutable } from './locate'
+import { delimiter, join } from 'node:path'
+import { FLATPAK_CLAUDE_WRAPPER, findClaudeExecutable } from './locate'
 
 describe('findClaudeExecutable', () => {
   it('prefers PATH, then well-known install locations', () => {
@@ -9,6 +10,13 @@ describe('findClaudeExecutable', () => {
     )
     expect(findClaudeExecutable({ PATH: '/usr/bin' }, exists, '/home/u', 'linux')).toBe(
       '/home/u/.local/bin/claude'
+    )
+  })
+
+  it('uses the host wrapper inside the Flatpak sandbox', () => {
+    const exists = (p: string): boolean => p === FLATPAK_CLAUDE_WRAPPER
+    expect(findClaudeExecutable({ FLATPAK_ID: 'io.github.x', PATH: '' }, exists, 'h', 'linux')).toBe(
+      FLATPAK_CLAUDE_WRAPPER
     )
   })
 

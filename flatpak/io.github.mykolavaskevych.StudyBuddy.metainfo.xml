@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.mykolavaskevych.StudyBuddy</id>
+  <name>Study Buddy</name>
+  <summary>Turn lecture PDFs into an exam plan you can finish</summary>
+  <developer id="io.github.mykolavaskevych">
+    <name>Mykola Vaskevych</name>
+  </developer>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <description>
+    <p>
+      Study Buddy reads your lecture slides and study notes, every page including diagrams and
+      formulas, and turns them into active study: notes for each page, quick tests on the page you
+      just read, spaced-repetition flashcards timed to your exam, quizzes and mock exams.
+    </p>
+    <p>
+      Its exam triage planner takes the time you have and a target score and decides which topics to
+      learn fully, which only at core level and which to skip, with the reason and the expected score.
+    </p>
+    <ul>
+      <li>Works with any PDF, including image-only slides</li>
+      <li>Answers and questions cite the page they come from</li>
+      <li>Tutor chat, printable cheat sheet, Anki export, bookmarks and notes</li>
+      <li>Runs on your Claude subscription through Claude Code, or an Anthropic API key</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">io.github.mykolavaskevych.StudyBuddy.desktop</launchable>
+  <url type="homepage">https://github.com/MykolaVaskevych/study-buddy</url>
+  <url type="bugtracker">https://github.com/MykolaVaskevych/study-buddy/issues</url>
+  <url type="vcs-browser">https://github.com/MykolaVaskevych/study-buddy</url>
+  <categories>
+    <category>Education</category>
+  </categories>
+  <content_rating type="oars-1.1" />
+  <provides>
+    <binary>study-buddy</binary>
+  </provides>
+  <releases>
+    <release version="0.1.0" date="2026-10-18">
+      <description>
+        <p>First release: page notes, Test me, flashcards, quizzes, exam triage planner, tutor chat, cheat sheet.</p>
+      </description>
+    </release>
+  </releases>
+</component>
