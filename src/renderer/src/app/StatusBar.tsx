@@ -1,29 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
-import type { RefObject } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { JobInfo } from '@shared/domain'
 import { useCancelJob, useJobs, useRateLimit, useSettings, useUpdateSettings } from '../api/hooks'
-import { cx, Icon, IconButton, Progress, Spinner } from '../components'
+import { cx, Icon, IconButton, Progress, Spinner, useDismiss } from '../components'
 import { notReady, providerLabel, PROVIDERS } from '../features/settings/providers'
-
-/** Closes a popover on Escape or a press outside `ref`. */
-function useDismiss(open: boolean, ref: RefObject<HTMLElement | null>, close: () => void): void {
-  useEffect(() => {
-    if (!open) return
-    const onDown = (e: PointerEvent): void => {
-      if (e.target instanceof Node && !ref.current?.contains(e.target)) close()
-    }
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') close()
-    }
-    window.addEventListener('pointerdown', onDown)
-    window.addEventListener('keydown', onKey)
-    return () => {
-      window.removeEventListener('pointerdown', onDown)
-      window.removeEventListener('keydown', onKey)
-    }
-  }, [open, ref, close])
-}
 
 /** Which AI is in use, switchable in one click (subscription, API key, local model). */
 function ProviderSwitch(): React.JSX.Element | null {

@@ -1,5 +1,6 @@
 import { basename } from 'node:path'
 import type { DocId, DocumentDetail, DocumentSummary } from '@shared/domain'
+import { placeImported } from './courses'
 import type { Indexing } from './indexing'
 import { messageOf, notFound } from './errors'
 import { JOB_SCAN_LIMIT, ACTIVE_JOB_STATES } from './priorities'
@@ -43,14 +44,14 @@ function toDetail(doc: DocRecord): DocumentDetail {
  * cancels the document's jobs before removing its rows and files.
  */
 export function createLibraryService(
-  deps: Pick<PipelineDeps, 'db' | 'library' | 'queue' | 'emit' | 'pickPdfs'>,
+  deps: Pick<PipelineDeps, 'db' | 'library' | 'queue' | 'emit' | 'pickPdfs' | 'now'>,
   services: { indexing: Indexing }
 ): { handlers: Pick<Handlers, LibraryChannels> } {
   const { db, library } = deps
 
-  async function importOne(path: string): Promise<DocId> {
+  async function importOne(path: string): Promise<{ id: DocId; created: boolean }> {
     const pdf = await library.importPdf(path)
-    const docId = db.transaction(() => {
+    const { id: docId, created } = db.transaction(() => {
       const { id, created } = db.documents.upsert({
         sha256: pdf.sha256,
         title: pdf.title,
@@ -61,7 +62,7 @@ export function createLibraryService(
       if (created) db.pages.insertPages(id, pdf.pages)
       // Also on re-import: chunk paths follow the library if it moved.
       db.pages.setChunks(id, pdf.chunks)
-      return id
+      return { id, created }
     })
     try {
       await services.indexing.start(docId, { auto: true })
@@ -70,16 +71,16 @@ export function createLibraryService(
       console.warn(`[pipelines] could not start indexing ${docId}: ${messageOf(err)}`)
     }
     deps.emit('library.changed', { docId })
-    return docId
+    return { id: docId, created }
   }
 
   return {
     handlers: {
       'library.list': async () => db.documents.list(),
 
-      'library.import': async ({ paths }) => {
+      'library.import': async ({ paths, courseId }) => {
         const files = paths ?? (await deps.pickPdfs())
-        const imported: DocId[] = []
+        const imported: { id: DocId; created: boolean }[] = []
         const failures: string[] = []
         for (const path of files) {
           try {
@@ -89,12 +90,20 @@ export function createLibraryService(
             failures.push(`${basename(path)}: ${err.message}`)
           }
         }
+        if (imported.length > 0) {
+          placeImported(db, imported, {
+            courseId: courseId ?? null,
+            paths: files,
+            now: deps.now().toISOString()
+          })
+          deps.emit('library.changed', { docId: null })
+        }
         // Successful files stay imported (library.changed already told the UI); the error names the rest.
         if (failures.length > 0) {
           const done = imported.length > 0 ? ` (${imported.length} other file(s) imported)` : ''
           throw new ServiceError('validation', `Could not import ${failures.join('; ')}${done}`)
         }
-        return [...new Set(imported)].map((id) => toSummary(requireDoc(db, id)))
+        return [...new Set(imported.map((d) => d.id))].map((id) => toSummary(requireDoc(db, id)))
       },
 
       'library.get': async ({ docId }) => toDetail(requireDoc(db, docId)),

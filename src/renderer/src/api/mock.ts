@@ -1,5 +1,6 @@
 import type { Annotation, ExamProfile, Lesson } from '@shared/domain'
 import { cramMinutes, cramQuestionCount, cramQuestionTypes } from '@shared/cram'
+import { createMockCourses } from './mock-courses'
 import { ipcContract } from '@shared/ipc/contract'
 import type {
   IpcChannel,
@@ -173,6 +174,13 @@ export function createMockApi(options: MockOptions = {}): MockApi {
     if (!d) throw new MockError('not_found', `Document ${docId} not found`)
     return d
   }
+  const courses = createMockCourses(BOOKS, {
+    nextId,
+    titleOf: (docId) => getDoc(docId).title,
+    fail: (message) => {
+      throw new MockError('not_found', message)
+    }
+  })
 
   const indexStatus = (d: DocState): IndexStatus => ({
     state: d.indexState,
@@ -410,7 +418,7 @@ export function createMockApi(options: MockOptions = {}): MockApi {
       [...docs.values()]
         .map(summary)
         .sort((a, b) => (b.lastOpenedAt ?? b.importedAt).localeCompare(a.lastOpenedAt ?? a.importedAt)),
-    'library.import': ({ paths }) => {
+    'library.import': ({ paths, courseId }) => {
       const names = paths ?? ['Thermodynamics, week 3.pdf']
       const created = names.map((path, i) => {
         const title = (path.split(/[\\/]/).pop() ?? path).replace(/\.pdf$/i, '')
@@ -435,8 +443,15 @@ export function createMockApi(options: MockOptions = {}): MockApi {
         emit('library.changed', { docId: spec.id })
         return summary(state)
       })
+      const folder = names[0]?.split(/[\\/]/).slice(-2, -1)[0]
+      courses.place(
+        created.map((d) => d.id),
+        courseId ?? null,
+        folder ?? created[0]?.title ?? 'New course'
+      )
       return created
     },
+    ...courses.handlers,
     'library.get': ({ docId }) => {
       const d = getDoc(docId)
       d.lastOpenedAt = now().toISOString()
@@ -455,6 +470,7 @@ export function createMockApi(options: MockOptions = {}): MockApi {
     'library.delete': ({ docId }) => {
       getDoc(docId)
       docs.delete(docId)
+      courses.removeDoc(docId)
       return { deleted: true }
     },
     'library.setLastPage': ({ docId, page }) => {

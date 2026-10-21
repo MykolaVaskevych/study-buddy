@@ -98,7 +98,31 @@ export function usePrefetchPageNotes(docId: string, pages: number[]): void {
 }
 
 export const useImportPdfs = () =>
-  useChannelMutation('library.import', { onSuccess: (_d, _i, qc) => invalidate(qc, ['library.list']) })
+  useChannelMutation('library.import', {
+    onSuccess: (_d, _i, qc) => invalidate(qc, ['library.list'], ['courses.list'])
+  })
+
+/** Courses (subjects) with their files, in sidebar order. */
+export const useCourses = () => useQuery(channelQuery('courses.list', {}))
+
+const invalidateCourses = (qc: QueryClient): void => invalidate(qc, ['courses.list'], ['library.list'])
+export const useCreateCourse = () =>
+  useChannelMutation('courses.create', { onSuccess: (_d, _i, qc) => invalidateCourses(qc) })
+export const useRenameCourse = () =>
+  useChannelMutation('courses.rename', { onSuccess: (_d, _i, qc) => invalidateCourses(qc) })
+export const useDissolveCourse = () =>
+  useChannelMutation('courses.dissolve', { onSuccess: (_d, _i, qc) => invalidateCourses(qc) })
+/** Drag and drop: the returned order is applied at once, so rows don't jump back while refetching. */
+export const useMoveDocument = () =>
+  useChannelMutation('courses.moveDocument', {
+    onSuccess: (data, _i, qc) => qc.setQueryData(channelKey('courses.list', {}), data)
+  })
+/** Shown inside its dialog, so no global error toast. */
+export const useSuggestNames = () => useChannelMutation('courses.suggestNames', { silent: true })
+export const useReorderCourses = () =>
+  useChannelMutation('courses.reorder', {
+    onSuccess: (data, _i, qc) => qc.setQueryData(channelKey('courses.list', {}), data)
+  })
 
 export const useRenameDocument = () =>
   useChannelMutation('library.rename', {
@@ -323,7 +347,12 @@ export function useApiEvents({ onJobFailed }: ApiEventOptions = {}): void {
         invalidate(qc, channelKey('library.pageNotes', { docId }))
       }),
       subscribe('library.changed', ({ docId }) => {
-        invalidate(qc, ['library.list'], docId ? channelKey('library.get', { docId }) : ['library.get'])
+        invalidate(
+          qc,
+          ['library.list'],
+          ['courses.list'],
+          docId ? channelKey('library.get', { docId }) : ['library.get']
+        )
         if (docId) invalidate(qc, channelKey('topics.list', { docId }))
       }),
       subscribe('cards.changed', () => invalidateCards(qc)),

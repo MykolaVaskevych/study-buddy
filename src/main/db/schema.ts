@@ -55,6 +55,14 @@ const json = <T>(name: string) => text(name, { mode: 'json' }).$type<T>()
 const bool = (name: string) => integer(name, { mode: 'boolean' })
 const emptyJsonArray = sql`'[]'`
 
+/** A subject or module: files studied together. Order is the sidebar's; a course without files is removed. */
+export const courses = sqliteTable('courses', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  ord: integer('ord').notNull(),
+  createdAt: text('created_at').notNull()
+})
+
 export const documents = sqliteTable('documents', {
   id: text('id').primaryKey(),
   sha256: text('sha256').notNull().unique(),
@@ -67,7 +75,10 @@ export const documents = sqliteTable('documents', {
   lastOpenedAt: text('last_opened_at'),
   lastPage: integer('last_page').notNull().default(1),
   indexState: text('index_state').$type<IndexState>().notNull().default('none'),
-  indexError: text('index_error')
+  indexError: text('index_error'),
+  courseId: text('course_id').references(() => courses.id, { onDelete: 'set null' }),
+  /** Position within the course. */
+  ord: integer('ord').notNull().default(0)
 })
 
 /**

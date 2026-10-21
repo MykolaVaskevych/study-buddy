@@ -9,7 +9,8 @@ import { useUiStore } from '../../app/uiStore'
 import { Button, buttonClass, EmptyState, Skeleton } from '../../components'
 import { studyTabs } from '../study-panel/tabs'
 import { StudyPanel } from '../study-panel/StudyPanel'
-import { CourseMap } from './CourseMap'
+import { CourseTree } from '../courses/CourseTree'
+import { TopicMap } from './TopicMap'
 import { targetPage } from './keys'
 import type { ReaderAction } from './keys'
 import { PdfViewer } from './pdf/PdfViewer'
@@ -135,17 +136,26 @@ export function BookScreen(): React.JSX.Element {
       <div className="flex h-full">
         {panes.left.open ? (
           <>
-            <aside aria-label="Course map" className="shrink-0 bg-paper" style={{ width: panes.left.width }}>
+            <aside
+              aria-label="Courses and files"
+              className="shrink-0 bg-paper"
+              style={{ width: panes.left.width }}
+            >
               <div className="flex h-full flex-col">
                 <BookmarkList docId={docId} page={currentPage} onJump={jumpTo} />
                 <div className="min-h-0 flex-1">
-                  {doc && index ? (
-                    <CourseMap doc={doc} index={index} page={currentPage} onJump={jumpTo} />
-                  ) : null}
+                  <CourseTree
+                    docId={docId}
+                    activeContent={
+                      doc && index ? (
+                        <TopicMap doc={doc} index={index} page={currentPage} onJump={jumpTo} />
+                      ) : null
+                    }
+                  />
                 </div>
               </div>
             </aside>
-            <ResizeHandle side="left" label="Resize course map" />
+            <ResizeHandle side="left" label="Resize the course tree" />
           </>
         ) : null}
 

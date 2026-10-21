@@ -16,3 +16,4 @@ export {
   type PdfTextFn
 } from './providers'
 export type * from './types'
+export type { NamingFile } from './prompts/naming'

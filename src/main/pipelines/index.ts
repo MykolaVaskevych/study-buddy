@@ -14,6 +14,7 @@ import { createChat } from './chat'
 import { createExtras } from './extras'
 import { createPastPapers } from './past-paper'
 import { createLessons } from './lessons'
+import { createCourses } from './courses'
 import { createCram } from './cram'
 import { createExamProfiles } from './exam-profile'
 import { createOverview } from './overview'
@@ -113,6 +114,7 @@ export function createPipelinesWith(deps: PipelineDeps, options: PipelineOptions
     ...lessons.handlers,
     ...examProfiles.handlers,
     ...createCram(deps).handlers,
+    ...createCourses(deps, { ledger, material }).handlers,
     ...pastPapers.handlers,
     ...createExtras(deps).handlers,
     ...overview.handlers

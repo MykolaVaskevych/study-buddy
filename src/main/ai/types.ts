@@ -17,6 +17,7 @@ import type {
   Verification
 } from '@shared/domain'
 import type { AiTask, LlmProvider, Usage } from '@shared/ai/provider'
+import type { NamingFile } from './prompts/naming'
 import type { ChunkInfo } from '../library/types'
 
 /**
@@ -186,6 +187,18 @@ export interface StudyAi {
     language: string
     signal?: AbortSignal
   }): Promise<WithUsage<PastPaperAnalysis>>
+  /** Names for a course and its files (fast tier, text only). */
+  suggestNames(input: {
+    files: NamingFile[]
+    language: string
+    signal?: AbortSignal
+  }): Promise<WithUsage<NameSuggestion>>
+}
+
+/** Suggested names: the course, then one title per file in the order given. */
+export interface NameSuggestion {
+  course: string
+  files: string[]
 }
 
 /** A page given to chat as context: its text layer plus what the index knows about it. */

@@ -185,6 +185,16 @@ export const pastPaperOutputSchema = z.strictObject({
 })
 export type PastPaperOutput = z.infer<typeof pastPaperOutputSchema>
 
+// ---------------------------------------------------------------- course and file names
+
+export const namingOutputSchema = z.strictObject({
+  /** The subject, e.g. "Optical Networks". */
+  course_name: z.string(),
+  /** One entry per file, by the index it was listed with. */
+  files: z.array(z.strictObject({ index: z.number().int(), title: z.string() }))
+})
+export type NamingOutput = z.infer<typeof namingOutputSchema>
+
 // ---------------------------------------------------------------- study book lessons
 
 /** A teaching chapter for one topic, written from its pages. */

@@ -18,6 +18,7 @@ import {
   fakeGrade,
   fakeIndex,
   fakeLesson,
+  fakeNaming,
   fakeQuestions,
   fakeTopics,
   fakeVerify
@@ -53,7 +54,8 @@ const BY_TASK: Partial<Record<AiTask, (text: string) => unknown>> = {
   page_check: fakeQuestions,
   verify: fakeVerify,
   grade: fakeGrade,
-  lesson: fakeLesson
+  lesson: fakeLesson,
+  naming: fakeNaming
 }
 
 /** Minimal value satisfying a JSON schema; covers tasks without a dedicated generator. */

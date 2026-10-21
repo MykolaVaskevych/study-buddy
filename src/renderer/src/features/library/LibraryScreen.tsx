@@ -1,6 +1,8 @@
 import { useAutoTour } from '../tour/useAutoTour'
 import { useCallback, useMemo, useState } from 'react'
-import { useImportPdfs, useLibrary } from '../../api/hooks'
+import type { Course, DocumentSummary } from '@shared/domain'
+import { useCourses, useImportPdfs, useLibrary } from '../../api/hooks'
+import { groupByCourse } from '../courses/tree'
 import { toast } from '../../app/toasts'
 import { useShortcuts } from '../../app/shortcuts'
 import { Button, EmptyState } from '../../components'
@@ -63,9 +65,49 @@ function Welcome({ onImport, importing }: { onImport: () => void; importing: boo
   )
 }
 
+const gridClass = 'grid grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] gap-5'
+
+/** Courses with several files get a shelf each; single files share the last one. */
+function Shelves({
+  docs,
+  courses,
+  now
+}: {
+  docs: DocumentSummary[]
+  courses: Course[]
+  now: Date
+}): React.JSX.Element {
+  const groups = groupByCourse(docs, courses)
+  return (
+    <div className="flex flex-col gap-9">
+      {groups.courses.map(({ course, docs: files }) => (
+        <section key={course.id} aria-label={course.name} className="flex flex-col gap-3">
+          <h2 className="flex items-baseline gap-2 font-serif text-lg font-semibold">
+            {course.name}
+            <span className="tabular font-sans text-sm font-normal text-graphite">{files.length} files</span>
+          </h2>
+          <div className={gridClass}>
+            {files.map((doc) => (
+              <BookCard key={doc.id} doc={doc} now={now} />
+            ))}
+          </div>
+        </section>
+      ))}
+      {groups.singles.length > 0 ? (
+        <section aria-label="Books" className={gridClass}>
+          {groups.singles.map((doc) => (
+            <BookCard key={doc.id} doc={doc} now={now} />
+          ))}
+        </section>
+      ) : null}
+    </div>
+  )
+}
+
 /** The library: every imported course, search across all of them, import by button or drop. */
 export function LibraryScreen(): React.JSX.Element {
   const library = useLibrary()
+  const courses = useCourses()
   const { mutate: importMutate, isPending: importing } = useImportPdfs()
   // One clock per render pass keeps every card's countdown consistent.
   const [now] = useState(() => new Date())
@@ -153,11 +195,7 @@ export function LibraryScreen(): React.JSX.Element {
         ) : docs.length === 0 ? (
           <Welcome onImport={() => runImport(null)} importing={importing} />
         ) : (
-          <section aria-label="Books" className="grid grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] gap-5">
-            {docs.map((doc) => (
-              <BookCard key={doc.id} doc={doc} now={now} />
-            ))}
-          </section>
+          <Shelves docs={docs} courses={courses.data ?? []} now={now} />
         )}
       </div>
 
