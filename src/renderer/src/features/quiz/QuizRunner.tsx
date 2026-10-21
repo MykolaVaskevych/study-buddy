@@ -17,6 +17,8 @@ interface QuizRunnerProps {
   reveal: RevealMode
   onCitation: (page: number) => void
   onNew: () => void
+  /** Label of the results' onNew button (default "New quiz"). */
+  newLabel?: string
   onRetry: (session: QuizSession) => void
 }
 
@@ -63,6 +65,7 @@ export function QuizRunner({
   reveal,
   onCitation,
   onNew,
+  newLabel,
   onRetry
 }: QuizRunnerProps): React.JSX.Element {
   const run = useQuizRun(session, reveal)
@@ -115,6 +118,7 @@ export function QuizRunner({
         state={state}
         onCitation={onCitation}
         onNew={onNew}
+        newLabel={newLabel}
         onRetry={onRetry}
       />
     )

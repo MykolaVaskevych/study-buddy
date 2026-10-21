@@ -1,4 +1,5 @@
 import type { Annotation, ExamProfile, Lesson } from '@shared/domain'
+import { cramMinutes, cramQuestionCount } from '@shared/cram'
 import { ipcContract } from '@shared/ipc/contract'
 import type {
   IpcChannel,
@@ -632,6 +633,14 @@ export function createMockApi(options: MockOptions = {}): MockApi {
       return saved
     },
     'cards.rebuildForExam': () => ({ suspended: 3, queued: 6 }),
+    'cram.plan': ({ docId, cards }) => {
+      const picked = getDoc(docId)
+        .cards.filter((c) => c.status === 'active' && c.type !== 'formula')
+        .slice(0, cards)
+      const questionCount = cramQuestionCount(cards)
+      const minutes = cramMinutes(picked.length, questionCount)
+      return { docId, cards: picked, questionCount, questionTypes: ['mcq', 'multi', 'tf'], minutes }
+    },
     'progress.reset': () => ({ cards: 12, attempts: 4, readingPages: 14 }),
     'lessons.list': ({ docId }) => {
       const all = topicsOf(getDoc(docId))

@@ -7,6 +7,7 @@ import type {
   ResetResult,
   AttemptResult,
   Card,
+  CramPlan,
   CheatSheet,
   PastPaperResult,
   DocumentDetail,
@@ -130,6 +131,8 @@ export const ipcContract = {
    * for an exam without formulas) and writes new essentials decks per topic.
    */
   'cards.rebuildForExam': route<{ suspended: number; queued: number }>()(z.object({ docId: id })),
+  /** "Don't panic" cram: `cards` flashcards that matter most for the exam, then exam-style questions. */
+  'cram.plan': route<CramPlan>()(z.object({ docId: id, cards: z.number().int().min(5).max(30) })),
   /** Study-book chapters written so far. */
   'lessons.list': route<Lesson[]>()(z.object({ docId: id })),
   /** Writes (or rewrites) the chapter for a topic, or for every leaf topic without one (topicId null). */

@@ -39,6 +39,7 @@ describe('mock api', () => {
       'cards.update': { cardId: `${docId}-card-1`, front: 'f', back: 'b' },
       'cards.setStatus': { cardId: `${docId}-card-1`, status: 'active' },
       'cards.stats': { docId },
+      'cram.plan': { docId, cards: 10 },
       'quiz.create': {
         scope: { kind: 'page', docId, page: 40 },
         mode: 'topic',

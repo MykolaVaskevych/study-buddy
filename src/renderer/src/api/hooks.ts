@@ -173,6 +173,8 @@ export const useSetCardStatus = () =>
 
 /** Creating a quiz has side effects (it may generate questions), so it's a mutation. */
 export const useCreateQuiz = () => useChannelMutation('quiz.create')
+/** "Don't panic": the cards and question mix for a short cram (no AI call). */
+export const useCramPlan = () => useChannelMutation('cram.plan')
 /** "Test me" on a page; instant when the page check was prefetched. */
 export const useStartPageCheck = () => useChannelMutation('quiz.pageCheck')
 export const useAnswerQuestion = () => useChannelMutation('quiz.answer')

@@ -91,6 +91,8 @@ interface ReviewSessionProps {
   /** Cards due right now according to the latest fetch (for "Review N more"). */
   dueNow: number
   onRestart: () => void
+  /** Replaces the next-due line and buttons at the end (e.g. the cram's next step). */
+  finish?: React.ReactNode
 }
 
 /** One review session: flip, rate 1–4, browse with j/k, edit with e, suspend with s. */
@@ -99,7 +101,8 @@ export function ReviewSession({
   docId,
   bookTitles,
   dueNow,
-  onRestart
+  onRestart,
+  finish
 }: ReviewSessionProps): React.JSX.Element {
   const [state, dispatch] = useReducer(reviewReducer, initial, initialReview)
   const [editing, setEditing] = useState<Card | null>(null)
@@ -155,7 +158,7 @@ export function ReviewSession({
   const recall = recallRate(state.log)
 
   if (!card) {
-    if (done === 0) return <NothingDue docId={docId} />
+    if (done === 0 && finish === undefined) return <NothingDue docId={docId} />
     return (
       <section aria-label="Session finished" className="flex flex-col items-start gap-5 py-6">
         <h2 className="font-serif text-2xl font-semibold">Done for now</h2>
@@ -165,18 +168,20 @@ export function ReviewSession({
             {done === 1 ? '' : 's'} and recalled{' '}
             <span className="tabular font-semibold text-ink">{pct(recall)}</span> of them.
           </p>
-          <NextDue docId={docId} lead="" />
+          {finish === undefined ? <NextDue docId={docId} lead="" /> : null}
         </div>
-        <div className="flex gap-2">
-          {dueNow > 0 ? (
-            <Button variant="primary" onClick={onRestart}>
-              Review {dueNow} more
-            </Button>
-          ) : null}
-          <Link to="/" className={buttonClass(dueNow > 0 ? 'ghost' : 'secondary')}>
-            Back to the library
-          </Link>
-        </div>
+        {finish ?? (
+          <div className="flex gap-2">
+            {dueNow > 0 ? (
+              <Button variant="primary" onClick={onRestart}>
+                Review {dueNow} more
+              </Button>
+            ) : null}
+            <Link to="/" className={buttonClass(dueNow > 0 ? 'ghost' : 'secondary')}>
+              Back to the library
+            </Link>
+          </div>
+        )}
       </section>
     )
   }
