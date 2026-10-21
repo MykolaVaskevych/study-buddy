@@ -2,6 +2,7 @@ import type {
   LessonOutput,
   CardsOutput,
   NamingOutput,
+  PortalStepOutput,
   GradeOutput,
   IndexChunkOutput,
   QuestionsOutput,
@@ -353,4 +354,27 @@ export function fakeNaming(text: string): NamingOutput {
     title: `${(m[2] ?? '').trim()} (named)`
   }))
   return { course_name: 'Named Course', files }
+}
+
+/**
+ * The fake "browses" just enough for --smoke: it presses the first element labelled Download while
+ * nothing has been downloaded, then stops. Real portals need the real model.
+ */
+export function fakePortal(text: string): PortalStepOutput {
+  const nothingYet = /<already_downloaded>\s*\(none yet\)/.test(text)
+  const download = /^\[(\d+)\] [^\n]*download[^\n]*\((?:button|link|menuitem)/im.exec(text)
+  if (nothingYet && download?.[1]) {
+    return {
+      thought: 'A Download button is on the page.',
+      actions: [{ type: 'click', element: Number(download[1]), why: 'download the file' }],
+      done: false,
+      summary: ''
+    }
+  }
+  return {
+    thought: 'Nothing more to download.',
+    actions: [],
+    done: true,
+    summary: 'Downloaded what the page offered.'
+  }
 }

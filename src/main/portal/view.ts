@@ -5,6 +5,10 @@ import type { BaseWindow, WebContents } from 'electron'
 import type { Log } from '../app/log'
 import type { PortalFile, PortalNav, PortalView } from '../pipelines/types'
 import { browserUserAgent, downloadTarget, isWebUrl, safeFileName } from './policy'
+import { clickScript, pageSnapshotSchema, SNAPSHOT_SCRIPT } from './snapshot'
+
+/** Our scripts run in their own JavaScript world: the page can see the DOM changes, not our code. */
+const AGENT_WORLD = 1077
 
 /** Signed-in portals survive restarts in this session; nothing else in the app shares it. */
 export const PORTAL_PARTITION = 'persist:portal'
@@ -39,6 +43,7 @@ export function createPortalView(opts: {
   let view: WebContentsView | null = null
   let host: BaseWindow | null = null
   let seq = 0
+  let lastActivity = Date.now()
 
   const nav = (wc: WebContents | undefined): PortalNav => {
     if (!wc || wc.isDestroyed()) return EMPTY
@@ -52,6 +57,7 @@ export function createPortalView(opts: {
     }
   }
   const changed = (): void => {
+    lastActivity = Date.now()
     const state = nav(view?.webContents)
     for (const fn of changeListeners) fn(state)
   }
@@ -171,6 +177,36 @@ export function createPortalView(opts: {
       changed()
     },
     onChange: (fn) => void changeListeners.push(fn),
-    onDownload: (fn) => void downloadListeners.push(fn)
+    onDownload: (fn) => void downloadListeners.push(fn),
+    async snapshot() {
+      const wc = view?.webContents
+      if (!wc || wc.isDestroyed() || !isWebUrl(wc.getURL())) return null
+      const raw: unknown = await wc.executeJavaScriptInIsolatedWorld(AGENT_WORLD, [{ code: SNAPSHOT_SCRIPT }])
+      // Built inside a web page: checked like any untrusted input.
+      const parsed = pageSnapshotSchema.safeParse(raw)
+      if (!parsed.success) throw new Error('The page could not be read')
+      return parsed.data
+    },
+    async click(id) {
+      const wc = view?.webContents
+      if (!wc || wc.isDestroyed()) return false
+      const pressed: unknown = await wc.executeJavaScriptInIsolatedWorld(
+        AGENT_WORLD,
+        [{ code: clickScript(id) }],
+        true
+      )
+      lastActivity = Date.now()
+      return pressed === true
+    },
+    async settle(maxMs = 10_000) {
+      const until = Date.now() + maxMs
+      // Quiet = not loading and no navigation for a moment (pages that load content after "load").
+      while (Date.now() < until) {
+        const wc = view?.webContents
+        if (!wc || wc.isDestroyed()) return
+        if (!wc.isLoading() && Date.now() - lastActivity > 800) return
+        await new Promise((resolve) => setTimeout(resolve, 100))
+      }
+    }
   }
 }

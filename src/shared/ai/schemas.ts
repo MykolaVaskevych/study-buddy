@@ -195,6 +195,27 @@ export const namingOutputSchema = z.strictObject({
 })
 export type NamingOutput = z.infer<typeof namingOutputSchema>
 
+// ---------------------------------------------------------------- portal driver
+
+export const portalStepSchema = z.strictObject({
+  /** One or two sentences: what the page shows and what to do next. */
+  thought: z.string(),
+  /** 0–5 actions, run in order; the list ends early when a click opens another page. */
+  actions: z.array(
+    z.strictObject({
+      type: z.enum(['click', 'back']),
+      /** Element number from the snapshot (click only; null for back). */
+      element: z.number().int().nullable(),
+      why: z.string()
+    })
+  ),
+  /** True when every course file found is downloaded or nothing more can be done. */
+  done: z.boolean(),
+  /** For the student, when done: what was downloaded and what was left out. */
+  summary: z.string()
+})
+export type PortalStepOutput = z.infer<typeof portalStepSchema>
+
 // ---------------------------------------------------------------- study book lessons
 
 /** A teaching chapter for one topic, written from its pages. */

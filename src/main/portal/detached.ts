@@ -1,4 +1,5 @@
 import type { PortalFile, PortalNav, PortalView } from '../pipelines/types'
+import type { PageSnapshot } from './snapshot'
 
 /**
  * A portal without a window, for tests, `--smoke` and scripts: navigation only records the address
@@ -7,6 +8,8 @@ import type { PortalFile, PortalNav, PortalView } from '../pipelines/types'
 export interface DetachedPortal extends PortalView {
   visible(): boolean
   download(file: PortalFile): void
+  /** Tests script the pages the AI sees and what a click does. */
+  script(site: { snapshot: () => PageSnapshot | null; click: (id: number) => boolean }): void
 }
 
 export function createDetachedPortal(): DetachedPortal {
@@ -15,6 +18,10 @@ export function createDetachedPortal(): DetachedPortal {
   const changed: ((nav: PortalNav) => void)[] = []
   const downloads: ((file: PortalFile) => void)[] = []
   const history: string[] = []
+  let site: { snapshot: () => PageSnapshot | null; click: (id: number) => boolean } = {
+    snapshot: () => null,
+    click: () => false
+  }
   const set = (next: Partial<PortalNav>): void => {
     nav = { ...nav, ...next }
     for (const fn of changed) fn(nav)
@@ -42,6 +49,12 @@ export function createDetachedPortal(): DetachedPortal {
     onChange: (fn) => void changed.push(fn),
     onDownload: (fn) => void downloads.push(fn),
     visible: () => shown,
-    download: (file) => downloads.forEach((fn) => fn(file))
+    download: (file) => downloads.forEach((fn) => fn(file)),
+    script: (next) => {
+      site = next
+    },
+    snapshot: async () => site.snapshot(),
+    click: async (id) => site.click(id),
+    settle: async () => undefined
   }
 }

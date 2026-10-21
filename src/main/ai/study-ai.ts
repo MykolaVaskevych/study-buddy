@@ -7,6 +7,7 @@ import { writeLesson } from './study/lesson'
 import { indexChunk } from './study/index-chunk'
 import { generateQuestions } from './study/questions'
 import { suggestNames } from './study/naming'
+import { portalStep } from './study/portal'
 import { mapPastPaper } from './study/past-paper'
 import { buildTopicMap } from './study/topic-map'
 import type { StudyAi } from './types'
@@ -29,6 +30,7 @@ export function createStudyAi(provider: LlmProvider, opts: StudyAiOptions = {}):
     chat: (input) => chat(provider, input),
     writeLesson: (ctx, topic) => writeLesson(provider, ctx, topic, settings),
     mapPastPaper: (input) => mapPastPaper(provider, input),
-    suggestNames: (input) => suggestNames(provider, input)
+    suggestNames: (input) => suggestNames(provider, input),
+    portalStep: (input) => portalStep(provider, input)
   }
 }

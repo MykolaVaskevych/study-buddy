@@ -11,6 +11,7 @@ import type {
   CramPlan,
   NameSuggestions,
   PortalState,
+  PortalAgentState,
   PortalDownload,
   CheatSheet,
   PastPaperResult,
@@ -210,6 +211,13 @@ export const ipcContract = {
   'portal.navigate': route<PortalState>()(z.object({ url: z.string().trim().min(1).max(2000) })),
   'portal.go': route<PortalState>()(z.object({ action: z.enum(['back', 'forward', 'reload', 'stop']) })),
   'portal.state': route<PortalState>()(none),
+  /**
+   * "Get files with AI": the AI clicks through the open portal page (expands modules, opens topics,
+   * presses Download) and every file lands in the portal's course. Progress arrives as 'portal.agent'.
+   */
+  'portal.agentStart': route<PortalAgentState>()(z.object({ goal: z.string().trim().max(500).nullable() })),
+  'portal.agentStop': route<PortalAgentState>()(none),
+  'portal.agentState': route<PortalAgentState>()(none),
   /** Forgets every portal sign-in (cookies and storage of the portal browser). */
   'portal.signOut': route<{ ok: true }>()(none),
 
@@ -366,6 +374,8 @@ export interface IpcEvents {
   'portal.changed': PortalState
   /** A file downloaded in the portal was imported (or why not). */
   'portal.downloaded': PortalDownload
+  /** Progress of "Get files with AI". */
+  'portal.agent': PortalAgentState
   'pageCheck.ready': { docId: string; page: number }
   'chat.delta': { requestId: string; text: string }
   /** error = null on success; citations = distinct [p. N] pages in the answer. */

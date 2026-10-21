@@ -1,3 +1,4 @@
+import type { PageSnapshot } from '../portal/snapshot'
 import type { ProviderId } from '@shared/ai/provider'
 import type { IpcChannel, IpcEvent, IpcEvents, IpcOutput, IpcParsedInput } from '@shared/ipc/contract'
 import type { ClaudeAuth } from '../ai/providers/claude-code/auth'
@@ -73,6 +74,12 @@ export interface PortalView {
    * `saved`: another kind of file, kept at `path` in the user's Downloads folder.
    */
   onDownload(listener: (file: PortalFile) => void): void
+  /** The page as the AI sees it (numbered clickable elements); null when nothing is loaded. */
+  snapshot(): Promise<PageSnapshot | null>
+  /** Presses element `id` of the last snapshot; false when it is gone. */
+  click(id: number): Promise<boolean>
+  /** Resolves once the page has stopped loading and stayed quiet briefly, or after `maxMs`. */
+  settle(maxMs?: number): Promise<void>
 }
 
 export interface PipelineDeps {
