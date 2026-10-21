@@ -24,7 +24,11 @@ export const settingsSchema = z.object({
   prefetchPageChecks: z.boolean(),
   verifyAnswerKeys: z.boolean(),
   /** Optional explicit path to a Claude Code executable; null = bundled/auto. */
-  claudeCodePath: z.string().nullable()
+  claudeCodePath: z.string().nullable(),
+  /** The student's study portals (Brightspace, Sulis, Blackboard…), shown on the portal's home. */
+  portals: z
+    .array(z.object({ name: z.string().trim().min(1).max(100), url: z.url({ protocol: /^https?$/ }) }))
+    .max(50)
 })
 
 export type Settings = z.infer<typeof settingsSchema>
@@ -51,5 +55,6 @@ export const DEFAULT_SETTINGS: Settings = {
   monthlyBudgetUsd: null,
   prefetchPageChecks: true,
   verifyAnswerKeys: true,
-  claudeCodePath: null
+  claudeCodePath: null,
+  portals: []
 }
