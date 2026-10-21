@@ -43,6 +43,13 @@
       "when": 1792591814192,
       "tag": "0005_courses",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1792594104267,
+      "tag": "0006_course_portal",
+      "breakpoints": true
     }
   ]
 }

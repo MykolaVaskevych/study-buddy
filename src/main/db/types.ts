@@ -316,6 +316,7 @@ export interface CourseRepo {
   /** A new course at the end holding `docIds`, moved out of their old courses. */
   create(name: string, docIds: readonly DocId[], now: IsoDate): Course
   rename(courseId: CourseId, name: string): void
+  setPortalUrl(courseId: CourseId, url: string | null): void
   /** Each file of the course becomes its own one-file course, named after the file. */
   dissolve(courseId: CourseId, now: IsoDate): void
   /** Moves a file into `courseId` at `index` (clamped); also reorders within one course. */

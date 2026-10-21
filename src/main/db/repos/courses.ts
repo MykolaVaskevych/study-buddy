@@ -46,7 +46,7 @@ export function createCourseRepo(ctx: RepoContext): CourseRepo {
 
   const get = (courseId: CourseId): Course | null => {
     const row = db.select().from(courses).where(eq(courses.id, courseId)).get()
-    return row ? { id: row.id, name: row.name, docIds: filesOf(row.id) } : null
+    return row ? { id: row.id, name: row.name, docIds: filesOf(row.id), portalUrl: row.portalUrl } : null
   }
 
   const courseOf = (docId: DocId): CourseId | null =>
@@ -66,7 +66,7 @@ export function createCourseRepo(ctx: RepoContext): CourseRepo {
       }
       return rows.flatMap((r) => {
         const docIds = files.get(r.id) ?? []
-        return docIds.length > 0 ? [{ id: r.id, name: r.name, docIds }] : []
+        return docIds.length > 0 ? [{ id: r.id, name: r.name, docIds, portalUrl: r.portalUrl }] : []
       })
     },
 
@@ -79,12 +79,16 @@ export function createCourseRepo(ctx: RepoContext): CourseRepo {
         setFiles(id, docIds)
         for (const source of sources) if (source !== null) setFiles(source, filesOf(source))
         prune()
-        return get(id) ?? { id, name, docIds: [] }
+        return get(id) ?? { id, name, docIds: [], portalUrl: null }
       })
     },
 
     rename(courseId, name) {
       db.update(courses).set({ name }).where(eq(courses.id, courseId)).run()
+    },
+
+    setPortalUrl(courseId, url) {
+      db.update(courses).set({ portalUrl: url }).where(eq(courses.id, courseId)).run()
     },
 
     dissolve(courseId, now) {

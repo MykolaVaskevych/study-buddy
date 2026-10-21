@@ -60,7 +60,9 @@ export const courses = sqliteTable('courses', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   ord: integer('ord').notNull(),
-  createdAt: text('created_at').notNull()
+  createdAt: text('created_at').notNull(),
+  /** Last study-portal page used for this course. */
+  portalUrl: text('portal_url')
 })
 
 export const documents = sqliteTable('documents', {
