@@ -10,11 +10,11 @@ const files = [
 describe('suggestNames', () => {
   it('asks the fast tier with each file listed, and keeps names the model skipped or blanked', async () => {
     const fake = createFakeProvider()
-    let request: GenerateRequest<unknown> | null = null
+    const requests: GenerateRequest<unknown>[] = []
     const provider: LlmProvider = {
       ...fake,
       async generate<T>(req: GenerateRequest<T>) {
-        request = req as GenerateRequest<unknown>
+        requests.push(req as GenerateRequest<unknown>)
         const data = {
           course_name: '  Optical   Networks ',
           files: [
@@ -30,6 +30,7 @@ describe('suggestNames', () => {
       course: 'Optical Networks',
       files: ['Week 3: Dispersion and PMD', 'Notes']
     })
+    const [request] = requests
     expect(request).toMatchObject({ task: 'naming', tier: 'fast' })
     const text = request?.parts.map((p) => (p.type === 'text' ? p.text : '')).join('') ?? ''
     expect(text).toContain('[0] current name: lec03_final_v2')
