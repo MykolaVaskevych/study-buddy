@@ -51,7 +51,8 @@ describe('SettingsScreen', () => {
         models: {
           'claude-code': { fast: 'haiku', smart: 'sonnet' },
           'anthropic-api': { fast: 'claude-haiku-5-5', smart: 'claude-opus-5-5' },
-          'openai-compatible': { fast: 'qwen3.6:27b', smart: 'qwen3.6:27b' }
+          'openai-compatible': { fast: 'qwen3.6:27b', smart: 'qwen3.6:27b' },
+          codex: { fast: 'gpt-6-luna', smart: 'gpt-6.1-sol' }
         }
       })
     )

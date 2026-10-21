@@ -1,7 +1,7 @@
 import { presetFor } from '@shared/ai/connections'
 import type { PublicSettings } from '@shared/settings'
 
-export type ChoosableProvider = 'claude-code' | 'anthropic-api' | 'openai-compatible'
+export type ChoosableProvider = 'claude-code' | 'anthropic-api' | 'codex' | 'openai-compatible'
 
 export const PROVIDERS: { id: ChoosableProvider; title: string; short: string; body: string }[] = [
   {
@@ -15,6 +15,12 @@ export const PROVIDERS: { id: ChoosableProvider; title: string; short: string; b
     title: 'Anthropic API key',
     short: 'API key',
     body: 'Pay per request with your own key from the Anthropic Console. Set a monthly budget below.'
+  },
+  {
+    id: 'codex',
+    title: 'ChatGPT subscription',
+    short: 'ChatGPT (Codex)',
+    body: 'Your ChatGPT plan through Codex, OpenAI’s CLI, on this computer. Nothing is billed per request.'
   },
   {
     id: 'openai-compatible',

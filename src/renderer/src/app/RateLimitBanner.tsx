@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { presetFor } from '@shared/ai/connections'
 import type { PublicSettings } from '@shared/settings'
-import { useRateLimit, useServerModels, useSettings, useUpdateSettings } from '../api/hooks'
+import { useCodexAccount, useRateLimit, useServerModels, useSettings, useUpdateSettings } from '../api/hooks'
 import { Button, Icon } from '../components'
 import { notReady } from '../features/settings/providers'
 
@@ -13,11 +13,19 @@ function Alternatives({ settings }: { settings: PublicSettings }): React.JSX.Ele
   )
   const preset = presetFor(settings.openaiBaseUrl)
   const localUp = (server.data?.models.length ?? 0) > 0
+  // The other subscription is the natural fallback when one plan's limit is hit.
+  const codex = useCodexAccount(settings.provider !== 'codex')
+  const codexReady = settings.provider !== 'codex' && codex.data?.loggedIn === true
   return (
     <span className="ml-auto flex shrink-0 gap-2">
       {settings.hasApiKey ? (
         <Button size="sm" onClick={() => update.mutate({ provider: 'anthropic-api' })}>
           Use my API key meanwhile
+        </Button>
+      ) : null}
+      {codexReady ? (
+        <Button size="sm" onClick={() => update.mutate({ provider: 'codex' })}>
+          Use ChatGPT (Codex) meanwhile
         </Button>
       ) : null}
       {localUp ? (
@@ -61,7 +69,8 @@ export function RateLimitBanner(): React.JSX.Element | null {
       <Icon name="clock" size={18} />
       <p className="text-sm">
         <span className="font-semibold">
-          Claude usage limit reached{info.resetAt ? `, resumes at ${formatResetTime(info.resetAt)}` : ''}.
+          {settings?.provider === 'codex' ? 'ChatGPT' : 'Claude'} usage limit reached
+          {info.resetAt ? `, resumes at ${formatResetTime(info.resetAt)}` : ''}.
         </span>{' '}
         <span className="text-graphite">Background work is paused. Reading and reviewing still work.</span>
       </p>

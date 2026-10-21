@@ -37,6 +37,8 @@ export function providerFingerprint(provider: ProviderId, settings: Settings): s
       return JSON.stringify([provider, settings.models['anthropic-api']])
     case 'openai-compatible':
       return JSON.stringify([provider, settings.models['openai-compatible'], settings.openaiBaseUrl])
+    case 'codex':
+      return JSON.stringify([provider, settings.models.codex])
     case 'fake':
       return provider
   }

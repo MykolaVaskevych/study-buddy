@@ -5,6 +5,8 @@ import { createClaudeCodeProvider } from './claude-code/provider'
 import { createFakeProvider } from './fake/provider'
 import { findClaudeExecutable } from './claude-code/locate'
 import { createOpenAiCompatibleProvider, type PdfTextFn } from './openai-compatible/provider'
+import { createCodexProvider } from './codex/provider'
+import { findCodexExecutable } from './codex/locate'
 
 /**
  * Provider factory used by the composition root. Model ids come from settings per provider and
@@ -14,7 +16,7 @@ import { createOpenAiCompatibleProvider, type PdfTextFn } from './openai-compati
 export function createProvider(
   settings: Settings,
   secrets: { apiKey: string | null },
-  deps: { pdfText: PdfTextFn }
+  deps: { pdfText: PdfTextFn; /** Empty folders for Codex calls. */ codexWorkDir: string }
 ): LlmProvider {
   switch (settings.provider) {
     case 'claude-code':
@@ -33,6 +35,11 @@ export function createProvider(
         },
         { pdfText: deps.pdfText }
       )
+    case 'codex':
+      return createCodexProvider(
+        { executable: findCodexExecutable(), models: settings.models.codex },
+        { pdfText: deps.pdfText, workDir: deps.codexWorkDir }
+      )
     case 'fake':
       return createFakeProvider()
   }
@@ -43,4 +50,7 @@ export { createClaudeCodeProvider } from './claude-code/provider'
 export { createFakeProvider } from './fake/provider'
 export { createClaudeAuth, type ClaudeAuth } from './claude-code/auth'
 export { findClaudeExecutable } from './claude-code/locate'
+export { createCodexAuth, type CodexAuth } from './codex/auth'
+export { createCodexProvider } from './codex/provider'
+export { findCodexExecutable } from './codex/locate'
 export { createOpenAiCompatibleProvider, listModels, type PdfTextFn } from './openai-compatible/provider'

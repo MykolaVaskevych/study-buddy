@@ -17,7 +17,7 @@ import type {
   RateLimitInfo,
   Scope
 } from '@shared/domain'
-import type { ClaudeAccount } from '@shared/ai/connections'
+import type { ClaudeAccount, CodexAccount } from '@shared/ai/connections'
 import { call, subscribe } from './client'
 
 /**
@@ -274,6 +274,18 @@ export const useClaudeLogin = () => useChannelMutation('ai.claudeLogin')
 export const useClaudeLoginCode = () => useChannelMutation('ai.claudeLoginCode', { onSuccess: setAccount })
 export const useClaudeLoginCancel = () => useChannelMutation('ai.claudeLoginCancel', { silent: true })
 export const useClaudeLogout = () => useChannelMutation('ai.claudeLogout', { onSuccess: setAccount })
+
+const setCodexAccount = (a: CodexAccount, _i: unknown, qc: QueryClient): void => {
+  qc.setQueryData(['ai.codexAccount', {}], a)
+}
+/** Codex's sign-in state; asking runs the CLI, so it is cached for a while. */
+export const useCodexAccount = (enabled = true) =>
+  useQuery({ ...channelQuery('ai.codexAccount', {}), enabled, staleTime: 60_000 })
+export const useCodexLogin = () => useChannelMutation('ai.codexLogin')
+/** Waits (up to 15 minutes) for the student to enter the device code. */
+export const useCodexLoginWait = () => useChannelMutation('ai.codexLoginWait', { onSuccess: setCodexAccount })
+export const useCodexLoginCancel = () => useChannelMutation('ai.codexLoginCancel', { silent: true })
+export const useCodexLogout = () => useChannelMutation('ai.codexLogout', { onSuccess: setCodexAccount })
 
 /** Models on an OpenAI-compatible server; a failure comes back as `error`, not as a thrown error. */
 export const useServerModels = (baseUrl: string | null) =>

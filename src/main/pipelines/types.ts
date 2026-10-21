@@ -2,6 +2,7 @@ import type { PageSnapshot } from '../portal/snapshot'
 import type { ProviderId } from '@shared/ai/provider'
 import type { IpcChannel, IpcEvent, IpcEvents, IpcOutput, IpcParsedInput } from '@shared/ipc/contract'
 import type { ClaudeAuth } from '../ai/providers/claude-code/auth'
+import type { CodexAuth } from '../ai/providers/codex/auth'
 import type { StudyAi } from '../ai/types'
 import type { Database } from '../db/types'
 import type { JobQueue } from '../jobs/types'
@@ -28,6 +29,7 @@ export interface SecretStore {
 
 export interface Connections {
   claude: ClaudeAuth
+  codex: CodexAuth
   listModels(baseUrl: string, apiKey: string | null): Promise<string[]>
 }
 

@@ -581,7 +581,11 @@ export function cardFromSeed(
   topicsBuilt: boolean
 ): Card {
   const day = 86_400_000
-  const due = new Date(now.getTime() + seed.dueInDays * day).toISOString()
+  // Calendar days, not 24-hour blocks: across a daylight-saving change those land on another day.
+  const dueAt = new Date(now)
+  dueAt.setDate(dueAt.getDate() + Math.trunc(seed.dueInDays))
+  dueAt.setTime(dueAt.getTime() + (seed.dueInDays % 1) * day)
+  const due = dueAt.toISOString()
   const fresh = index % 5 === 1
   return {
     id: `${docId}-card-${index + 1}`,

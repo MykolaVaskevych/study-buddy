@@ -4,6 +4,7 @@ import { useCheckAiHealth, useUpdateSettings } from '../../api/hooks'
 import { Button, cx, Icon } from '../../components'
 import { ApiKeyField } from './ApiKeyField'
 import { ClaudeAccountPanel } from './ClaudeAccountPanel'
+import { CodexAccountPanel } from './CodexAccountPanel'
 import { LocalServerPanel } from './LocalServerPanel'
 import { SettingsSection } from './layout'
 import { PROVIDERS } from './providers'
@@ -44,8 +45,8 @@ function ConnectionTest({ provider }: { provider: PublicSettings['provider'] }):
 }
 
 /**
- * Which AI to use: the Claude subscription (with sign-in), an Anthropic API key, or a local /
- * OpenAI-compatible server. Picking a card switches at once; the status bar switches too.
+ * Which AI to use: the Claude subscription (with sign-in), an Anthropic API key, the ChatGPT
+ * subscription through Codex (with sign-in), or a local / OpenAI-compatible server. Picking a card switches at once; the status bar switches too.
  */
 export function ConnectionSection({ settings }: { settings: PublicSettings }): React.JSX.Element {
   const update = useUpdateSettings()
@@ -54,7 +55,7 @@ export function ConnectionSection({ settings }: { settings: PublicSettings }): R
     <SettingsSection title="AI connection">
       <fieldset className="flex flex-col gap-3">
         <legend className="sr-only">Connect with</legend>
-        <div data-tour="ai-connection" className="grid gap-3 sm:grid-cols-3">
+        <div data-tour="ai-connection" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {PROVIDERS.map((p) => {
             const checked = settings.provider === p.id
             return (
@@ -95,6 +96,7 @@ export function ConnectionSection({ settings }: { settings: PublicSettings }): R
       </fieldset>
       {settings.provider === 'claude-code' ? <ClaudeAccountPanel /> : null}
       {settings.provider === 'anthropic-api' ? <ApiKeyField hasKey={settings.hasApiKey} /> : null}
+      {settings.provider === 'codex' ? <CodexAccountPanel /> : null}
       {settings.provider === 'openai-compatible' ? <LocalServerPanel settings={settings} /> : null}
       <ConnectionTest key={settings.provider} provider={settings.provider} />
     </SettingsSection>

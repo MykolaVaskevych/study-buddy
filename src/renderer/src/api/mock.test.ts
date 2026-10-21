@@ -130,7 +130,12 @@ describe('mock api', () => {
       'usage.summary',
       'ai.claudeAccount',
       'ai.claudeLoginCancel',
-      'ai.claudeLogout'
+      'ai.claudeLogout',
+      'ai.codexAccount',
+      'ai.codexLogin',
+      'ai.codexLoginWait',
+      'ai.codexLoginCancel',
+      'ai.codexLogout'
     ]
     for (const channel of contractChannels) {
       if (channel === 'quiz.answer' || channel === 'quiz.finish') continue

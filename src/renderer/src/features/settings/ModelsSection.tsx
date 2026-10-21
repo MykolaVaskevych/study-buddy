@@ -7,7 +7,10 @@ import { Button, cx } from '../../components'
 import { fieldClass } from '../study/form'
 import { SettingRow, SettingsSection } from './layout'
 
-type Provider = 'claude-code' | 'anthropic-api' | 'openai-compatible'
+type Provider = 'claude-code' | 'anthropic-api' | 'openai-compatible' | 'codex'
+
+/** Codex's catalog (`codex debug models`): the fast, workhorse and frontier models. */
+const CODEX_MODELS = ['gpt-6-luna', 'gpt-6.1-sol', 'gpt-6-astra', 'gpt-6-sol', 'gpt-5.6-luna', 'gpt-5.6-sol']
 type Tier = 'fast' | 'smart'
 
 const TIERS: { tier: Tier; label: string; description: string }[] = [
@@ -82,7 +85,8 @@ export function ModelsSection({ settings }: { settings: PublicSettings }): React
     ...new Set([
       ...(local ? [...(server.data?.models ?? []), ...presetFor(settings.openaiBaseUrl).models] : []),
       defaults.fast,
-      defaults.smart
+      defaults.smart,
+      ...(provider === 'codex' ? CODEX_MODELS : [])
     ])
   ]
   const isDefault = current.fast === defaults.fast && current.smart === defaults.smart
@@ -95,9 +99,11 @@ export function ModelsSection({ settings }: { settings: PublicSettings }): React
       description={
         provider === 'claude-code'
           ? 'Claude Code accepts short names such as haiku or opus.'
-          : provider === 'openai-compatible'
-            ? 'Model names as the server lists them (for Ollama, e.g. qwen3.6:27b). One model for both is fastest on a single graphics card.'
-            : 'Full model ids from the Anthropic API.'
+          : provider === 'codex'
+            ? 'Codex model names (codex debug models lists them). Luna is fast, Sol the workhorse, Astra the strongest but heaviest on your plan.'
+            : provider === 'openai-compatible'
+              ? 'Model names as the server lists them (for Ollama, e.g. qwen3.6:27b). One model for both is fastest on a single graphics card.'
+              : 'Full model ids from the Anthropic API.'
       }
     >
       {TIERS.map(({ tier, label, description }) => (

@@ -22,7 +22,7 @@ import type {
   SearchHit,
   Topic
 } from '@shared/domain'
-import type { ClaudeAccount } from '@shared/ai/connections'
+import type { ClaudeAccount, CodexAccount } from '@shared/ai/connections'
 import type { PublicSettings } from '@shared/settings'
 import { DEFAULT_SETTINGS } from '@shared/settings'
 import type { ExamPlan, PlanTopic } from '@shared/planner/types'
@@ -140,6 +140,7 @@ export function createMockApi(options: MockOptions = {}): MockApi {
   const pdfCache = new Map<string, Promise<Uint8Array>>()
   const timers = new Set<ReturnType<typeof setInterval>>()
   let settings: PublicSettings = { ...DEFAULT_SETTINGS, hasApiKey: false, hasOpenAiCompatibleKey: false }
+  let codexAccount: CodexAccount = { installed: true, loggedIn: false, method: null, problem: null }
   let claudeAccount: ClaudeAccount = {
     installed: true,
     loggedIn: true,
@@ -783,6 +784,17 @@ export function createMockApi(options: MockOptions = {}): MockApi {
     'ai.claudeLogout': () => {
       claudeAccount = { ...claudeAccount, loggedIn: false, method: null, email: null, plan: null }
       return claudeAccount
+    },
+    'ai.codexAccount': () => codexAccount,
+    'ai.codexLogin': () => ({ url: 'https://auth.openai.com/codex/device', code: 'MOCK-12345' }),
+    'ai.codexLoginWait': () => {
+      codexAccount = { ...codexAccount, loggedIn: true, method: 'ChatGPT' }
+      return codexAccount
+    },
+    'ai.codexLoginCancel': () => ({ ok: true }),
+    'ai.codexLogout': () => {
+      codexAccount = { ...codexAccount, loggedIn: false, method: null }
+      return codexAccount
     },
     'ai.listModels': ({ baseUrl }) =>
       baseUrl.includes('11434')

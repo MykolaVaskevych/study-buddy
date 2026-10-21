@@ -18,7 +18,7 @@ finish-args:
   # Read PDFs dropped from the file manager; the file picker works through portals anyway.
   - --filesystem=xdg-documents:ro
   - --filesystem=xdg-download:ro
-  # Subscription mode runs the user's own Claude Code on the host (flatpak/claude-host.sh).
+  # Subscription modes run the user's own Claude Code / Codex on the host (flatpak/*-host.sh).
   - --talk-name=org.freedesktop.Flatpak
   - --env=ELECTRON_TRASH=gio
 modules:
@@ -28,6 +28,7 @@ modules:
       - mkdir -p /app/lib && tar --no-same-owner -xzf linux-unpacked.tar.gz -C /app/lib && mv /app/lib/linux-unpacked /app/lib/study-buddy
       - install -Dm755 study-buddy.sh /app/bin/study-buddy
       - install -Dm755 claude-host.sh /app/bin/claude-host
+      - install -Dm755 codex-host.sh /app/bin/codex-host
       - install -Dm644 icon-512.png /app/share/icons/hicolor/512x512/apps/io.github.mykolavaskevych.StudyBuddy.png
       - install -Dm644 io.github.mykolavaskevych.StudyBuddy.desktop -t /app/share/applications
       - install -Dm644 io.github.mykolavaskevych.StudyBuddy.metainfo.xml -t /app/share/metainfo
@@ -39,6 +40,8 @@ modules:
         path: study-buddy.sh
       - type: file
         path: claude-host.sh
+      - type: file
+        path: codex-host.sh
       - type: file
         path: ../build/icon-512.png
       - type: file

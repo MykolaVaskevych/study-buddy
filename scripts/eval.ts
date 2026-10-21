@@ -15,7 +15,7 @@ import { parseArgs } from 'node:util'
 import type { ProviderId } from '@shared/ai/provider'
 import type { Card, Question } from '@shared/domain'
 import { DEFAULT_SETTINGS } from '@shared/settings'
-import { createClaudeAuth, createProvider, createStudyAi } from '../src/main/ai'
+import { createClaudeAuth, createCodexAuth, createProvider, createStudyAi } from '../src/main/ai'
 import { openDatabase } from '../src/main/db'
 import { createJobQueue } from '../src/main/jobs'
 import { createPdfLibrary, DEFAULT_CHUNK_OPTIONS } from '../src/main/library'
@@ -59,7 +59,13 @@ const settings = {
   provider,
   openaiBaseUrl: process.env['OPENAI_BASE_URL'] ?? DEFAULT_SETTINGS.openaiBaseUrl
 }
-const ai = createStudyAi(createProvider(settings, { apiKey }, { pdfText: (path) => library.pageTexts(path) }))
+const ai = createStudyAi(
+  createProvider(
+    settings,
+    { apiKey },
+    { pdfText: (path) => library.pageTexts(path), codexWorkDir: join(dir, 'codex') }
+  )
+)
 const queue = createJobQueue({ repo: db.jobs, concurrency: 3 })
 const noKey = { getApiKey: () => null, setApiKey: () => undefined }
 const pipelines = createPipelines({
@@ -70,7 +76,11 @@ const pipelines = createPipelines({
   aiFor: () => ai,
   secrets: { getApiKey: () => apiKey, setApiKey: () => undefined },
   openAiSecrets: noKey,
-  connections: { claude: createClaudeAuth({ executable: () => null }), listModels: async () => [] },
+  connections: {
+    claude: createClaudeAuth({ executable: () => null }),
+    listModels: async () => [],
+    codex: createCodexAuth({ executable: () => null })
+  },
   emit: (event, payload) => {
     if (event === 'ai.rateLimited' && payload) console.warn('rate limited:', payload)
   },

@@ -9,10 +9,14 @@ export {
   createClaudeCodeProvider,
   createFakeProvider,
   createClaudeAuth,
+  createCodexAuth,
+  createCodexProvider,
+  findCodexExecutable,
   createOpenAiCompatibleProvider,
   findClaudeExecutable,
   listModels,
   type ClaudeAuth,
+  type CodexAuth,
   type PdfTextFn
 } from './providers'
 export type * from './types'
