@@ -83,7 +83,8 @@ describe('migrate()', () => {
       tag: '0099_rebuild_documents',
       statements: [
         ddl.replace('CREATE TABLE `documents`', 'CREATE TABLE `__new_documents`'),
-        'INSERT INTO `__new_documents` SELECT * FROM `documents`',
+        // The columns of the original table (later migrations added more).
+        'INSERT INTO `__new_documents` SELECT id, sha256, title, stored_path, page_count, outline, language, imported_at, last_opened_at, last_page, index_state, index_error FROM `documents`',
         'DROP TABLE `documents`',
         'ALTER TABLE `__new_documents` RENAME TO `documents`'
       ]

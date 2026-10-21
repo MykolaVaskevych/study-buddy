@@ -69,5 +69,15 @@ export const MIGRATIONS: readonly EmbeddedMigration[] = [
     statements: [
       'CREATE TABLE `exam_profiles` (\n\t`doc_id` text PRIMARY KEY NOT NULL,\n\t`profile` text NOT NULL,\n\t`updated_at` text NOT NULL,\n\tFOREIGN KEY (`doc_id`) REFERENCES `documents`(`id`) ON UPDATE no action ON DELETE cascade\n);'
     ]
+  },
+  {
+    tag: '0005_courses',
+    statements: [
+      'CREATE TABLE `courses` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`name` text NOT NULL,\n\t`ord` integer NOT NULL,\n\t`created_at` text NOT NULL\n);',
+      'ALTER TABLE `documents` ADD `course_id` text REFERENCES courses(id);',
+      'ALTER TABLE `documents` ADD `ord` integer DEFAULT 0 NOT NULL;',
+      '-- Every existing file becomes a one-file course named after it, in import order.\nINSERT INTO `courses` (`id`, `name`, `ord`, `created_at`) SELECT `id`, `title`, (SELECT count(*) FROM `documents` `d2` WHERE `d2`.`imported_at` < `documents`.`imported_at`), `imported_at` FROM `documents`;',
+      'UPDATE `documents` SET `course_id` = `id`;'
+    ]
   }
 ]

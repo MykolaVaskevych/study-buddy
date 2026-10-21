@@ -135,63 +135,60 @@ function NotBuilt({ doc, index }: { doc: DocumentDetail; index: IndexStatus }): 
   )
 }
 
-/** Left pane: topics with page ranges and mastery, following the reader's position. */
-export function CourseMap({ doc, index, page, onJump }: Props): React.JSX.Element {
+/** The open file's topics with page ranges and mastery, following the reader's position. */
+export function TopicMap({ doc, index, page, onJump }: Props): React.JSX.Element {
   const topics = useTopics(doc.id)
   const list = topics.data ?? []
   const current = topicAt(list, page)
 
   return (
-    <div data-reader-panel data-tour="course-map" className="flex h-full flex-col">
-      <h2 className="flex h-11 shrink-0 items-center px-4 text-sm font-semibold text-graphite">Course map</h2>
-      <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4" tabIndex={-1}>
-        {topics.isPending ? (
-          <div className="flex flex-col gap-4 px-3 pt-2">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex flex-col gap-2">
-                <Skeleton className="h-3.5 w-4/5" />
-                <Skeleton className="h-1 w-full" />
-              </div>
-            ))}
-          </div>
-        ) : list.length === 0 ? (
-          <div className="flex flex-col gap-6 px-3 pt-2">
-            <NotBuilt doc={doc} index={index} />
-            {doc.outline.length > 0 ? (
-              <nav aria-label="Contents from the PDF" className="flex flex-col gap-1">
-                <h3 className="text-xs font-semibold text-graphite">Contents from the PDF</h3>
-                <ul>
-                  {doc.outline.map((item, i) => (
-                    <li key={`${item.title}-${i}`}>
-                      <button
-                        type="button"
-                        disabled={item.page === null}
-                        onClick={() => item.page !== null && onJump(item.page)}
-                        className="flex w-full justify-between gap-3 rounded-sm py-1.5 text-left text-sm hover:text-accent"
-                      >
-                        <span className="truncate">{item.title}</span>
-                        {item.page !== null ? <span className="tabular text-faint">{item.page}</span> : null}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </nav>
-            ) : null}
-          </div>
-        ) : (
-          <ul aria-label="Topics">
-            {buildTopicTree(list).map((node) => (
-              <TopicRow
-                key={node.topic.id}
-                node={node}
-                depth={0}
-                currentId={current?.id ?? null}
-                onJump={onJump}
-              />
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
+    <>
+      {topics.isPending ? (
+        <div className="flex flex-col gap-4 px-3 pt-2">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex flex-col gap-2">
+              <Skeleton className="h-3.5 w-4/5" />
+              <Skeleton className="h-1 w-full" />
+            </div>
+          ))}
+        </div>
+      ) : list.length === 0 ? (
+        <div className="flex flex-col gap-6 px-3 pt-2">
+          <NotBuilt doc={doc} index={index} />
+          {doc.outline.length > 0 ? (
+            <nav aria-label="Contents from the PDF" className="flex flex-col gap-1">
+              <h3 className="text-xs font-semibold text-graphite">Contents from the PDF</h3>
+              <ul>
+                {doc.outline.map((item, i) => (
+                  <li key={`${item.title}-${i}`}>
+                    <button
+                      type="button"
+                      disabled={item.page === null}
+                      onClick={() => item.page !== null && onJump(item.page)}
+                      className="flex w-full justify-between gap-3 rounded-sm py-1.5 text-left text-sm hover:text-accent"
+                    >
+                      <span className="truncate">{item.title}</span>
+                      {item.page !== null ? <span className="tabular text-faint">{item.page}</span> : null}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ) : null}
+        </div>
+      ) : (
+        <ul aria-label="Topics">
+          {buildTopicTree(list).map((node) => (
+            <TopicRow
+              key={node.topic.id}
+              node={node}
+              depth={0}
+              currentId={current?.id ?? null}
+              onJump={onJump}
+            />
+          ))}
+        </ul>
+      )}
+    </>
   )
 }

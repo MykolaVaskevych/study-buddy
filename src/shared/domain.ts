@@ -6,6 +6,7 @@
 
 export type DocId = string
 export type TopicId = string
+export type CourseId = string
 export type CardId = string
 export type QuestionId = string
 export type QuizId = string
@@ -42,6 +43,14 @@ export interface DocumentSummary {
   /** 0..1 averaged over topics with data, null if nothing studied yet. */
   mastery: number | null
   examDate: IsoDate | null
+}
+
+/** A subject or module (e.g. "Optical Networks"): any number of files studied together. */
+export interface Course {
+  id: CourseId
+  name: string
+  /** Files in the student's order. */
+  docIds: DocId[]
 }
 
 export interface DocumentDetail extends DocumentSummary {

@@ -66,6 +66,12 @@ export const tours: Record<TourId, TourStep[]> = {
   ],
   book: [
     {
+      target: '[data-tour="course-files"]',
+      title: 'Courses and their files',
+      body: 'A course keeps all the files of one subject together: slides, notes, past papers. Drag files to reorder them or into another course, drop files from your desktop onto a course to add them, and double-click (or F2) to rename. The ⋯ menu has the rest.',
+      optional: true
+    },
+    {
       target: '[data-tour="course-map"]',
       title: 'Course map',
       body: 'The book’s topics with your mastery. Click a topic to jump to it. It fills in once the AI has read the book.',

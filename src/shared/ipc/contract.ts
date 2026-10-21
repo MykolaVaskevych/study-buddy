@@ -7,6 +7,7 @@ import type {
   ResetResult,
   AttemptResult,
   Card,
+  Course,
   CramPlan,
   CheatSheet,
   PastPaperResult,
@@ -79,6 +80,7 @@ export const planInputSchema = z.object({
 })
 
 const none = z.object({}).strict()
+const courseName = z.string().trim().min(1).max(200)
 
 /** Declares a channel: input schema + output type. */
 function route<O>() {
@@ -91,8 +93,13 @@ export const ipcContract = {
 
   // ------------------------------------------------------------ library
   'library.list': route<DocumentSummary[]>()(none),
-  /** paths = null opens a native file picker. Returns the imported (or already present) docs. */
-  'library.import': route<DocumentSummary[]>()(z.object({ paths: z.array(z.string()).nullable() })),
+  /**
+   * paths = null opens a native file picker. Returns the imported (or already present) docs. Files go
+   * into `courseId` when given; otherwise several new files become one new course, a single file its own.
+   */
+  'library.import': route<DocumentSummary[]>()(
+    z.object({ paths: z.array(z.string()).nullable(), courseId: id.nullable().optional() })
+  ),
   'library.get': route<DocumentDetail>()(z.object({ docId: id })),
   'library.rename': route<DocumentSummary>()(z.object({ docId: id, title: z.string().min(1).max(200) })),
   'library.delete': route<{ deleted: true }>()(z.object({ docId: id })),
@@ -147,6 +154,20 @@ export const ipcContract = {
   ),
   /** Revision sheet from the index: core concepts and formulas per topic (no AI call). */
   'library.cheatSheet': route<CheatSheet>()(z.object({ docId: id })),
+
+  // ------------------------------------------------------------ courses
+  /** Courses (subjects) in sidebar order, each with its files in order. */
+  'courses.list': route<Course[]>()(none),
+  /** A new course from files, moved out of their old courses (emptied courses disappear). */
+  'courses.create': route<Course>()(z.object({ name: courseName, docIds: z.array(id).min(1).max(500) })),
+  'courses.rename': route<Course>()(z.object({ courseId: id, name: courseName })),
+  /** Moves a file into a course at a position; also reorders files within a course. */
+  'courses.moveDocument': route<Course[]>()(
+    z.object({ docId: id, courseId: id, index: z.number().int().min(0) })
+  ),
+  /** Splits a course back into one-file courses; no file is deleted. */
+  'courses.dissolve': route<{ ok: true }>()(z.object({ courseId: id })),
+  'courses.reorder': route<Course[]>()(z.object({ courseIds: z.array(id).max(1000) })),
 
   // ------------------------------------------------------------ AI index pass
   'index.start': route<IndexStatus>()(z.object({ docId: id })),

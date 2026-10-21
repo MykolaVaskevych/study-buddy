@@ -40,6 +40,11 @@ describe('mock api', () => {
       'cards.setStatus': { cardId: `${docId}-card-1`, status: 'active' },
       'cards.stats': { docId },
       'cram.plan': { docId, cards: 10 },
+      'courses.create': { name: 'Optics', docIds: [docId] },
+      'courses.rename': { courseId: 'course-signals-systems', name: 'Signals' },
+      'courses.moveDocument': { docId, courseId: 'course-signals-systems', index: 0 },
+      'courses.dissolve': { courseId: 'course-signals-systems' },
+      'courses.reorder': { courseIds: [] },
       'quiz.create': {
         scope: { kind: 'page', docId, page: 40 },
         mode: 'topic',
@@ -107,6 +112,7 @@ describe('mock api', () => {
     const empty = [
       'app.info',
       'library.list',
+      'courses.list',
       'settings.get',
       'usage.summary',
       'ai.claudeAccount',
