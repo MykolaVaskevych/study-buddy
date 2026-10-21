@@ -38,6 +38,7 @@ ESLint enforces the import rules (`no-restricted-imports` in `eslint.config.js`)
 5. **Learning loop.** FSRS reviews (deadline-aware) and quiz attempts update topic mastery (a Beta belief). The planner re-solves.
 
 **Courses and sources.**
+
 - **Courses.** A course (`courses` table) groups files. Every document belongs to one course. Plans, cards and topics are still per document; a cram can span several files of a course.
 - **Office files.** PowerPoint, Word and OpenDocument files are converted to PDF at import by the user's LibreOffice (`library/office.ts`; on the host when running in the Flatpak). A source-hash note makes re-imports reuse the stored PDF.
 - **Study portal.** `/portal` is an Electron `WebContentsView` on the persistent partition `persist:portal`, laid over the screen's placeholder (`portal/view.ts`).
