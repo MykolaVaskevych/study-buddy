@@ -6,6 +6,7 @@ import type { DocId, Question, QuestionResponse } from '@shared/domain'
 import type { IpcEvent, IpcEvents } from '@shared/ipc/contract'
 import { writeFixturePdf } from '../../../tests/fixtures/make-fixture-pdf'
 import { createClaudeAuth } from '../ai/providers/claude-code/auth'
+import { createDetachedPortal, type DetachedPortal } from '../portal/detached'
 import { createFakeProvider } from '../ai/providers/fake/provider'
 import { createStudyAi } from '../ai/study-ai'
 import { openDatabase } from '../db'
@@ -35,6 +36,8 @@ export interface Harness {
   secrets: SecretStore
   fixture: string
   libraryDir: string
+  /** The windowless portal browser behind the portal.* channels. */
+  portal: DetachedPortal
   clock: { now: () => Date; set: (iso: string) => void; advance: (ms: number) => void }
   events: { event: IpcEvent; payload: unknown }[]
   eventsOf<E extends IpcEvent>(event: E): IpcEvents[E][]
@@ -94,6 +97,7 @@ export async function createHarness(opts: HarnessOptions = {}): Promise<Harness>
     }
   }
   const events: Harness['events'] = []
+  const portal = createDetachedPortal()
   const pipelines = createPipelinesWith(
     {
       db,
@@ -112,7 +116,8 @@ export async function createHarness(opts: HarnessOptions = {}): Promise<Harness>
       },
       now: clock.now,
       pickPdfs: async () => [fixture],
-      appInfo: { version: '0.0.0-test', platform: 'test', dataDir: dir }
+      appInfo: { version: '0.0.0-test', platform: 'test', dataDir: dir },
+      portal
     },
     { ...DEFAULT_PIPELINE_OPTIONS, ...opts.options }
   )
@@ -141,6 +146,7 @@ export async function createHarness(opts: HarnessOptions = {}): Promise<Harness>
     secrets,
     fixture,
     libraryDir,
+    portal,
     clock,
     events,
     eventsOf: <E extends IpcEvent>(event: E) =>

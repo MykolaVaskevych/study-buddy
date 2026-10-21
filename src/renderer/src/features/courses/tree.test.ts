@@ -2,8 +2,8 @@ import type { Course } from '@shared/domain'
 import { dropMove, edgeAt, groupByCourse, nudgeFile } from './tree'
 
 const courses: Course[] = [
-  { id: 'optics', name: 'Optics', docIds: ['w1', 'w2', 'w3'] },
-  { id: 'radio', name: 'Radio', docIds: ['r1'] }
+  { id: 'optics', name: 'Optics', docIds: ['w1', 'w2', 'w3'], portalUrl: null },
+  { id: 'radio', name: 'Radio', docIds: ['r1'], portalUrl: null }
 ]
 
 describe('course tree drops', () => {
@@ -76,8 +76,8 @@ describe('groupByCourse', () => {
   it('gives multi-file courses a section and keeps the rest in library order', () => {
     const docs = [{ id: 'r1' }, { id: 'w2' }, { id: 'solo' }, { id: 'w1' }]
     const result = groupByCourse(docs, [
-      { id: 'optics', name: 'Optics', docIds: ['w1', 'w2'] },
-      { id: 'radio', name: 'Radio', docIds: ['r1'] }
+      { id: 'optics', name: 'Optics', docIds: ['w1', 'w2'], portalUrl: null },
+      { id: 'radio', name: 'Radio', docIds: ['r1'], portalUrl: null }
     ])
     expect(result.courses.map((g) => [g.course.id, g.docs.map((d) => d.id)])).toEqual([
       ['optics', ['w1', 'w2']]

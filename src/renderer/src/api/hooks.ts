@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import {
   keepPreviousData,
   queryOptions,
@@ -9,7 +9,14 @@ import {
 } from '@tanstack/react-query'
 import type { QueryClient, QueryKey } from '@tanstack/react-query'
 import type { IpcChannel, IpcInput, IpcOutput } from '@shared/ipc/contract'
-import type { DocumentSummary, IndexStatus, JobInfo, RateLimitInfo, Scope } from '@shared/domain'
+import type {
+  DocumentSummary,
+  IndexStatus,
+  JobInfo,
+  PortalDownload,
+  RateLimitInfo,
+  Scope
+} from '@shared/domain'
 import type { ClaudeAccount } from '@shared/ai/connections'
 import { call, subscribe } from './client'
 
@@ -364,6 +371,7 @@ export function useApiEvents({ onJobFailed }: ApiEventOptions = {}): void {
         if (docId) invalidate(qc, channelKey('topics.list', { docId }))
       }),
       subscribe('cards.changed', () => invalidateCards(qc)),
+      subscribe('portal.changed', (state) => qc.setQueryData(channelKey('portal.state', {}), state)),
       subscribe('pageCheck.ready', ({ docId, page }) => {
         invalidate(qc, channelKey('quiz.history', { docId }))
         markPageCheckReady(qc, docId, page)
@@ -374,6 +382,32 @@ export function useApiEvents({ onJobFailed }: ApiEventOptions = {}): void {
       for (const off of offs) off()
     }
   }, [qc, onJobFailed])
+}
+
+// ------------------------------------------------------------------ study portal (in-app browser)
+
+/** What the portal browser shows; kept current by 'portal.changed' events. */
+export const usePortalState = () => useQuery(channelQuery('portal.state', {}))
+const setPortalState = (qc: QueryClient, state: IpcOutput<'portal.state'>): void => {
+  qc.setQueryData(channelKey('portal.state', {}), state)
+}
+export const usePortalOpen = () =>
+  useChannelMutation('portal.open', { silent: true, onSuccess: (s, _i, qc) => setPortalState(qc, s) })
+export const usePortalClose = () => useChannelMutation('portal.close', { silent: true })
+export const usePortalBounds = () => useChannelMutation('portal.setBounds', { silent: true })
+export const usePortalCourse = () =>
+  useChannelMutation('portal.setCourse', { onSuccess: (s, _i, qc) => setPortalState(qc, s) })
+export const usePortalNavigate = () =>
+  useChannelMutation('portal.navigate', { onSuccess: (s, _i, qc) => setPortalState(qc, s) })
+export const usePortalGo = () =>
+  useChannelMutation('portal.go', { silent: true, onSuccess: (s, _i, qc) => setPortalState(qc, s) })
+export const usePortalSignOut = () => useChannelMutation('portal.signOut')
+
+/** Files downloaded in the portal this session, newest first. */
+export function usePortalDownloads(): PortalDownload[] {
+  const [downloads, setDownloads] = useState<PortalDownload[]>([])
+  useEffect(() => subscribe('portal.downloaded', (d) => setDownloads((all) => [d, ...all].slice(0, 20))), [])
+  return downloads
 }
 
 // ------------------------------------------------------------------ study (page checks, card jobs)

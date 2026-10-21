@@ -313,6 +313,10 @@ export function CourseTree({ docId, activeContent }: CourseTreeProps): React.JSX
 
   const courseMenu = (course: Course): (MenuItem | 'separator')[] => [
     { label: 'Rename', onSelect: () => setRenaming(course.id) },
+    {
+      label: 'Open study portal',
+      onSelect: () => void navigate(`/portal?course=${encodeURIComponent(course.id)}`)
+    },
     { label: 'Suggest names with AI…', onSelect: () => setNaming(course) },
     { label: 'Add files…', onSelect: () => addFiles(course.id, null) },
     {

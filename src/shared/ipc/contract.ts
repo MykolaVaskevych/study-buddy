@@ -10,6 +10,8 @@ import type {
   Course,
   CramPlan,
   NameSuggestions,
+  PortalState,
+  PortalDownload,
   CheatSheet,
   PastPaperResult,
   DocumentDetail,
@@ -83,6 +85,12 @@ export const planInputSchema = z.object({
 const none = z.object({}).strict()
 const courseName = z.string().trim().min(1).max(200)
 const cramScope = z.object({ docId: id, topicIds: z.array(id).max(500).nullable() })
+const portalBounds = z.object({
+  x: z.number().int(),
+  y: z.number().int(),
+  width: z.number().int().min(0),
+  height: z.number().int().min(0)
+})
 
 /** Declares a channel: input schema + output type. */
 function route<O>() {
@@ -187,6 +195,23 @@ export const ipcContract = {
   /** Splits a course back into one-file courses; no file is deleted. */
   'courses.dissolve': route<{ ok: true }>()(z.object({ courseId: id })),
   'courses.reorder': route<Course[]>()(z.object({ courseIds: z.array(id).max(1000) })),
+
+  // ------------------------------------------------------------ study portal (in-app browser)
+  /**
+   * Shows the portal browser over `bounds` (window coordinates of the screen's placeholder) and sets
+   * the course downloads go into. Opens the course's last portal page when nothing is loaded yet.
+   */
+  'portal.open': route<PortalState>()(z.object({ bounds: portalBounds, courseId: id.nullable() })),
+  /** Hides the portal browser (it keeps its page and sign-in). */
+  'portal.close': route<{ ok: true }>()(none),
+  'portal.setBounds': route<{ ok: true }>()(z.object({ bounds: portalBounds })),
+  'portal.setCourse': route<PortalState>()(z.object({ courseId: id.nullable() })),
+  /** Opens an address typed by the student ("sulis.ul.ie" works; only http and https). */
+  'portal.navigate': route<PortalState>()(z.object({ url: z.string().trim().min(1).max(2000) })),
+  'portal.go': route<PortalState>()(z.object({ action: z.enum(['back', 'forward', 'reload', 'stop']) })),
+  'portal.state': route<PortalState>()(none),
+  /** Forgets every portal sign-in (cookies and storage of the portal browser). */
+  'portal.signOut': route<{ ok: true }>()(none),
 
   // ------------------------------------------------------------ AI index pass
   'index.start': route<IndexStatus>()(z.object({ docId: id })),
@@ -337,6 +362,10 @@ export interface IpcEvents {
   'index.progress': { docId: string; status: IndexStatus }
   'library.changed': { docId: string | null }
   'cards.changed': { docId: string }
+  /** The portal browser navigated, loaded or changed title. */
+  'portal.changed': PortalState
+  /** A file downloaded in the portal was imported (or why not). */
+  'portal.downloaded': PortalDownload
   'pageCheck.ready': { docId: string; page: number }
   'chat.delta': { requestId: string; text: string }
   /** error = null on success; citations = distinct [p. N] pages in the answer. */

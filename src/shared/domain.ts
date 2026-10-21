@@ -51,6 +51,28 @@ export interface Course {
   name: string
   /** Files in the student's order. */
   docIds: DocId[]
+  /** Last study-portal page used for this course (where the portal opens next time). */
+  portalUrl: string | null
+}
+
+/** The in-app study-portal browser: what it shows and where downloads go. */
+export interface PortalState {
+  url: string | null
+  title: string
+  loading: boolean
+  canGoBack: boolean
+  canGoForward: boolean
+  /** Downloads go into this course; null makes each file its own course. */
+  courseId: CourseId | null
+}
+
+/** One file downloaded in the portal and what became of it. */
+export interface PortalDownload {
+  fileName: string
+  courseId: CourseId | null
+  docIds: DocId[]
+  /** Why it was not imported (e.g. LibreOffice missing); null when it was. */
+  error: string | null
 }
 
 /** AI-suggested names for a course and its files; nothing changes until the student accepts them. */

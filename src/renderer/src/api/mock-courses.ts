@@ -28,7 +28,12 @@ export function createMockCourses(
     changed: () => void
   }
 ): MockCourses {
-  let courses: Course[] = books.map((b) => ({ id: `course-${b.id}`, name: b.title, docIds: [b.id] }))
+  let courses: Course[] = books.map((b) => ({
+    id: `course-${b.id}`,
+    name: b.title,
+    docIds: [b.id],
+    portalUrl: null
+  }))
   const prune = (): void => {
     courses = courses.filter((c) => c.docIds.length > 0)
   }
@@ -39,7 +44,7 @@ export function createMockCourses(
     courses.find((c) => c.id === courseId) ?? deps.fail(`Course not found: ${courseId}`)
   const create = (name: string, docIds: string[]): Course => {
     detach(docIds)
-    const course = { id: deps.nextId('course'), name, docIds: [...docIds] }
+    const course: Course = { id: deps.nextId('course'), name, docIds: [...docIds], portalUrl: null }
     courses = [...courses, course]
     prune()
     return course

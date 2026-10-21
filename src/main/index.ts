@@ -15,6 +15,7 @@ import {
   registerPdfProtocol,
   registerPdfScheme,
   resolveRendererSource,
+  runPortalSmoke,
   runSmoke,
   waitForRendererLoad,
   writeSmokePdf
@@ -22,6 +23,7 @@ import {
 import { openDatabase } from './db'
 import { createEmitter, registerIpc } from './ipc'
 import { createJobQueue } from './jobs'
+import { createPortalView } from './portal/view'
 import { createOfficeConverter, createPdfLibrary, DEFAULT_CHUNK_OPTIONS, findSoffice } from './library'
 import { createPipelines } from './pipelines'
 import { createSrs } from './srs'
@@ -110,7 +112,12 @@ async function bootstrap(): Promise<void> {
     emit: createEmitter(() => BrowserWindow.getAllWindows(), log),
     now,
     pickPdfs: () => pickPdfs(mainWindow),
-    appInfo: { version: app.getVersion(), platform: process.platform, dataDir }
+    appInfo: { version: app.getVersion(), platform: process.platform, dataDir },
+    portal: createPortalView({
+      window: () => mainWindow,
+      downloadsDir: join(dataDir, 'portal-downloads'),
+      log
+    })
   })
   registerIpc(ipcMain, pipelines.handlers, { isTrustedSender: (url) => isAppUrl(renderer, url), log })
   registerPdfProtocol(protocol, (docId) => db.documents.get(docId)?.storedPath ?? null, { log })
@@ -154,6 +161,7 @@ async function bootstrap(): Promise<void> {
       log.info('[smoke] OK: preload bridge round trip')
       const pdfPath = await writeSmokePdf(join(dataDir, 'smoke'))
       await runSmoke(pipelines.handlers, { pdfPath, log, timeoutMs: 120_000 })
+      await runPortalSmoke(pipelines.handlers, { pdfPath, log, timeoutMs: 30_000 })
       await pipelines.stop()
       app.exit(0)
     } catch (err) {

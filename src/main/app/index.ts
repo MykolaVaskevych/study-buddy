@@ -23,6 +23,7 @@ export {
 } from './secrets'
 export { ensureSingleInstance } from './single-instance'
 export {
+  runPortalSmoke,
   runSmoke,
   waitForRendererLoad,
   writeSmokePdf,

@@ -79,5 +79,9 @@ export const MIGRATIONS: readonly EmbeddedMigration[] = [
       '-- Every existing file becomes a one-file course named after it, in import order.\nINSERT INTO `courses` (`id`, `name`, `ord`, `created_at`) SELECT `id`, `title`, (SELECT count(*) FROM `documents` `d2` WHERE `d2`.`imported_at` < `documents`.`imported_at`), `imported_at` FROM `documents`;',
       'UPDATE `documents` SET `course_id` = `id`;'
     ]
+  },
+  {
+    tag: '0006_course_portal',
+    statements: ['ALTER TABLE `courses` ADD `portal_url` text;']
   }
 ]

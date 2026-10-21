@@ -15,6 +15,7 @@ import { createExtras } from './extras'
 import { createPastPapers } from './past-paper'
 import { createLessons } from './lessons'
 import { createCourses } from './courses'
+import { createPortal } from './portal'
 import { createCram } from './cram'
 import { createExamProfiles } from './exam-profile'
 import { createOverview } from './overview'
@@ -99,9 +100,11 @@ export function createPipelinesWith(deps: PipelineDeps, options: PipelineOptions
     generateCards: cards.handlers['cards.generate']
   })
   topicsReady.notify = overview.onTopicsReady
+  const libraryService = createLibraryService(deps, { indexing })
 
   const handlers = guardAll({
-    ...createLibraryService(deps, { indexing }).handlers,
+    ...libraryService.handlers,
+    ...createPortal(deps, { importFiles: libraryService.handlers['library.import'] }).handlers,
     ...indexing.handlers,
     ...topics.handlers,
     ...cards.handlers,

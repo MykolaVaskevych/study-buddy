@@ -44,6 +44,11 @@ export const appRoutes: AppRoute[] = [
     nav: { label: 'Planner', icon: 'planner', shortcut: 'Mod+3' }
   },
   {
+    path: '/portal',
+    lazy: () => import('../features/portal/PortalScreen').then((m) => m.PortalScreen),
+    nav: { label: 'Portal', icon: 'external', shortcut: 'Mod+5' }
+  },
+  {
     path: '/settings',
     lazy: () => import('../features/settings/SettingsScreen').then((m) => m.SettingsScreen),
     nav: { label: 'Settings', icon: 'settings', shortcut: 'Mod+4' }

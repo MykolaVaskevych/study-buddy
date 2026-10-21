@@ -20,6 +20,7 @@ import { openDatabase } from '../src/main/db'
 import { createJobQueue } from '../src/main/jobs'
 import { createPdfLibrary, DEFAULT_CHUNK_OPTIONS } from '../src/main/library'
 import { createPipelines } from '../src/main/pipelines'
+import { createDetachedPortal } from '../src/main/portal/detached'
 import { createSrs } from '../src/main/srs'
 
 const { values, positionals } = parseArgs({
@@ -75,7 +76,8 @@ const pipelines = createPipelines({
   },
   now: () => new Date(),
   pickPdfs: async () => [],
-  appInfo: { version: 'eval', platform: process.platform, dataDir: dir }
+  appInfo: { version: 'eval', platform: process.platform, dataDir: dir },
+  portal: createDetachedPortal()
 })
 const h = pipelines.handlers
 pipelines.start()
