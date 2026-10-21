@@ -179,7 +179,8 @@ export function createMockApi(options: MockOptions = {}): MockApi {
     titleOf: (docId) => getDoc(docId).title,
     fail: (message) => {
       throw new MockError('not_found', message)
-    }
+    },
+    changed: () => emit('library.changed', { docId: null })
   })
 
   const indexStatus = (d: DocState): IndexStatus => ({

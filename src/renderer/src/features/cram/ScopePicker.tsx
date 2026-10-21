@@ -9,7 +9,7 @@ export type ScopeChoice = Map<string, 'all' | Set<string>>
 
 /** The cram's scopes from the picker's choice, in file order; files with no chapter ticked drop out. */
 export function scopesOf(choice: ScopeChoice, order: readonly string[]): CramScope[] {
-  return order.flatMap((docId) => {
+  return order.flatMap((docId): CramScope[] => {
     const c = choice.get(docId)
     if (c === undefined) return []
     if (c === 'all') return [{ docId, topicIds: null }]
