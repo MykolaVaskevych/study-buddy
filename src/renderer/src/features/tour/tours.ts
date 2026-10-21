@@ -19,6 +19,11 @@ export const tours: Record<TourId, TourStep[]> = {
       body: 'Open Brightspace, Sulis, Blackboard, Moodle or any other portal and sign in as usual; the sign-in stays here for next time. Study Buddy never sees your password.'
     },
     {
+      target: '[data-tour="portal-home"]',
+      title: 'Your portals',
+      body: 'Home lists your portals: add one with “Add portal”, or save the page you are on with the bookmark. Going home keeps you signed in and the page open; “Continue” takes you back.'
+    },
+    {
       target: '[data-tour="portal-bar"]',
       title: 'Browse as usual',
       body: 'Back, forward, reload and the address bar work like in any browser.'

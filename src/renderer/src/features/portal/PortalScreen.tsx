@@ -9,20 +9,14 @@ import {
   usePortalGo,
   usePortalNavigate,
   usePortalOpen,
-  usePortalState
+  usePortalState,
+  useSettings,
+  useUpdateSettings
 } from '../../api/hooks'
 import { cx, Icon, IconButton } from '../../components'
 import { fieldClass } from '../study/form'
+import { PortalHome, type SavedPortal } from './PortalHome'
 import { useAutoTour } from '../tour/useAutoTour'
-
-/** Where students usually start; any address works. */
-const EXAMPLES = [
-  { label: 'Brightspace (UL)', url: 'learn.ul.ie' },
-  { label: 'Sulis (UL)', url: 'sulis.ul.ie' },
-  { label: 'Blackboard', url: 'blackboard.com' },
-  { label: 'Moodle', url: 'moodle.org' },
-  { label: 'Canvas', url: 'canvas.instructure.com' }
-]
 
 type Bounds = { x: number; y: number; width: number; height: number }
 
@@ -52,6 +46,12 @@ export function PortalScreen(): React.JSX.Element {
   const navigate = usePortalNavigate()
   const go = usePortalGo()
   const downloads = usePortalDownloads()
+  const settings = useSettings()
+  const updateSettings = useUpdateSettings()
+  const portals = settings.data?.portals ?? []
+  const savePortals = (next: SavedPortal[]): void => updateSettings.mutate({ portals: next })
+  // Home shows the portal list; the page stays open (and signed in) behind it.
+  const [home, setHome] = useState(true)
   const area = useRef<HTMLDivElement>(null)
   const [address, setAddress] = useState('')
   const [editing, setEditing] = useState(false)
@@ -65,7 +65,8 @@ export function PortalScreen(): React.JSX.Element {
   useEffect(() => {
     target.current = courseId
   }, [courseId])
-  const shown = url !== null
+  const shown = url !== null && !home
+  const saved = url !== null && portals.some((p) => p.url === url)
   const { mutate: openView } = open
   const { mutate: closeView } = close
   const { mutate: moveView } = setBounds
@@ -88,7 +89,7 @@ export function PortalScreen(): React.JSX.Element {
   }, [shown, openView, closeView, moveView])
 
   const visit = (target: string): void => {
-    navigate.mutate({ url: target })
+    navigate.mutate({ url: target }, { onSuccess: () => setHome(false) })
     setEditing(false)
   }
 
@@ -102,15 +103,22 @@ export function PortalScreen(): React.JSX.Element {
         data-tour="portal-bar"
       >
         <IconButton
+          icon="home"
+          label="Portal home"
+          data-tour="portal-home"
+          pressed={!shown}
+          onClick={() => setHome(true)}
+        />
+        <IconButton
           icon="chevron-left"
           label="Back"
-          disabled={!state.data?.canGoBack}
+          disabled={!shown || !state.data?.canGoBack}
           onClick={() => go.mutate({ action: 'back' })}
         />
         <IconButton
           icon="chevron-right"
           label="Forward"
-          disabled={!state.data?.canGoForward}
+          disabled={!shown || !state.data?.canGoForward}
           onClick={() => go.mutate({ action: 'forward' })}
         />
         <IconButton
@@ -140,6 +148,15 @@ export function PortalScreen(): React.JSX.Element {
             className={cx(fieldClass, 'h-8 w-full')}
           />
         </form>
+        <IconButton
+          icon="bookmark"
+          label={saved ? 'In your portals' : 'Add this page to your portals'}
+          pressed={saved}
+          disabled={!shown || saved}
+          onClick={() => {
+            if (url) savePortals([...portals, { name: state.data?.title || new URL(url).hostname, url }])
+          }}
+        />
         <label className="flex items-center gap-2 text-sm text-graphite" data-tour="portal-course">
           Files go to
           <select
@@ -162,31 +179,15 @@ export function PortalScreen(): React.JSX.Element {
       </div>
       {navigate.error ? <p className="px-4 py-1 text-sm text-redpen">{navigate.error.message}</p> : null}
 
-      <div ref={area} className="relative min-h-0 flex-1 bg-sheet">
+      <div ref={area} className="relative min-h-0 flex-1 overflow-y-auto bg-sheet">
         {!shown ? (
-          <section
-            aria-label="Open your study portal"
-            className="mx-auto flex max-w-2xl flex-col gap-5 px-8 py-12"
-          >
-            <h1 className="font-serif text-2xl font-semibold">Your study portal, inside Study Buddy</h1>
-            <p className="text-md">
-              Open your university’s portal and sign in as usual. Every PDF, PowerPoint or Word file you
-              download here goes straight into the course you pick above. Your password stays with the portal;
-              Study Buddy never sees it.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {EXAMPLES.map((e) => (
-                <button
-                  key={e.url}
-                  type="button"
-                  onClick={() => visit(e.url)}
-                  className="rounded-full border border-rule bg-paper px-3 py-1 text-sm hover:bg-sunken"
-                >
-                  {e.label}
-                </button>
-              ))}
-            </div>
-          </section>
+          <PortalHome
+            portals={portals}
+            current={url !== null ? { url, title: state.data?.title ?? '' } : null}
+            onOpen={visit}
+            onContinue={() => setHome(false)}
+            onChange={savePortals}
+          />
         ) : null}
       </div>
 

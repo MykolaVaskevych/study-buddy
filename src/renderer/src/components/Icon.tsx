@@ -49,7 +49,8 @@ const paths = {
   link: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
   pencil: 'M15.5 5.5l3 3M4.5 19.5l1-4 10.6-10.6a1.4 1.4 0 0 1 2 0l1 1a1.4 1.4 0 0 1 0 2L8.5 18.5z',
   more: 'M5.5 12h.01M12 12h.01M18.5 12h.01',
-  plus: 'M12 5v14M5 12h14'
+  plus: 'M12 5v14M5 12h14',
+  home: 'M4 11.5 12 4.5l8 7M6.5 9.5V20h11V9.5M10 20v-5.5h4V20'
 } as const
 
 export type IconName = keyof typeof paths
