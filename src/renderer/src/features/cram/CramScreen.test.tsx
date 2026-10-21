@@ -7,7 +7,7 @@ const calls = (invoke: { mock: { calls: unknown[][] } }, channel: string): unkno
   invoke.mock.calls.filter(([c]) => c === channel).map(([, input]) => input)
 
 describe('CramScreen', () => {
-  it('runs the picked cards, then exam-style questions in the exam's types', async () => {
+  it('runs the picked cards, then exam-style questions in the exam types', async () => {
     const { mock } = renderApp('/book/optical-networks/panic')
     await mock.invoke('exam.saveProfile', {
       docId: 'optical-networks',
