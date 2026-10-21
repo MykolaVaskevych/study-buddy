@@ -31,6 +31,12 @@ export const tours: Record<TourId, TourStep[]> = {
       optional: true
     },
     {
+      target: '[data-tour="panic"]',
+      title: 'Exam tomorrow? Don’t panic',
+      body: 'The red button is a 30-minute cram: the flashcards that matter most for the exam, then a few exam-style questions with the answers explained. Then sleep.',
+      optional: true
+    },
+    {
       target: '[data-tour="today"]',
       title: 'Today',
       body: 'Once a plan is saved, today’s sessions appear here: what to learn, check and review. Press Start and go.',

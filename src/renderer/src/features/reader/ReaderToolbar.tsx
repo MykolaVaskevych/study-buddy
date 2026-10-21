@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { useUiStore } from '../../app/uiStore'
 import { cx, Icon, IconButton, Tooltip } from '../../components'
+import { panicClass } from '../cram/panic'
 import { formatZoom } from './zoom'
 
 interface Props {
@@ -148,6 +149,13 @@ export function ReaderToolbar({
             </Link>
           </Tooltip>
         ))}
+        <Link
+          to={`/book/${docId}/panic`}
+          title="Exam tomorrow? A 30-minute cram: the cards that matter most, then exam questions"
+          className={cx(panicClass, 'ml-1 h-7 px-3 text-xs')}
+        >
+          Don’t panic
+        </Link>
       </nav>
 
       <IconButton

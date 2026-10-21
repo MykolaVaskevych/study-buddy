@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import type { DocumentSummary } from '@shared/domain'
 import { Badge, cx, Icon, Progress } from '../../components'
+import { panicClass } from '../cram/panic'
 import { examCountdown, relativeDay, spineIndex } from './format'
 import type { Urgency } from './format'
 
@@ -80,6 +81,14 @@ export function BookCard({ doc, now }: { doc: DocumentSummary; now: Date }): Rea
           className="relative z-10 -mt-2 self-start text-sm text-accent hover:underline"
         >
           AI status &amp; progress →
+        </Link>
+        <Link
+          to={`/book/${encodeURIComponent(doc.id)}/panic`}
+          data-tour="panic"
+          title="Exam tomorrow? A 30-minute cram: the cards that matter most, then exam questions"
+          className={cx(panicClass, 'relative z-10 -mt-1 h-7 self-start px-3 text-xs')}
+        >
+          Don’t panic
         </Link>
 
         <div className="flex flex-col gap-1.5">

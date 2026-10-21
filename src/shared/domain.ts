@@ -194,6 +194,20 @@ export interface Card {
   createdAt: IsoDate
 }
 
+/**
+ * "Don't panic": a short cram for an exam that is close. The flashcards worth most right now, then
+ * a few exam-style questions in the types the exam profile allows.
+ */
+export interface CramPlan {
+  docId: DocId
+  cards: Card[]
+  questionCount: number
+  /** null = any type. */
+  questionTypes: QuestionType[] | null
+  /** Rough length of the whole session. */
+  minutes: number
+}
+
 // ---------------------------------------------------------------- questions
 
 export type QuestionType = 'mcq' | 'multi' | 'tf' | 'short' | 'numeric'

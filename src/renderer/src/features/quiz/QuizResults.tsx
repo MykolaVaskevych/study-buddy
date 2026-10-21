@@ -13,6 +13,8 @@ interface QuizResultsProps {
   state: RunState
   onCitation: (page: number) => void
   onNew: () => void
+  /** Label of the onNew button (default "New quiz"). */
+  newLabel?: string
   onRetry: (session: QuizSession) => void
 }
 
@@ -30,6 +32,7 @@ export function QuizResults({
   state,
   onCitation,
   onNew,
+  newLabel = 'New quiz',
   onRetry
 }: QuizResultsProps): React.JSX.Element {
   const topics = useTopics(session.docId)
@@ -82,7 +85,7 @@ export function QuizResults({
             Retry mistakes
           </Button>
         ) : null}
-        <Button onClick={onNew}>New quiz</Button>
+        <Button onClick={onNew}>{newLabel}</Button>
         <Link to={`/book/${encodeURIComponent(session.docId)}`} className={buttonClass('ghost')}>
           Back to the book
         </Link>
