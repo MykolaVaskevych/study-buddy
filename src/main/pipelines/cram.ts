@@ -40,7 +40,9 @@ export function pickCram(
   for (const c of cards) {
     if (c.status !== 'active' || opts.skip.has(c.type)) continue
     const key = c.topicId !== null && byId.has(c.topicId) ? c.topicId : null
-    groups.set(key, [...(groups.get(key) ?? []), c])
+    const group = groups.get(key)
+    if (group) group.push(c)
+    else groups.set(key, [c])
   }
   const known = [...groups.keys()].flatMap((id) => {
     const w = id === null ? undefined : byId.get(id)?.estimates?.examWeight

@@ -18,12 +18,12 @@ export const cramQuestionCount = (cards: number): number => Math.min(15, Math.ma
 export const cramMinutes = (cards: number, questions: number = cramQuestionCount(cards)): number =>
   Math.max(5, Math.ceil((cards * CARD_MINUTES + questions * QUESTION_MINUTES) / 5) * 5)
 
-/** Question types that look like the exam; numeric ones only when the exam has formulas. */
+/** Question types that look like the exam; numeric ones only when the exam has formulas or is all numeric. */
 export function cramQuestionTypes(profile: Pick<ExamProfile, 'formats' | 'formulas'>): QuestionType[] | null {
   const f = profile.formats
   const types: QuestionType[] = []
   if (f.mcq > 0) types.push('mcq', 'multi', 'tf')
   if (f.written > 0) types.push('short')
-  if (f.numeric > 0 && profile.formulas !== 'none') types.push('numeric')
+  if (f.numeric > 0 && (profile.formulas !== 'none' || types.length === 0)) types.push('numeric')
   return types.length > 0 ? types : null
 }

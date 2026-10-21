@@ -7,8 +7,14 @@ const calls = (invoke: { mock: { calls: unknown[][] } }, channel: string): unkno
   invoke.mock.calls.filter(([c]) => c === channel).map(([, input]) => input)
 
 describe('CramScreen', () => {
-  it('runs the picked cards, then exam-style questions, then sends you to bed', async () => {
+  it('runs the picked cards, then exam-style questions in the exam's types', async () => {
     const { mock } = renderApp('/book/optical-networks/panic')
+    await mock.invoke('exam.saveProfile', {
+      docId: 'optical-networks',
+      formats: { mcq: 1, written: 0, numeric: 0 },
+      formulas: 'none',
+      formulaSheet: false
+    })
     const invoke = vi.spyOn(mock, 'invoke')
     const user = userEvent.setup()
 

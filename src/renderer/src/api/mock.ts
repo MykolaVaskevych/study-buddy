@@ -1,5 +1,5 @@
 import type { Annotation, ExamProfile, Lesson } from '@shared/domain'
-import { cramMinutes, cramQuestionCount } from '@shared/cram'
+import { cramMinutes, cramQuestionCount, cramQuestionTypes } from '@shared/cram'
 import { ipcContract } from '@shared/ipc/contract'
 import type {
   IpcChannel,
@@ -141,6 +141,17 @@ export function createMockApi(options: MockOptions = {}): MockApi {
   let seq = 0
   const annotations: Annotation[] = []
   const profiles = new Map<string, ExamProfile>()
+  const profileOf = (docId: string): ExamProfile =>
+    profiles.get(docId) ?? {
+      docId,
+      formats: { mcq: 0.4, written: 0.3, numeric: 0.3 },
+      formulas: 'apply',
+      formulaSheet: false,
+      style: '',
+      examples: [],
+      source: 'default',
+      updatedAt: null
+    }
   const nextId = (prefix: string): string => `${prefix}-${++seq}`
 
   const listeners: { [E in IpcEvent]: Set<(payload: IpcEvents[E]) => void> } = {
@@ -606,17 +617,7 @@ export function createMockApi(options: MockOptions = {}): MockApi {
       !force && !profiles.has(docId)
         ? { queued: 0, needsProfile: true, message: 'Tell Study Buddy what your exam looks like first.' }
         : { queued: 5, needsProfile: false, message: 'Making essentials flashcards for 5 topics.' },
-    'exam.getProfile': ({ docId }) =>
-      profiles.get(docId) ?? {
-        docId,
-        formats: { mcq: 0.4, written: 0.3, numeric: 0.3 },
-        formulas: 'apply',
-        formulaSheet: false,
-        style: '',
-        examples: [],
-        source: 'default',
-        updatedAt: null
-      },
+    'exam.getProfile': ({ docId }) => profileOf(docId),
     'exam.saveProfile': ({ docId, formats, formulas, formulaSheet }) => {
       const sum = formats.mcq + formats.written + formats.numeric || 1
       const saved: ExamProfile = {
@@ -634,12 +635,13 @@ export function createMockApi(options: MockOptions = {}): MockApi {
     },
     'cards.rebuildForExam': () => ({ suspended: 3, queued: 6 }),
     'cram.plan': ({ docId, cards }) => {
+      const profile = profileOf(docId)
       const picked = getDoc(docId)
-        .cards.filter((c) => c.status === 'active' && c.type !== 'formula')
+        .cards.filter((c) => c.status === 'active' && (profile.formulas !== 'none' || c.type !== 'formula'))
         .slice(0, cards)
       const questionCount = cramQuestionCount(cards)
       const minutes = cramMinutes(picked.length, questionCount)
-      return { docId, cards: picked, questionCount, questionTypes: ['mcq', 'multi', 'tf'], minutes }
+      return { docId, cards: picked, questionCount, questionTypes: cramQuestionTypes(profile), minutes }
     },
     'progress.reset': () => ({ cards: 12, attempts: 4, readingPages: 14 }),
     'lessons.list': ({ docId }) => {

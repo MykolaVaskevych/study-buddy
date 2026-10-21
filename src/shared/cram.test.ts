@@ -10,6 +10,9 @@ describe('cram sizing', () => {
     expect(cramQuestionTypes({ formats: { mcq: 0, written: 0.5, numeric: 0.5 }, formulas: 'none' })).toEqual([
       'short'
     ])
+    expect(cramQuestionTypes({ formats: { mcq: 0, written: 0, numeric: 1 }, formulas: 'none' })).toEqual([
+      'numeric'
+    ])
     expect(cramQuestionTypes({ formats: { mcq: 0, written: 0, numeric: 0 }, formulas: 'apply' })).toBeNull()
   })
 
