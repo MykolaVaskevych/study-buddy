@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const providerIdSchema = z.enum(['claude-code', 'anthropic-api', 'openai-compatible', 'fake'])
+export const providerIdSchema = z.enum(['claude-code', 'anthropic-api', 'openai-compatible', 'codex', 'fake'])
 
 const tierModelsSchema = z.object({ fast: z.string().min(1), smart: z.string().min(1) })
 
@@ -10,7 +10,9 @@ export const settingsSchema = z.object({
   models: z.object({
     'claude-code': tierModelsSchema,
     'anthropic-api': tierModelsSchema,
-    'openai-compatible': tierModelsSchema
+    'openai-compatible': tierModelsSchema,
+    /** Codex CLI on a ChatGPT plan; ids from `codex debug models`. */
+    codex: tierModelsSchema
   }),
   /** Base URL of an OpenAI-compatible server (Ollama, LM Studio, llama.cpp, DeepSeek, ...), ending in /v1. */
   openaiBaseUrl: z.url({ protocol: /^https?$/ }),
@@ -46,7 +48,8 @@ export const DEFAULT_SETTINGS: Settings = {
     'claude-code': { fast: 'haiku', smart: 'opus' },
     'anthropic-api': { fast: 'claude-haiku-5-5', smart: 'claude-opus-5-5' },
     // One model for both tiers: a 24 GB GPU holds one of these at a time, and swapping is slow.
-    'openai-compatible': { fast: 'qwen3.6:27b', smart: 'qwen3.6:27b' }
+    'openai-compatible': { fast: 'qwen3.6:27b', smart: 'qwen3.6:27b' },
+    codex: { fast: 'gpt-6-luna', smart: 'gpt-6.1-sol' }
   },
   openaiBaseUrl: 'http://localhost:11434/v1',
   aiConcurrency: 3,

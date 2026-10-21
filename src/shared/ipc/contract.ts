@@ -28,7 +28,7 @@ import type {
   Topic,
   UsageSummary
 } from '../domain'
-import type { ClaudeAccount, ClaudeLoginStart } from '../ai/connections'
+import type { ClaudeAccount, ClaudeLoginStart, CodexAccount, CodexLoginStart } from '../ai/connections'
 import type { HealthResult } from '../ai/provider'
 import type { PublicSettings } from '../settings'
 import { settingsSchema, providerIdSchema } from '../settings'
@@ -340,6 +340,15 @@ export const ipcContract = {
   'ai.claudeLoginCancel': route<{ ok: true }>()(none),
   /** Signs Claude Code out on this computer, terminal included. */
   'ai.claudeLogout': route<ClaudeAccount>()(none),
+  /** Codex (OpenAI's CLI, on a ChatGPT plan) on this computer. */
+  'ai.codexAccount': route<CodexAccount>()(none),
+  /** Starts a device sign-in: the page to open and the code to enter there. */
+  'ai.codexLogin': route<CodexLoginStart>()(none),
+  /** Resolves once the student entered the code (or the sign-in stopped), with the new state. */
+  'ai.codexLoginWait': route<CodexAccount>()(none),
+  'ai.codexLoginCancel': route<{ ok: true }>()(none),
+  /** Signs Codex out on this computer (the terminal `codex` too). */
+  'ai.codexLogout': route<CodexAccount>()(none),
   /** Models an OpenAI-compatible server offers; uses the stored key for that server, if any. */
   'ai.listModels': route<{ models: string[]; error: string | null }>()(
     z.object({ baseUrl: z.url({ protocol: /^https?$/ }) })

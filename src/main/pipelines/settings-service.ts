@@ -17,10 +17,15 @@ export function createSettingsService(
     | 'ai.claudeLoginCode'
     | 'ai.claudeLoginCancel'
     | 'ai.claudeLogout'
+    | 'ai.codexAccount'
+    | 'ai.codexLogin'
+    | 'ai.codexLoginWait'
+    | 'ai.codexLoginCancel'
+    | 'ai.codexLogout'
     | 'ai.listModels'
   >
 } {
-  const { claude } = deps.connections
+  const { claude, codex } = deps.connections
   const { db } = deps
 
   // Secrets never leave main: the renderer only learns whether a key exists.
@@ -61,6 +66,14 @@ export function createSettingsService(
         return { ok: true }
       },
       'ai.claudeLogout': () => claude.logout(),
+      'ai.codexAccount': () => codex.status(),
+      'ai.codexLogin': () => codex.login(),
+      'ai.codexLoginWait': () => codex.waitForLogin(),
+      'ai.codexLoginCancel': async () => {
+        codex.cancelLogin()
+        return { ok: true }
+      },
+      'ai.codexLogout': () => codex.logout(),
 
       // A failure is data here: the settings form shows it next to the URL field.
       'ai.listModels': async ({ baseUrl }) => {

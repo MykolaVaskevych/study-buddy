@@ -7,7 +7,7 @@ import type { z } from 'zod'
  *  - 'openai-compatible' : any server speaking the OpenAI chat API (Ollama, LM Studio, DeepSeek, ...)
  *  - 'fake'          : deterministic provider for tests and the smoke run
  */
-export type ProviderId = 'claude-code' | 'anthropic-api' | 'openai-compatible' | 'fake'
+export type ProviderId = 'claude-code' | 'anthropic-api' | 'openai-compatible' | 'codex' | 'fake'
 
 /** 'fast' = bulk/cheap work (indexing), 'smart' = generation, grading, chat. */
 export type ModelTier = 'fast' | 'smart'

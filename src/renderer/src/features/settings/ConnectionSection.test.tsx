@@ -108,3 +108,25 @@ describe('usage limit banner', () => {
     expect(screen.queryByRole('button', { name: 'Use my API key meanwhile' })).toBeNull()
   })
 })
+
+describe('ChatGPT subscription (Codex)', () => {
+  it('switches to Codex, signs in with a device code, and offers its models', async () => {
+    const { mock } = renderApp('/settings')
+    const invoke = vi.spyOn(mock, 'invoke')
+    const user = userEvent.setup()
+    window.open = vi.fn() as unknown as typeof window.open
+
+    await user.click(await screen.findByRole('radio', { name: /ChatGPT subscription/ }))
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('settings.update', { provider: 'codex' }))
+    expect(await screen.findByText('Not signed in')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Sign in with ChatGPT' }))
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('ai.codexLogin', {}))
+    expect(window.open).toHaveBeenCalledWith('https://auth.openai.com/codex/device', '_blank')
+    // The mock's sign-in finishes at once.
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('ai.codexLoginWait', {}))
+    expect(await screen.findByText('Signed in')).toBeTruthy()
+    expect(screen.getByText(/Codex uses your ChatGPT plan/)).toBeTruthy()
+    expect(screen.getByText(/Luna is fast, Sol the workhorse/)).toBeTruthy()
+  })
+})

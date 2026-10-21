@@ -2,7 +2,15 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app, BrowserWindow, ipcMain, protocol, safeStorage } from 'electron'
-import { createClaudeAuth, createProvider, createStudyAi, findClaudeExecutable, listModels } from './ai'
+import {
+  createClaudeAuth,
+  createCodexAuth,
+  createProvider,
+  createStudyAi,
+  findClaudeExecutable,
+  findCodexExecutable,
+  listModels
+} from './ai'
 import {
   createAiRegistry,
   createConsoleLog,
@@ -95,7 +103,10 @@ async function bootstrap(): Promise<void> {
     openAiSecrets,
     // Text-only models get chunk PDFs as page text, read by the library's PDF worker.
     createProvider: (settings, keys) =>
-      createProvider(settings, keys, { pdfText: (path) => library.pageTexts(path) }),
+      createProvider(settings, keys, {
+        pdfText: (path) => library.pageTexts(path),
+        codexWorkDir: join(dataDir, 'codex')
+      }),
     createStudyAi,
     forceProvider: isSmoke ? 'fake' : undefined
   })
@@ -111,7 +122,8 @@ async function bootstrap(): Promise<void> {
       claude: createClaudeAuth({
         executable: () => db.settings.get().claudeCodePath ?? findClaudeExecutable()
       }),
-      listModels: (baseUrl, apiKey) => listModels({ baseUrl, apiKey })
+      listModels: (baseUrl, apiKey) => listModels({ baseUrl, apiKey }),
+      codex: createCodexAuth({ executable: () => findCodexExecutable() })
     },
     emit: createEmitter(() => BrowserWindow.getAllWindows(), log),
     now,

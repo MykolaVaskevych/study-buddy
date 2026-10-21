@@ -74,12 +74,13 @@ Your quiz results feed back into the plan, so it re-solves as you go ("ahead: ad
 
 ## Pick your AI
 
-|                                                          | Cost                                                 | Setup                                                                                                                                   |
-| -------------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| **Claude subscription** (default)                        | Included in Claude Pro / Max                         | Install [Claude Code](https://claude.com/claude-code), then **Settings → AI connection → Sign in with Claude**                          |
-| **Anthropic API key**                                    | Pay per request, with an optional monthly budget cap | Paste the key in Settings; it's stored encrypted by your OS keychain                                                                    |
-| **Local model** (Ollama, LM Studio, llama.cpp)           | Free, offline                                        | `ollama pull qwen3.6:27b` (24 GB GPU; `gpt-oss:20b` for less), start Ollama with `OLLAMA_CONTEXT_LENGTH=32768`, and pick it in Settings |
-| **Other OpenAI-compatible APIs** (DeepSeek, OpenRouter…) | That provider's prices                               | Pick the preset and paste its key                                                                                                       |
+|                                                          | Cost                                                 | Setup                                                                                                                                       |
+| -------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Claude subscription** (default)                        | Included in Claude Pro / Max                         | Install [Claude Code](https://claude.com/claude-code), then **Settings → AI connection → Sign in with Claude**                              |
+| **ChatGPT subscription** (via Codex)                     | Included in ChatGPT Plus / Pro                       | Install [Codex](https://github.com/openai/codex) (`npm install -g @openai/codex`), then **Settings → AI connection → Sign in with ChatGPT** |
+| **Anthropic API key**                                    | Pay per request, with an optional monthly budget cap | Paste the key in Settings; it's stored encrypted by your OS keychain                                                                        |
+| **Local model** (Ollama, LM Studio, llama.cpp)           | Free, offline                                        | `ollama pull qwen3.6:27b` (24 GB GPU; `gpt-oss:20b` for less), start Ollama with `OLLAMA_CONTEXT_LENGTH=32768`, and pick it in Settings     |
+| **Other OpenAI-compatible APIs** (DeepSeek, OpenRouter…) | That provider's prices                               | Pick the preset and paste its key                                                                                                           |
 
 Switch between them from the status bar at any time, for example when your subscription hits its usage limit. Local models read the text of each page, so image-only slides are skipped.
 

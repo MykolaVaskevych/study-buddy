@@ -6,6 +6,7 @@ import type { DocId, Question, QuestionResponse } from '@shared/domain'
 import type { IpcEvent, IpcEvents } from '@shared/ipc/contract'
 import { writeFixturePdf } from '../../../tests/fixtures/make-fixture-pdf'
 import { createClaudeAuth } from '../ai/providers/claude-code/auth'
+import { createCodexAuth } from '../ai/providers/codex/auth'
 import { createDetachedPortal, type DetachedPortal } from '../portal/detached'
 import { createFakeProvider } from '../ai/providers/fake/provider'
 import { createStudyAi } from '../ai/study-ai'
@@ -109,7 +110,8 @@ export async function createHarness(opts: HarnessOptions = {}): Promise<Harness>
       openAiSecrets,
       connections: opts.connections ?? {
         claude: createClaudeAuth({ executable: () => null }),
-        listModels: async () => []
+        listModels: async () => [],
+        codex: createCodexAuth({ executable: () => null })
       },
       emit: (event, payload) => {
         events.push({ event, payload })

@@ -124,3 +124,19 @@ export interface ClaudeLoginStart {
   /** The sign-in page, in case the browser did not open. */
   url: string | null
 }
+
+/** Codex (OpenAI's CLI) on this computer, as the settings screen shows it. */
+export interface CodexAccount {
+  installed: boolean
+  loggedIn: boolean
+  /** "ChatGPT" or "API key" when signed in. */
+  method: string | null
+  /** Why the state could not be read, or what to do (e.g. install Codex). */
+  problem: string | null
+}
+
+/** A device sign-in in progress: open `url` and type `code` there. */
+export interface CodexLoginStart {
+  url: string
+  code: string
+}
