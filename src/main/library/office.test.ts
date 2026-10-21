@@ -1,6 +1,7 @@
 import { EventEmitter } from 'node:events'
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { writeFixturePdf } from '../../../tests/fixtures/make-fixture-pdf'
 import { createPdfLibrary, DEFAULT_CHUNK_OPTIONS } from './index'
 import {
@@ -40,13 +41,19 @@ describe('soffice', () => {
     expect(findSoffice({ PATH: '/opt/bin:/usr/local/bin' }, exists, 'linux')).toBe('/opt/bin/soffice')
     expect(findSoffice({ PATH: '' }, exists, 'linux')).toBe('/usr/lib/libreoffice/program/soffice')
     expect(findSoffice({ PATH: '' }, () => false, 'linux')).toBeNull()
+    const win = (p: string): boolean =>
+      p === 'C:\\LO\\program\\soffice.exe' || p === 'D:\\Apps\\LibreOffice\\program\\soffice.exe'
+    expect(findSoffice({ PATH: 'C:\\x;C:\\LO\\program' }, win, 'win32')).toBe('C:\\LO\\program\\soffice.exe')
+    expect(findSoffice({ PATH: '', ProgramFiles: 'D:\\Apps' }, win, 'win32')).toBe(
+      'D:\\Apps\\LibreOffice\\program\\soffice.exe'
+    )
   })
 
   it('runs headless with a private profile, on the host inside the Flatpak', () => {
     const plain = sofficeCommand('/usr/bin/soffice', '/w/a.pptx', '/w', '/data/lo', false)
     expect(plain.command).toBe('/usr/bin/soffice')
     expect(plain.args).toEqual([
-      '-env:UserInstallation=file:///data/lo',
+      `-env:UserInstallation=${pathToFileURL('/data/lo').href}`,
       '--headless',
       '--norestore',
       '--convert-to',

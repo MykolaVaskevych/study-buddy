@@ -1,7 +1,7 @@
 import { spawn as nodeSpawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { stat } from 'node:fs/promises'
-import { basename, delimiter, extname, join } from 'node:path'
+import { basename, extname, join, posix, win32 } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { LibraryError } from './types'
 
@@ -44,16 +44,18 @@ export function findSoffice(
   exists: (path: string) => boolean = existsSync,
   platform: NodeJS.Platform = process.platform
 ): string | null {
+  // Path rules of the target platform, not the host's (tests run every platform's case everywhere).
+  const path = platform === 'win32' ? win32 : posix
   const name = platform === 'win32' ? 'soffice.exe' : 'soffice'
   const fromPath = (env['PATH'] ?? '')
-    .split(delimiter)
+    .split(path.delimiter)
     .filter(Boolean)
-    .map((dir) => join(dir, name))
+    .map((dir) => path.join(dir, name))
   const known =
     platform === 'win32'
       ? [
-          join(env['ProgramFiles'] ?? 'C:\\Program Files', 'LibreOffice', 'program', name),
-          join(env['ProgramFiles(x86)'] ?? 'C:\\Program Files (x86)', 'LibreOffice', 'program', name)
+          path.join(env['ProgramFiles'] ?? 'C:\\Program Files', 'LibreOffice', 'program', name),
+          path.join(env['ProgramFiles(x86)'] ?? 'C:\\Program Files (x86)', 'LibreOffice', 'program', name)
         ]
       : platform === 'darwin'
         ? ['/Applications/LibreOffice.app/Contents/MacOS/soffice']
