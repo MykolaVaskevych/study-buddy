@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { CRAM_SIZES, cramMinutes } from '@shared/cram'
 import type { CramPlan, QuizSession } from '@shared/domain'
-import { useCramPlan, useCreateQuiz, useDocument } from '../../api/hooks'
+import { useCourses, useCramPlan, useCramQuiz, useDocument, useLibrary } from '../../api/hooks'
 import { Button, buttonClass, cx, Icon } from '../../components'
 import { formatClock } from '../quiz/ExamTimer'
 import { QuizRunner } from '../quiz/QuizRunner'
 import { ReviewSession } from '../review/ReviewSession'
 import { panicClass } from './panic'
+import { ScopePicker, scopesOf, type ScopeChoice } from './ScopePicker'
 
 type Stage =
   | { step: 'intro' }
@@ -44,27 +45,31 @@ export function CramScreen(): React.JSX.Element {
   const navigate = useNavigate()
   const doc = useDocument(docId)
   const cram = useCramPlan()
-  const createQuiz = useCreateQuiz()
+  const createQuiz = useCramQuiz()
+  const courses = useCourses()
+  const library = useLibrary()
   const [size, setSize] = useState<number>(20)
   const [stage, setStage] = useState<Stage>({ step: 'intro' })
+  const [choice, setChoice] = useState<ScopeChoice>(() => new Map([[docId, 'all']]))
   const title = doc.data?.title ?? 'this book'
-  const titles = new Map([[docId, title]])
+  const titles = useMemo(() => new Map((library.data ?? []).map((d) => [d.id, d.title])), [library.data])
+  // The other files of this book's course (weeks, lectures) can join the cram.
+  const course = courses.data?.find((c) => c.docIds.includes(docId))
+  const files = (course?.docIds ?? [docId]).map((id) => ({ docId: id, title: titles.get(id) ?? title }))
+  const scopes = scopesOf(
+    choice,
+    files.map((f) => f.docId)
+  )
 
   const start = (): void =>
     cram.mutate(
-      { docId, cards: size },
+      { docId, cards: size, scopes },
       { onSuccess: (plan) => setStage({ step: 'cards', plan, endsAt: Date.now() + plan.minutes * 60_000 }) }
     )
 
   const toQuestions = (plan: CramPlan, endsAt: number): void =>
     createQuiz.mutate(
-      {
-        scope: { kind: 'document', docId },
-        mode: 'topic',
-        count: plan.questionCount,
-        types: plan.questionTypes,
-        timeLimit: null
-      },
+      { scopes: plan.scopes, count: plan.questionCount, types: plan.questionTypes },
       { onSuccess: (session) => setStage({ step: 'questions', plan, endsAt, session }) }
     )
 
@@ -97,15 +102,15 @@ export function CramScreen(): React.JSX.Element {
           <section aria-label="Cram setup" className="flex flex-col gap-6">
             <div className="flex max-w-prose flex-col gap-2 text-md">
               <p>
-                Exam soon and far too many cards? Do just this: the flashcards that matter most for{' '}
-                <span className="font-semibold">{title}</span>, then a few exam-style questions with the
-                answers explained. Then sleep.
+                Exam soon and far too many cards? Do just this: the flashcards that matter most, spread over
+                every topic, then a few exam-style questions with the answers explained. Then sleep.
               </p>
               <p className="text-sm text-graphite">
-                Cards are picked by exam weight and what you don’t know yet: your mistakes and shaky cards
-                come first. Formula cards stay out if your exam has no formulas.
+                Every topic gets its most important card first, then the heaviest topics get more. Your
+                mistakes and shaky cards come first, and formula cards stay out if your exam has no formulas.
               </p>
             </div>
+            <ScopePicker files={files} choice={choice} onChange={setChoice} />
             <fieldset className="flex flex-col gap-2">
               <legend className="mb-2 text-sm font-semibold">How long have you got?</legend>
               <div className="flex flex-wrap gap-2">
@@ -138,7 +143,7 @@ export function CramScreen(): React.JSX.Element {
               <button
                 type="button"
                 className={cx(panicClass, 'h-14 px-10 text-lg')}
-                disabled={cram.isPending}
+                disabled={cram.isPending || scopes.length === 0}
                 onClick={start}
               >
                 {cram.isPending ? 'Picking cards…' : 'Start'}
