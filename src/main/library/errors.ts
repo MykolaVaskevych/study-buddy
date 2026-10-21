@@ -6,7 +6,15 @@ import { LibraryError, type LibraryErrorKind } from './types'
  * through unchanged. Errors cross the worker boundary as plain `{ kind, message }` objects.
  */
 
-const KINDS: readonly LibraryErrorKind[] = ['not_pdf', 'encrypted', 'corrupt', 'too_large', 'io']
+const KINDS: readonly LibraryErrorKind[] = [
+  'not_pdf',
+  'encrypted',
+  'corrupt',
+  'too_large',
+  'io',
+  'converter_missing',
+  'conversion_failed'
+]
 
 export function isLibraryErrorKind(value: unknown): value is LibraryErrorKind {
   return typeof value === 'string' && (KINDS as readonly string[]).includes(value)

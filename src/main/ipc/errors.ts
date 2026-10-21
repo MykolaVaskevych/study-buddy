@@ -21,7 +21,9 @@ const LIBRARY_MESSAGES: Record<LibraryErrorKind, string> = {
   encrypted: 'Password-protected or copy-restricted PDFs are not supported yet.',
   corrupt: 'This PDF looks damaged and could not be read.',
   too_large: 'This PDF is too large to import.',
-  io: 'The file could not be read or saved. Check that it still exists and that the disk has free space.'
+  io: 'The file could not be read or saved. Check that it still exists and that the disk has free space.',
+  converter_missing: 'PowerPoint and Word files need LibreOffice to import. Install it, then try again.',
+  conversion_failed: 'LibreOffice could not convert this file to PDF.'
 }
 
 /** One line per zod issue, `path: message`, joined with '; '. */
