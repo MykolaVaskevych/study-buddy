@@ -356,12 +356,25 @@ export function fakeNaming(text: string): NamingOutput {
   return { course_name: 'Named Course', files }
 }
 
-/** The fake does not browse: it says so and stops at once. */
-export function fakePortal(): PortalStepOutput {
+/**
+ * The fake "browses" just enough for --smoke: it presses the first element labelled Download while
+ * nothing has been downloaded, then stops. Real portals need the real model.
+ */
+export function fakePortal(text: string): PortalStepOutput {
+  const nothingYet = /<already_downloaded>\s*\(none yet\)/.test(text)
+  const download = /^\[(\d+)\] [^\n]*download[^\n]*\((?:button|link|menuitem)/im.exec(text)
+  if (nothingYet && download?.[1]) {
+    return {
+      thought: 'A Download button is on the page.',
+      actions: [{ type: 'click', element: Number(download[1]), why: 'download the file' }],
+      done: false,
+      summary: ''
+    }
+  }
   return {
-    thought: 'The offline test AI does not browse.',
+    thought: 'Nothing more to download.',
     actions: [],
     done: true,
-    summary: 'Nothing downloaded.'
+    summary: 'Downloaded what the page offered.'
   }
 }

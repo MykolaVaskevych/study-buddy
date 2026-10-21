@@ -2,6 +2,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import {
   useCourses,
+  usePortalAgent,
+  usePortalAgentStart,
+  usePortalAgentStop,
   usePortalBounds,
   usePortalClose,
   usePortalCourse,
@@ -13,8 +16,9 @@ import {
   useSettings,
   useUpdateSettings
 } from '../../api/hooks'
-import { cx, Icon, IconButton } from '../../components'
+import { Button, cx, Icon, IconButton } from '../../components'
 import { fieldClass } from '../study/form'
+import { AgentPanel } from './AgentPanel'
 import { PortalHome, type SavedPortal } from './PortalHome'
 import { useAutoTour } from '../tour/useAutoTour'
 
@@ -46,6 +50,11 @@ export function PortalScreen(): React.JSX.Element {
   const navigate = usePortalNavigate()
   const go = usePortalGo()
   const downloads = usePortalDownloads()
+  const agent = usePortalAgent()
+  const startAgent = usePortalAgentStart()
+  const stopAgent = usePortalAgentStop()
+  const [agentClosed, setAgentClosed] = useState(true)
+  const running = agent.data?.status === 'running'
   const settings = useSettings()
   const updateSettings = useUpdateSettings()
   const portals = settings.data?.portals ?? []
@@ -157,6 +166,20 @@ export function PortalScreen(): React.JSX.Element {
             if (url) savePortals([...portals, { name: state.data?.title || new URL(url).hostname, url }])
           }}
         />
+        <Button
+          size="sm"
+          variant="primary"
+          data-tour="portal-agent"
+          disabled={!shown || running}
+          loading={startAgent.isPending}
+          onClick={() => {
+            setAgentClosed(false)
+            startAgent.mutate({ goal: null })
+          }}
+        >
+          <Icon name="sparkle" size={14} />
+          Get files with AI
+        </Button>
         <label className="flex items-center gap-2 text-sm text-graphite" data-tour="portal-course">
           Files go to
           <select
@@ -190,6 +213,15 @@ export function PortalScreen(): React.JSX.Element {
           />
         ) : null}
       </div>
+
+      {agent.data && agent.data.status !== 'idle' && (!agentClosed || running) ? (
+        <AgentPanel
+          agent={agent.data}
+          onStop={() => stopAgent.mutate({})}
+          onClose={() => setAgentClosed(true)}
+        />
+      ) : null}
+      {startAgent.error ? <p className="px-4 py-1 text-sm text-redpen">{startAgent.error.message}</p> : null}
 
       {downloads.length > 0 ? (
         <ul

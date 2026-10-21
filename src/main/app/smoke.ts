@@ -401,15 +401,22 @@ export async function runPortalSmoke(
   // A different file from the main smoke PDF (one byte more), so it imports as a new document.
   const pdf = Buffer.concat([await readFile(opts.pdfPath), Buffer.from('\n%portal\n')])
   const server = createServer((req, res) => {
-    if (req.url === '/week5.pdf') {
+    if (req.url === '/week5.pdf' || req.url === '/week6.pdf') {
       res.writeHead(200, {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="Week 5.pdf"'
+        'Content-Disposition': `attachment; filename="${req.url === '/week5.pdf' ? 'Week 5' : 'Week 6'}.pdf"`
       })
-      res.end(pdf)
+      // Distinct bytes per file, so each imports as its own document.
+      res.end(Buffer.concat([pdf, Buffer.from(req.url)]))
     } else {
       res.writeHead(200, { 'Content-Type': 'text/html' })
-      res.end('<!doctype html><title>Course page</title><a href="/week5.pdf">Week 5 slides</a>')
+      // The download button sits in a shadow root, like Brightspace's components.
+      res.end(
+        '<!doctype html><title>Course page</title><a href="/week5.pdf">Week 5 slides</a>' +
+          '<sb-button></sb-button><script>customElements.define("sb-button", class extends HTMLElement {' +
+          ' constructor() { super(); this.attachShadow({ mode: "open" }).innerHTML = "<button>Download original file</button>";' +
+          ' this.shadowRoot.querySelector("button").onclick = () => { location.href = "/week6.pdf" } } })</script>'
+      )
     }
   })
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
@@ -437,6 +444,24 @@ export async function runPortalSmoke(
       return docs.length > before && files.length > course.docIds.length
     })
     opts.log.info('[smoke] ok   portal: download imported into the course')
+    // Get files with AI (fake model): snapshot through the shadow DOM, press Download, import.
+    await handlers['portal.navigate']({ url: `http://127.0.0.1:${port}/` })
+    await wait(
+      'the course page again',
+      async () => (await handlers['portal.state']({})).title === 'Course page'
+    )
+    const count = (await handlers['library.list']({})).length
+    await handlers['portal.agentStart']({ goal: null })
+    await wait('the AI run', async () => (await handlers['portal.agentState']({})).status !== 'running')
+    const run = await handlers['portal.agentState']({})
+    if (run.status !== 'done') throw new Error(`portal agent: ${run.status}: ${run.log.at(-1)?.text ?? ''}`)
+    if (!run.downloaded.includes('Week 6.pdf'))
+      throw new Error(`portal agent downloaded ${run.downloaded.join(', ') || 'nothing'}`)
+    await wait(
+      'the AI-downloaded file in the library',
+      async () => (await handlers['library.list']({})).length > count
+    )
+    opts.log.info('[smoke] ok   portal: AI pressed Download in a shadow root, the file was imported')
     await handlers['portal.close']({})
   } finally {
     server.close()

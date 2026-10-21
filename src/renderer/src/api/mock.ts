@@ -1,4 +1,4 @@
-import type { Annotation, ExamProfile, Lesson, PortalState } from '@shared/domain'
+import type { Annotation, ExamProfile, Lesson, PortalAgentState, PortalState } from '@shared/domain'
 import { cramMinutes, cramQuestionCount, cramQuestionTypes } from '@shared/cram'
 import { createMockCourses } from './mock-courses'
 import { ipcContract } from '@shared/ipc/contract'
@@ -128,6 +128,7 @@ export function createMockApi(options: MockOptions = {}): MockApi {
   const docs = new Map<string, DocState>(BOOKS.map((b) => [b.id, initialState(b, now())]))
   const jobs = new Map<string, JobInfo>()
   const plans = new Map<string, ExamPlan>()
+  let agent: PortalAgentState = { status: 'idle', step: 0, maxSteps: 40, log: [], downloaded: [] }
   let portal: PortalState = {
     url: null,
     title: '',
@@ -170,6 +171,7 @@ export function createMockApi(options: MockOptions = {}): MockApi {
     'cards.changed': new Set(),
     'portal.changed': new Set(),
     'portal.downloaded': new Set(),
+    'portal.agent': new Set(),
     'pageCheck.ready': new Set(),
     'ai.rateLimited': new Set(),
     'chat.delta': new Set(),
@@ -680,6 +682,25 @@ export function createMockApi(options: MockOptions = {}): MockApi {
     },
     'portal.go': () => portal,
     'portal.state': () => portal,
+    // The mock does not browse: a run says so and finishes at once.
+    'portal.agentStart': () => {
+      if (portal.url === null) throw new MockError('validation', 'Open your portal on a course page first')
+      const at = now().toISOString()
+      agent = {
+        status: 'done',
+        step: 1,
+        maxSteps: 40,
+        log: [
+          { at, kind: 'think', text: 'This is the browser preview: the AI does not browse here.' },
+          { at, kind: 'done', text: 'Nothing downloaded.' }
+        ],
+        downloaded: []
+      }
+      emit('portal.agent', agent)
+      return agent
+    },
+    'portal.agentStop': () => agent,
+    'portal.agentState': () => agent,
     'portal.signOut': () => {
       portal = { ...portal, url: null, title: '', canGoBack: false }
       return { ok: true }
