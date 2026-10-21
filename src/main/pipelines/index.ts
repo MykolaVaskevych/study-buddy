@@ -114,7 +114,7 @@ export function createPipelinesWith(deps: PipelineDeps, options: PipelineOptions
     ...lessons.handlers,
     ...examProfiles.handlers,
     ...createCram(deps).handlers,
-    ...createCourses(deps).handlers,
+    ...createCourses(deps, { ledger, material }).handlers,
     ...pastPapers.handlers,
     ...createExtras(deps).handlers,
     ...overview.handlers

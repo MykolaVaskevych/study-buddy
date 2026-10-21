@@ -1,4 +1,5 @@
 import { openTestDb, seedDocument } from '../db/test-helpers'
+import { createHarness, type Harness } from './test-harness'
 import { courseNameFor, placeImported } from './courses'
 
 const now = '2026-10-21T10:00:00.000Z'
@@ -49,5 +50,25 @@ describe('placeImported', () => {
     const { db, w1 } = setup()
     placeImported(db, [{ id: w1, created: true }], { courseId: null, paths: ['/u/Optics/w1.pdf'], now })
     expect(db.courses.list().map((c) => c.name)).toEqual(['Old notes', 'Week 1'])
+  })
+})
+
+describe('courses.suggestNames', () => {
+  let harness: Harness
+  afterEach(async () => harness.close())
+
+  it('suggests names for the course and each file without renaming anything', async () => {
+    harness = await createHarness()
+    const docId = await harness.importIndexed()
+    const [course] = await harness.h['courses.list']({})
+    if (!course) throw new Error('no course')
+    const title = (await harness.h['library.get']({ docId })).title
+    const names = await harness.h['courses.suggestNames']({ courseId: course.id })
+    expect(names).toEqual({
+      courseId: course.id,
+      name: 'Named Course',
+      files: [{ docId, title: `${title} (named)` }]
+    })
+    expect((await harness.h['library.get']({ docId })).title).toBe(title)
   })
 })

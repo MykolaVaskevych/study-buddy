@@ -45,6 +45,7 @@ describe('mock api', () => {
       'courses.moveDocument': { docId, courseId: 'course-signals-systems', index: 0 },
       'courses.dissolve': { courseId: 'course-signals-systems' },
       'courses.reorder': { courseIds: [] },
+      'courses.suggestNames': { courseId: 'course-signals-systems' },
       'quiz.create': {
         scope: { kind: 'page', docId, page: 40 },
         mode: 'topic',

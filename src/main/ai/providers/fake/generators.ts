@@ -1,6 +1,7 @@
 import type {
   LessonOutput,
   CardsOutput,
+  NamingOutput,
   GradeOutput,
   IndexChunkOutput,
   QuestionsOutput,
@@ -343,4 +344,13 @@ export function fakeLesson(text: string): LessonOutput {
     ],
     exercises: pages.slice(0, 2).map((p) => ({ question: `Explain ${p.term}.`, answer: p.summary }))
   }
+}
+
+/** Names derived from the current ones, so tests can tell a suggestion from the original. */
+export function fakeNaming(text: string): NamingOutput {
+  const files = [...text.matchAll(/^\[(\d+)\] current name: (.+)$/gm)].map((m) => ({
+    index: Number(m[1]),
+    title: `${(m[2] ?? '').trim()} (named)`
+  }))
+  return { course_name: 'Named Course', files }
 }

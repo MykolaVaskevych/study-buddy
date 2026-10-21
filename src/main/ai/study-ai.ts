@@ -6,6 +6,7 @@ import { gradeShortAnswer } from './study/grade'
 import { writeLesson } from './study/lesson'
 import { indexChunk } from './study/index-chunk'
 import { generateQuestions } from './study/questions'
+import { suggestNames } from './study/naming'
 import { mapPastPaper } from './study/past-paper'
 import { buildTopicMap } from './study/topic-map'
 import type { StudyAi } from './types'
@@ -27,6 +28,7 @@ export function createStudyAi(provider: LlmProvider, opts: StudyAiOptions = {}):
     gradeShortAnswer: (input) => gradeShortAnswer(provider, input),
     chat: (input) => chat(provider, input),
     writeLesson: (ctx, topic) => writeLesson(provider, ctx, topic, settings),
-    mapPastPaper: (input) => mapPastPaper(provider, input)
+    mapPastPaper: (input) => mapPastPaper(provider, input),
+    suggestNames: (input) => suggestNames(provider, input)
   }
 }

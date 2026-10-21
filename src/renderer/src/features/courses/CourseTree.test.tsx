@@ -78,4 +78,32 @@ describe('CourseTree', () => {
       ])
     )
   })
+
+  it('suggests names with AI and renames only what stays ticked', async () => {
+    const { mock } = renderApp('/book/optical-networks')
+    const invoke = vi.spyOn(mock, 'invoke')
+    const user = userEvent.setup()
+    const tree = await screen.findByRole('list', { name: 'Courses' })
+    // The course row comes first; its file has the same name.
+    const [courseMenu] = await within(tree).findAllByRole('button', { name: 'Optical Networks options' })
+    await user.click(courseMenu as HTMLElement)
+    await user.click(await screen.findByRole('menuitem', { name: 'Suggest names with AI…' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Suggest names' })
+    // Rows: the course first, then its file (both named "Optical Networks" here).
+    const [course, file] = await within(dialog).findAllByRole('textbox', {
+      name: 'New name for “Optical Networks”'
+    })
+    expect((course as HTMLInputElement).value).toBe('Optical Networks (course)')
+    expect((file as HTMLInputElement).value).toBe('Part 1: Optical Networks')
+    // Keep the course name: untick its row.
+    const boxes = within(dialog).getAllByRole('checkbox', { name: 'Rename “Optical Networks”' })
+    await user.click(boxes[0] as HTMLElement)
+    await user.click(within(dialog).getByRole('button', { name: 'Rename' }))
+    await waitFor(() =>
+      expect(calls(invoke, 'library.rename')).toEqual([
+        { docId: 'optical-networks', title: 'Part 1: Optical Networks' }
+      ])
+    )
+    expect(calls(invoke, 'courses.rename')).toEqual([])
+  })
 })

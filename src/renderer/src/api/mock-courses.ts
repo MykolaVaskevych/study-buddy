@@ -8,6 +8,7 @@ type CourseChannel =
   | 'courses.dissolve'
   | 'courses.moveDocument'
   | 'courses.reorder'
+  | 'courses.suggestNames'
 
 export interface MockCourses {
   handlers: { [C in CourseChannel]: (input: IpcInput<C>) => IpcOutput<C> }
@@ -72,6 +73,14 @@ export function createMockCourses(
           .sort((a, b) => rank(a.c) - rank(b.c) || a.i - b.i)
           .map((x) => x.c)
         return list()
+      },
+      'courses.suggestNames': ({ courseId }) => {
+        const course = find(courseId)
+        return {
+          courseId,
+          name: `${course.name} (course)`,
+          files: course.docIds.map((docId, i) => ({ docId, title: `Part ${i + 1}: ${deps.titleOf(docId)}` }))
+        }
       }
     },
     place(docIds, courseId, name) {

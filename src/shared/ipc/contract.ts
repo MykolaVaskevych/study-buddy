@@ -9,6 +9,7 @@ import type {
   Card,
   Course,
   CramPlan,
+  NameSuggestions,
   CheatSheet,
   PastPaperResult,
   DocumentDetail,
@@ -165,6 +166,8 @@ export const ipcContract = {
   'courses.moveDocument': route<Course[]>()(
     z.object({ docId: id, courseId: id, index: z.number().int().min(0) })
   ),
+  /** AI names for the course and its files from what they contain (fast tier); renames nothing. */
+  'courses.suggestNames': route<NameSuggestions>()(z.object({ courseId: id })),
   /** Splits a course back into one-file courses; no file is deleted. */
   'courses.dissolve': route<{ ok: true }>()(z.object({ courseId: id })),
   'courses.reorder': route<Course[]>()(z.object({ courseIds: z.array(id).max(1000) })),

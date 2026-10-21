@@ -53,6 +53,13 @@ export interface Course {
   docIds: DocId[]
 }
 
+/** AI-suggested names for a course and its files; nothing changes until the student accepts them. */
+export interface NameSuggestions {
+  courseId: CourseId
+  name: string
+  files: { docId: DocId; title: string }[]
+}
+
 export interface DocumentDetail extends DocumentSummary {
   outline: OutlineItem[]
   language: string | null

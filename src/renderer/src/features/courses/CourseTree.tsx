@@ -18,6 +18,7 @@ import { toast } from '../../app/toasts'
 import { cx, Icon, IconButton, Skeleton, useDismiss } from '../../components'
 import { resolveDrop } from '../library/useDropImport'
 import { buildTopicTree } from '../reader/topicTree'
+import { NameSuggestionsDialog } from './NameSuggestionsDialog'
 import { dropMove, edgeAt, nudgeFile } from './tree'
 import type { DragItem, DropTarget, TreeMove } from './tree'
 
@@ -193,6 +194,7 @@ export function CourseTree({ docId, activeContent }: CourseTreeProps): React.JSX
   const [dragging, setDragging] = useState<DragItem | null>(null)
   const [drop, setDrop] = useState<DropTarget | null>(null)
   const [fileDrop, setFileDrop] = useState<string | null>(null)
+  const [naming, setNaming] = useState<Course | null>(null)
 
   // The open file and its course start expanded, unless the student folded them.
   const isOpen = (id: string): boolean =>
@@ -311,6 +313,7 @@ export function CourseTree({ docId, activeContent }: CourseTreeProps): React.JSX
 
   const courseMenu = (course: Course): (MenuItem | 'separator')[] => [
     { label: 'Rename', onSelect: () => setRenaming(course.id) },
+    { label: 'Suggest names with AI…', onSelect: () => setNaming(course) },
     { label: 'Add files…', onSelect: () => addFiles(course.id, null) },
     {
       label: 'Split into one course per file',
@@ -531,6 +534,9 @@ export function CourseTree({ docId, activeContent }: CourseTreeProps): React.JSX
           </ul>
         )}
       </div>
+      {naming ? (
+        <NameSuggestionsDialog course={naming} titleOf={titleOf} onClose={() => setNaming(null)} />
+      ) : null}
     </div>
   )
 }

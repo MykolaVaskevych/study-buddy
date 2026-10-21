@@ -117,6 +117,8 @@ export const useMoveDocument = () =>
   useChannelMutation('courses.moveDocument', {
     onSuccess: (data, _i, qc) => qc.setQueryData(channelKey('courses.list', {}), data)
   })
+/** Shown inside its dialog, so no global error toast. */
+export const useSuggestNames = () => useChannelMutation('courses.suggestNames', { silent: true })
 export const useReorderCourses = () =>
   useChannelMutation('courses.reorder', {
     onSuccess: (data, _i, qc) => qc.setQueryData(channelKey('courses.list', {}), data)
