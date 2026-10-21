@@ -33,6 +33,7 @@ describe('portal', () => {
     const path = join(dir, 'Week 5.pdf')
     await copyFile(harness.fixture, path)
     harness.portal.download({
+      kind: 'import',
       path,
       fileName: 'Week 5.pdf',
       url: 'https://sulis.ul.ie/access/content/week5.pdf'
@@ -46,6 +47,19 @@ describe('portal', () => {
     // Same bytes as the fixture: already in the library, kept in its course; the temp file is gone.
     expect(harness.eventsOf('portal.downloaded')[0]?.docIds).toEqual([docId])
     await expect(stat(path)).rejects.toThrow()
+
+    // Other files are kept in Downloads, and the screen is told why they were not imported.
+    harness.portal.download({
+      kind: 'saved',
+      path: '/home/u/Downloads/all.zip',
+      fileName: 'all.zip',
+      url: 'https://x/all.zip'
+    })
+    expect(harness.eventsOf('portal.downloaded').at(-1)).toMatchObject({
+      fileName: 'all.zip',
+      docIds: [],
+      error: /Downloads/
+    })
 
     await harness.h['portal.close']({})
     expect(harness.portal.visible()).toBe(false)

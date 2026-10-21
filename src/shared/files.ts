@@ -1,8 +1,11 @@
 /** Files LibreOffice turns into PDF at import: slides, documents and rich text. */
 export const OFFICE_EXTENSIONS = ['pptx', 'ppt', 'ppsx', 'pps', 'odp', 'docx', 'doc', 'odt', 'rtf'] as const
 
+/** Notes rendered to PDF by the app (with formulas). */
+export const MARKDOWN_EXTENSIONS = ['md', 'markdown', 'txt'] as const
+
 /** Everything the library imports. */
-export const IMPORT_EXTENSIONS = ['pdf', ...OFFICE_EXTENSIONS] as const
+export const IMPORT_EXTENSIONS = ['pdf', ...OFFICE_EXTENSIONS, ...MARKDOWN_EXTENSIONS] as const
 
 const extensionOf = (name: string): string => /\.([^./\\]+)$/.exec(name)?.[1]?.toLowerCase() ?? ''
 
@@ -13,3 +16,7 @@ export const isImportable = (name: string): boolean =>
 /** True for office files that are converted to PDF first. */
 export const needsConversion = (name: string): boolean =>
   (OFFICE_EXTENSIONS as readonly string[]).includes(extensionOf(name))
+
+/** True for Markdown and plain-text notes. */
+export const isMarkdown = (name: string): boolean =>
+  (MARKDOWN_EXTENSIONS as readonly string[]).includes(extensionOf(name))

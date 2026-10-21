@@ -442,3 +442,30 @@ export async function runPortalSmoke(
     server.close()
   }
 }
+
+/** Markdown notes end to end: printed by the renderer's print page, imported with a text layer. */
+export async function runMarkdownSmoke(handlers: Handlers, opts: { dir: string; log: Log }): Promise<void> {
+  await mkdir(opts.dir, { recursive: true })
+  const path = join(opts.dir, 'W1_L1.1_Bits_to_Qubits.md')
+  await writeFile(
+    path,
+    [
+      '# From Classical Bits to Qubits',
+      '',
+      'A qubit generalizes the bit: $|\\psi\\rangle = \\alpha|0\\rangle + \\beta|1\\rangle$.',
+      '',
+      '| Basis | Vector |',
+      '| --- | --- |',
+      '| zero | $|0\\rangle$ |',
+      '',
+      '$$P(0) = |\\alpha|^2$$'
+    ].join('\n')
+  )
+  const [doc] = await handlers['library.import']({ paths: [path] })
+  if (!doc) throw new Error('markdown: nothing imported')
+  if (doc.title !== 'From Classical Bits to Qubits') throw new Error(`markdown: title is "${doc.title}"`)
+  if (doc.pageCount < 1) throw new Error('markdown: no pages')
+  const hits = await handlers['library.search']({ query: 'qubit', docId: doc.id, limit: 5 })
+  if (hits.length === 0) throw new Error('markdown: the printed PDF has no searchable text')
+  opts.log.info(`[smoke] ok   markdown: "${doc.title}", ${doc.pageCount} page(s), text searchable`)
+}

@@ -36,6 +36,15 @@ export function createPortal(
   })
 
   portal.onDownload((file) => {
+    if (file.kind === 'saved') {
+      deps.emit('portal.downloaded', {
+        fileName: file.fileName,
+        courseId: null,
+        docIds: [],
+        error: 'Not a study file Study Buddy can read; saved to your Downloads folder'
+      })
+      return
+    }
     const target = courseId !== null && db.courses.get(courseId) ? courseId : null
     void services
       .importFiles({ paths: [file.path], courseId: target })

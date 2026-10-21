@@ -90,7 +90,7 @@ describe('createPdfLibrary.importPdf', () => {
         (e: unknown) => (e instanceof LibraryError ? e.kind : e)
       )
 
-    expect(await kindOf(await write('notes.txt', 'just some text, definitely not a PDF'))).toBe('not_pdf')
+    expect(await kindOf(await write('notes.dat', 'just some text, definitely not a PDF'))).toBe('not_pdf')
     expect(await kindOf(await write('corrupt.pdf', '%PDF-1.7\n' + 'garbage\n'.repeat(100)))).toBe('corrupt')
     const truncated = (await makeFixturePdf()).slice(0, 2000)
     expect(await kindOf(await write('truncated.pdf', truncated))).toBe('corrupt')

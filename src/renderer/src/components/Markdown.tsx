@@ -2,6 +2,7 @@ import { memo, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import type { Components, Options } from 'react-markdown'
 import rehypeKatex from 'rehype-katex'
+import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import { remarkCitations } from './citations'
 import { cx } from './cx'
@@ -26,7 +27,7 @@ export function safeUrl(url: string): string {
   }
 }
 
-const remarkPlugins: Options['remarkPlugins'] = [remarkMath, remarkCitations]
+const remarkPlugins: Options['remarkPlugins'] = [remarkGfm, remarkMath, remarkCitations]
 const rehypePlugins: Options['rehypePlugins'] = [[rehypeKatex, katexOptions]]
 
 function pageAttr(value: unknown): number | null {

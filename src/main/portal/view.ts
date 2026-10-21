@@ -1,9 +1,9 @@
 import { mkdirSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
-import { session as electronSession, shell, WebContentsView } from 'electron'
+import { app, session as electronSession, shell, WebContentsView } from 'electron'
 import type { BaseWindow, WebContents } from 'electron'
 import type { Log } from '../app/log'
-import type { PortalNav, PortalView } from '../pipelines/types'
+import type { PortalFile, PortalNav, PortalView } from '../pipelines/types'
 import { browserUserAgent, downloadTarget, isWebUrl, safeFileName } from './policy'
 
 /** Signed-in portals survive restarts in this session; nothing else in the app shares it. */
@@ -35,7 +35,7 @@ export function createPortalView(opts: {
   ses.setPermissionCheckHandler(() => false)
 
   const changeListeners: ((nav: PortalNav) => void)[] = []
-  const downloadListeners: ((file: { path: string; fileName: string; url: string }) => void)[] = []
+  const downloadListeners: ((file: PortalFile) => void)[] = []
   let view: WebContentsView | null = null
   let host: BaseWindow | null = null
   let seq = 0
@@ -58,14 +58,23 @@ export function createPortalView(opts: {
 
   ses.on('will-download', (_event, item) => {
     const fileName = safeFileName(item.getFilename())
-    if (downloadTarget(fileName) === 'save') return
+    if (downloadTarget(fileName) === 'save') {
+      // No dialog: like a browser, other files go to Downloads, and the portal screen says so.
+      const path = join(app.getPath('downloads'), fileName)
+      item.setSavePath(path)
+      item.once('done', (_e, state) => {
+        if (state === 'completed')
+          for (const fn of downloadListeners) fn({ kind: 'saved', path, fileName, url: item.getURL() })
+      })
+      return
+    }
     const dir = join(opts.downloadsDir, `${Date.now()}-${++seq}`)
     mkdirSync(dir, { recursive: true })
     const path = join(dir, fileName)
     item.setSavePath(path)
     item.once('done', (_e, state) => {
       if (state === 'completed') {
-        for (const fn of downloadListeners) fn({ path, fileName, url: item.getURL() })
+        for (const fn of downloadListeners) fn({ kind: 'import', path, fileName, url: item.getURL() })
       } else log.warn(`[portal] download of ${fileName} ${state}`)
     })
   })
