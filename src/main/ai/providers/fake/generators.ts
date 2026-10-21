@@ -2,6 +2,7 @@ import type {
   LessonOutput,
   CardsOutput,
   NamingOutput,
+  PortalStepOutput,
   GradeOutput,
   IndexChunkOutput,
   QuestionsOutput,
@@ -353,4 +354,14 @@ export function fakeNaming(text: string): NamingOutput {
     title: `${(m[2] ?? '').trim()} (named)`
   }))
   return { course_name: 'Named Course', files }
+}
+
+/** The fake does not browse: it says so and stops at once. */
+export function fakePortal(): PortalStepOutput {
+  return {
+    thought: 'The offline test AI does not browse.',
+    actions: [],
+    done: true,
+    summary: 'Nothing downloaded.'
+  }
 }

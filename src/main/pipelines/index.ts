@@ -104,7 +104,7 @@ export function createPipelinesWith(deps: PipelineDeps, options: PipelineOptions
 
   const handlers = guardAll({
     ...libraryService.handlers,
-    ...createPortal(deps, { importFiles: libraryService.handlers['library.import'] }).handlers,
+    ...createPortal(deps, { importFiles: libraryService.handlers['library.import'], ledger }).handlers,
     ...indexing.handlers,
     ...topics.handlers,
     ...cards.handlers,

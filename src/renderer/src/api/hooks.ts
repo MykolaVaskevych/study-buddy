@@ -372,6 +372,7 @@ export function useApiEvents({ onJobFailed }: ApiEventOptions = {}): void {
       }),
       subscribe('cards.changed', () => invalidateCards(qc)),
       subscribe('portal.changed', (state) => qc.setQueryData(channelKey('portal.state', {}), state)),
+      subscribe('portal.agent', (state) => qc.setQueryData(channelKey('portal.agentState', {}), state)),
       subscribe('pageCheck.ready', ({ docId, page }) => {
         invalidate(qc, channelKey('quiz.history', { docId }))
         markPageCheckReady(qc, docId, page)
@@ -402,6 +403,15 @@ export const usePortalNavigate = () =>
 export const usePortalGo = () =>
   useChannelMutation('portal.go', { silent: true, onSuccess: (s, _i, qc) => setPortalState(qc, s) })
 export const usePortalSignOut = () => useChannelMutation('portal.signOut')
+/** "Get files with AI": its state, kept current by 'portal.agent' events. */
+export const usePortalAgent = () => useQuery(channelQuery('portal.agentState', {}))
+const setAgentState = (qc: QueryClient, state: IpcOutput<'portal.agentState'>): void => {
+  qc.setQueryData(channelKey('portal.agentState', {}), state)
+}
+export const usePortalAgentStart = () =>
+  useChannelMutation('portal.agentStart', { onSuccess: (s, _i, qc) => setAgentState(qc, s) })
+export const usePortalAgentStop = () =>
+  useChannelMutation('portal.agentStop', { onSuccess: (s, _i, qc) => setAgentState(qc, s) })
 
 /** Files downloaded in the portal this session, newest first. */
 export function usePortalDownloads(): PortalDownload[] {

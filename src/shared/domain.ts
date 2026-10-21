@@ -66,6 +66,17 @@ export interface PortalState {
   courseId: CourseId | null
 }
 
+/** "Get files with AI": the AI clicking through the portal to download course files. */
+export interface PortalAgentState {
+  status: 'idle' | 'running' | 'done' | 'stopped' | 'failed'
+  step: number
+  maxSteps: number
+  /** Oldest first; the last few dozen entries. */
+  log: { at: IsoDate; kind: 'think' | 'click' | 'skip' | 'file' | 'error' | 'done'; text: string }[]
+  /** File names downloaded during this run. */
+  downloaded: string[]
+}
+
 /** One file downloaded in the portal and what became of it. */
 export interface PortalDownload {
   fileName: string

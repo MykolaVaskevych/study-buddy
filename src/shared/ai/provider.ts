@@ -28,6 +28,7 @@ export type AiTask =
   | 'past_paper'
   | 'lesson'
   | 'naming'
+  | 'portal'
   | 'health'
 
 export type PromptPart =

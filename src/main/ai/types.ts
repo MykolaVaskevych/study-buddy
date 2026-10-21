@@ -17,6 +17,7 @@ import type {
   Verification
 } from '@shared/domain'
 import type { AiTask, LlmProvider, Usage } from '@shared/ai/provider'
+import type { PortalStepOutput } from '@shared/ai/schemas'
 import type { NamingFile } from './prompts/naming'
 import type { ChunkInfo } from '../library/types'
 
@@ -193,6 +194,16 @@ export interface StudyAi {
     language: string
     signal?: AbortSignal
   }): Promise<WithUsage<NameSuggestion>>
+  /** One step of clicking through the study portal to download course files (fast tier). */
+  portalStep(input: {
+    goal: string
+    page: string
+    history: readonly string[]
+    downloaded: readonly string[]
+    step: number
+    maxSteps: number
+    signal?: AbortSignal
+  }): Promise<WithUsage<PortalStepOutput>>
 }
 
 /** Suggested names: the course, then one title per file in the order given. */
