@@ -22,7 +22,7 @@ import {
 import { openDatabase } from './db'
 import { createEmitter, registerIpc } from './ipc'
 import { createJobQueue } from './jobs'
-import { createPdfLibrary, DEFAULT_CHUNK_OPTIONS } from './library'
+import { createOfficeConverter, createPdfLibrary, DEFAULT_CHUNK_OPTIONS, findSoffice } from './library'
 import { createPipelines } from './pipelines'
 import { createSrs } from './srs'
 
@@ -73,7 +73,16 @@ async function bootstrap(): Promise<void> {
     log,
     name: OPENAI_COMPATIBLE_KEY_SECRET
   })
-  const library = createPdfLibrary({ rootDir: join(dataDir, 'library'), chunk: DEFAULT_CHUNK_OPTIONS })
+  const library = createPdfLibrary(
+    { rootDir: join(dataDir, 'library'), chunk: DEFAULT_CHUNK_OPTIONS },
+    {
+      officeConverter: createOfficeConverter({
+        locate: () => findSoffice(),
+        flatpak: Boolean(process.env['FLATPAK_ID']),
+        profileDir: join(dataDir, 'libreoffice-profile')
+      })
+    }
+  )
   const ai = createAiRegistry({
     getSettings: () => db.settings.get(),
     secrets,

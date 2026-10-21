@@ -48,7 +48,15 @@ export interface ImportedPdf {
   chunks: ChunkInfo[]
 }
 
-export type LibraryErrorKind = 'not_pdf' | 'encrypted' | 'corrupt' | 'too_large' | 'io'
+export type LibraryErrorKind =
+  | 'not_pdf'
+  | 'encrypted'
+  | 'corrupt'
+  | 'too_large'
+  | 'io'
+  /** An office file and no LibreOffice to convert it. */
+  | 'converter_missing'
+  | 'conversion_failed'
 
 export class LibraryError extends Error {
   readonly kind: LibraryErrorKind

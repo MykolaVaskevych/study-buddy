@@ -1,5 +1,6 @@
-import { rm, stat } from 'node:fs/promises'
-import { basename } from 'node:path'
+import { copyFile, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { basename, dirname, extname, join } from 'node:path'
+import { needsConversion } from '@shared/files'
 import { PAGE_STAMP_PREFIX } from './chunk-plan'
 import { readCompleteChunkGrid } from './chunks'
 import { io } from './errors'
@@ -7,7 +8,8 @@ import { readExtractCache, writeExtractCache } from './extract-cache'
 import { FOCUS_CHUNK_INDEX, writeFocusChunk } from './focus'
 import type { PdfJob } from './job'
 import { assertSha256, chunksDir, documentDir, extractCachePath, focusFilePath, storedPdfPath } from './paths'
-import { storeSourcePdf } from './store'
+import { installHint, type OfficeConverter } from './office'
+import { hashFile, storeSourcePdf } from './store'
 import { hasTextLayer } from './text'
 import {
   LibraryError,
@@ -23,6 +25,7 @@ import { DEFAULT_WORKER_TIMEOUT_MS, processPdf, type ProcessOptions } from './wo
 export { PAGE_STAMP_PREFIX, stampText } from './chunk-plan'
 export { FOCUS_CHUNK_INDEX } from './focus'
 export { hasTextLayer } from './text'
+export { createOfficeConverter, findSoffice } from './office'
 
 /** 10 pages keeps a chunk well inside one model call; 20 MB leaves headroom under the 32 MB API limit. */
 export const DEFAULT_CHUNK_OPTIONS: ChunkOptions = { pagesPerChunk: 10, maxChunkBytes: 20 * 1024 * 1024 }
@@ -52,6 +55,8 @@ export interface LibraryRuntimeOptions {
   maxPdfBytes?: number
   /** Give up on a file after this long (default 5 minutes). */
   workerTimeoutMs?: number
+  /** Turns PowerPoint, Word and OpenDocument files into PDFs; without it they fail as `converter_missing`. */
+  officeConverter?: OfficeConverter
 }
 
 /**
@@ -96,7 +101,8 @@ export function createPdfLibrary(config: LibraryConfig, runtime: LibraryRuntimeO
     })
   }
 
-  async function importPdf(sourcePath: string): Promise<ImportedPdf> {
+  /** Imports a PDF; `fileName` is the title of last resort. */
+  async function importStoredPdf(sourcePath: string, fileName: string): Promise<ImportedPdf> {
     const { sha256, storedPath } = await storeSourcePdf(sourcePath, root, maxPdfBytes)
     const cachePath = extractCachePath(root, sha256)
     const dir = chunksDir(root, sha256)
@@ -109,7 +115,7 @@ export function createPdfLibrary(config: LibraryConfig, runtime: LibraryRuntimeO
     if (!extract || !chunks) {
       const job: PdfJob = {
         pdfPath: storedPath,
-        extract: extract ? null : { fileName: basename(sourcePath) },
+        extract: extract ? null : { fileName },
         chunks: chunks ? null : { dir, options: chunkOptions, expectedPageCount: extract?.pageCount ?? null }
       }
       const result = await processPdf(job, processing).catch(async (err: unknown) => {
@@ -135,6 +141,55 @@ export function createPdfLibrary(config: LibraryConfig, runtime: LibraryRuntimeO
       pages: extract.pages,
       chunks
     }
+  }
+
+  /**
+   * Office files are converted once: a note from the source's hash to the PDF's hash lets a re-import
+   * reuse the stored PDF (LibreOffice output differs byte for byte between runs, so it would duplicate).
+   * The file name is the title: slide decks often carry a generic "PowerPoint Presentation" title.
+   */
+  async function importOffice(sourcePath: string): Promise<ImportedPdf> {
+    const name = basename(sourcePath)
+    const title = basename(name, extname(name))
+    const sourceSha = await io(`Cannot read ${name}`, () => hashFile(sourcePath))
+    const notePath = join(root, 'converted', `${sourceSha}.txt`)
+    const known = await readFile(notePath, 'utf8').then(
+      (s) => s.trim(),
+      () => ''
+    )
+    if (/^[0-9a-f]{64}$/.test(known)) {
+      const stored = storedPdfPath(root, known)
+      const present = await stat(stored).then(
+        (s) => s.isFile(),
+        () => false
+      )
+      if (present) return { ...(await importStoredPdf(stored, name)), title }
+    }
+    const converter = runtime.officeConverter
+    if (!converter) throw new LibraryError('converter_missing', installHint())
+    // Converted from a copy under the library root: a plain name, and a path a host LibreOffice sees
+    // when the app runs in the Flatpak sandbox.
+    const work = join(root, 'converting', sourceSha)
+    await rm(work, { recursive: true, force: true })
+    try {
+      await io('Cannot prepare the conversion folder', () => mkdir(work, { recursive: true }))
+      const copy = join(work, name)
+      await io(`Cannot read ${name}`, () => copyFile(sourcePath, copy))
+      const imported = await importStoredPdf(await converter.toPdf(copy, work), name)
+      await io('Cannot save the conversion note', async () => {
+        await mkdir(dirname(notePath), { recursive: true })
+        await writeFile(notePath, imported.sha256)
+      })
+      return { ...imported, title }
+    } finally {
+      await rm(work, { recursive: true, force: true }).catch(() => undefined)
+    }
+  }
+
+  function importPdf(sourcePath: string): Promise<ImportedPdf> {
+    return needsConversion(sourcePath)
+      ? importOffice(sourcePath)
+      : importStoredPdf(sourcePath, basename(sourcePath))
   }
 
   async function ensureChunks(sha256: string, pageCount: number): Promise<ChunkInfo[]> {

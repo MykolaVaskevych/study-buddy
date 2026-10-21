@@ -1,8 +1,9 @@
 import { useCallback, useRef, useState } from 'react'
 import type { DragEvent } from 'react'
+import { isImportable } from '@shared/files'
 import { pathForFile } from '../../api/client'
 
-const isPdf = (f: File): boolean => f.type === 'application/pdf' || /\.pdf$/i.test(f.name)
+const canImport = (f: File): boolean => f.type === 'application/pdf' || isImportable(f.name)
 
 export interface DropResult {
   /** Absolute paths for main, or null when the bridge can't resolve dropped files. */
@@ -10,11 +11,11 @@ export interface DropResult {
   rejected: number
 }
 
-/** Pure part of the drop handler: filter PDFs and resolve their paths. */
+/** Pure part of the drop handler: keep importable files (PDF, office) and resolve their paths. */
 export function resolveDrop(files: File[], resolve: (f: File) => string | null = pathForFile): DropResult {
-  const pdfs = files.filter(isPdf)
-  const paths = pdfs.map(resolve).filter((p): p is string => p !== null)
-  return { paths: paths.length === pdfs.length ? paths : null, rejected: files.length - pdfs.length }
+  const kept = files.filter(canImport)
+  const paths = kept.map(resolve).filter((p): p is string => p !== null)
+  return { paths: paths.length === kept.length ? paths : null, rejected: files.length - kept.length }
 }
 
 /** Drag-and-drop state for a drop zone; the counter survives dragenter/leave on children. */

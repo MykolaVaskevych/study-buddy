@@ -18,7 +18,7 @@ describe('LibraryScreen', () => {
     const invoke = vi.spyOn(mock, 'invoke')
     const user = userEvent.setup()
     await screen.findByRole('region', { name: 'Books' })
-    await user.click(screen.getByRole('button', { name: /Import PDF/ }))
+    await user.click(screen.getByRole('button', { name: /Import files/ }))
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('library.import', { paths: null }))
     expect(await screen.findByRole('link', { name: 'Thermodynamics, week 3' })).toBeTruthy()
   })

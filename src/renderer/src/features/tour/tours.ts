@@ -21,7 +21,7 @@ export const tours: Record<TourId, TourStep[]> = {
     {
       target: '[data-tour="import"]',
       title: 'Add your PDFs',
-      body: 'Import PDFs here, or drop them anywhere on the window. The AI reads every page in the background, slides and formulas included. You can start reading straight away.',
+      body: 'Import PDFs, PowerPoint or Word files here, or drop them anywhere on the window. Files imported together become one course. The AI reads every page in the background, slides and formulas included. You can start reading straight away.',
       optional: true
     },
     {

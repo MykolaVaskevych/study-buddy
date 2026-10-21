@@ -57,9 +57,11 @@ function Welcome({ onImport, importing }: { onImport: () => void; importing: boo
           loading={importing}
           shortcut="Mod+O"
         >
-          Import PDF
+          Import files
         </Button>
-        <span className="text-sm text-graphite">or drop PDF files anywhere on this window</span>
+        <span className="text-sm text-graphite">
+          or drop PDF, PowerPoint or Word files anywhere on this window
+        </span>
       </div>
     </section>
   )
@@ -136,7 +138,11 @@ export function LibraryScreen(): React.JSX.Element {
   const onDrop = useCallback(
     ({ paths, rejected }: DropResult) => {
       if (rejected > 0)
-        toast({ tone: 'info', title: 'Only PDF files can be imported', body: `${rejected} skipped.` })
+        toast({
+          tone: 'info',
+          title: 'Only PDF, PowerPoint, Word and OpenDocument files can be imported',
+          body: `${rejected} skipped.`
+        })
       if (paths === null) {
         // The bridge can't see dropped file paths yet; let the person pick them instead.
         runImport(null)
@@ -166,7 +172,7 @@ export function LibraryScreen(): React.JSX.Element {
               loading={importing}
               shortcut="Mod+O"
             >
-              Import PDF
+              Import files
             </Button>
           ) : null}
           {docs.length > 0 ? (

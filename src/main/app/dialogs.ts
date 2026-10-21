@@ -1,14 +1,19 @@
 import { dialog } from 'electron'
 import type { BaseWindow, OpenDialogOptions } from 'electron'
+import { IMPORT_EXTENSIONS, OFFICE_EXTENSIONS } from '@shared/files'
 
 export const PDF_OPEN_DIALOG: OpenDialogOptions = {
-  title: 'Import PDFs',
+  title: 'Import files',
   buttonLabel: 'Import',
   properties: ['openFile', 'multiSelections'],
-  filters: [{ name: 'PDF documents', extensions: ['pdf'] }]
+  filters: [
+    { name: 'Study files (PDF, PowerPoint, Word, OpenDocument)', extensions: [...IMPORT_EXTENSIONS] },
+    { name: 'PDF documents', extensions: ['pdf'] },
+    { name: 'Slides and documents (converted with LibreOffice)', extensions: [...OFFICE_EXTENSIONS] }
+  ]
 }
 
-/** Native multi-select "open PDFs" dialog, modal to `win` when given. Resolves [] when cancelled. */
+/** Native multi-select "open files" dialog, modal to `win` when given. Resolves [] when cancelled. */
 export async function pickPdfs(win: BaseWindow | null): Promise<string[]> {
   const result = win
     ? await dialog.showOpenDialog(win, PDF_OPEN_DIALOG)
