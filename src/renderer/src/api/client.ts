@@ -33,8 +33,19 @@ function getBridge(): PreloadApi {
   throw new Error('No IPC bridge: run inside Electron or install the mock api')
 }
 
+/** Shown when the window is newer than the main process (e.g. after `git pull` under `npm run dev`). */
+export const OUTDATED_MESSAGE =
+  'Study Buddy was updated while it was open. Close it and start it again to use this.'
+
 export async function call<C extends IpcChannel>(channel: C, input: IpcInput<C>): Promise<IpcOutput<C>> {
-  const envelope = await getBridge().invoke(channel, input)
+  const envelope = await getBridge()
+    .invoke(channel, input)
+    .catch((err: unknown) => {
+      // Electron rejects (instead of returning an envelope) when main has no handler for the channel.
+      if (err instanceof Error && err.message.includes('No handler registered'))
+        throw new ApiError('internal', OUTDATED_MESSAGE)
+      throw err
+    })
   if (envelope.ok) return envelope.data
   throw new ApiError(envelope.error.kind, envelope.error.message, envelope.error.resetAt ?? null)
 }
