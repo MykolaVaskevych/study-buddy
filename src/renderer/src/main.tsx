@@ -28,6 +28,12 @@ async function start(): Promise<void> {
   await installMockIfNeeded()
   const root = document.getElementById('root')
   if (!root) throw new Error('#root missing')
+  // A hidden window turns Markdown lecture notes into PDFs on this page (see main/app/markdown-pdf).
+  if (location.hash.startsWith('#/print')) {
+    const { PrintPage } = await import('./features/print/PrintPage')
+    createRoot(root).render(<PrintPage />)
+    return
+  }
   createRoot(root).render(
     <StrictMode>
       <App />

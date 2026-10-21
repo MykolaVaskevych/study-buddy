@@ -7,7 +7,7 @@ export const PDF_OPEN_DIALOG: OpenDialogOptions = {
   buttonLabel: 'Import',
   properties: ['openFile', 'multiSelections'],
   filters: [
-    { name: 'Study files (PDF, PowerPoint, Word, OpenDocument)', extensions: [...IMPORT_EXTENSIONS] },
+    { name: 'Study files (PDF, PowerPoint, Word, Markdown)', extensions: [...IMPORT_EXTENSIONS] },
     { name: 'PDF documents', extensions: ['pdf'] },
     { name: 'Slides and documents (converted with LibreOffice)', extensions: [...OFFICE_EXTENSIONS] }
   ]

@@ -223,12 +223,15 @@
   }
 }
 
-/* Printing (cheat sheet): let content flow across pages instead of the app's fixed-height panes. */
+/*
+ * Printing (cheat sheet, Markdown notes): let content flow across pages instead of the app's
+ * fixed-height panes. KaTeX is left alone: it places exponents and matrices with exact heights.
+ */
 @media print {
   html,
   body,
   #root,
-  #root * {
+  #root *:not(.katex, .katex *) {
     height: auto !important;
     max-height: none !important;
     overflow: visible !important;

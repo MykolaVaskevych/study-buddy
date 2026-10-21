@@ -7,6 +7,7 @@ import {
   createAiRegistry,
   createConsoleLog,
   createMainWindow,
+  createMarkdownPdfRenderer,
   createSecretStore,
   ensureSingleInstance,
   OPENAI_COMPATIBLE_KEY_SECRET,
@@ -15,6 +16,7 @@ import {
   registerPdfProtocol,
   registerPdfScheme,
   resolveRendererSource,
+  runMarkdownSmoke,
   runPortalSmoke,
   runSmoke,
   waitForRendererLoad,
@@ -43,6 +45,7 @@ const log = createConsoleLog('[main]')
 registerPdfScheme(protocol)
 if (isSmoke) app.setPath('userData', mkdtempSync(join(tmpdir(), 'study-buddy-smoke-')))
 
+const PRELOAD_PATH = join(__dirname, '../preload/index.cjs')
 const renderer = resolveRendererSource(
   process.env['ELECTRON_RENDERER_URL'],
   join(__dirname, '../renderer/index.html')
@@ -54,7 +57,7 @@ function openMainWindow(): BrowserWindow {
   const win = createMainWindow({
     isSmoke,
     isDev: !app.isPackaged,
-    preloadPath: join(__dirname, '../preload/index.cjs'),
+    preloadPath: PRELOAD_PATH,
     renderer,
     icon: app.isPackaged ? undefined : join(app.getAppPath(), 'build/icon.png')
   })
@@ -82,7 +85,8 @@ async function bootstrap(): Promise<void> {
         locate: () => findSoffice(),
         flatpak: Boolean(process.env['FLATPAK_ID']),
         profileDir: join(dataDir, 'libreoffice-profile')
-      })
+      }),
+      markdownToPdf: createMarkdownPdfRenderer({ renderer, preloadPath: PRELOAD_PATH })
     }
   )
   const ai = createAiRegistry({
@@ -162,6 +166,7 @@ async function bootstrap(): Promise<void> {
       const pdfPath = await writeSmokePdf(join(dataDir, 'smoke'))
       await runSmoke(pipelines.handlers, { pdfPath, log, timeoutMs: 120_000 })
       await runPortalSmoke(pipelines.handlers, { pdfPath, log, timeoutMs: 30_000 })
+      await runMarkdownSmoke(pipelines.handlers, { dir: join(dataDir, 'smoke'), log })
       await pipelines.stop()
       app.exit(0)
     } catch (err) {

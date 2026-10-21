@@ -51,6 +51,13 @@ export interface PortalNav {
  * The in-app study-portal browser (an Electron view on its own persistent session). Thin glue; the
  * pipelines decide where downloads go and what to remember.
  */
+export interface PortalFile {
+  kind: 'import' | 'saved'
+  path: string
+  fileName: string
+  url: string
+}
+
 export interface PortalView {
   show(bounds: PortalBounds): void
   hide(): void
@@ -61,8 +68,11 @@ export interface PortalView {
   /** Clears cookies and storage of the portal session (signs out of every portal). */
   signOut(): Promise<void>
   onChange(listener: (nav: PortalNav) => void): void
-  /** A finished download of a study file, saved at `path` (the caller imports, then deletes it). */
-  onDownload(listener: (file: { path: string; fileName: string; url: string }) => void): void
+  /**
+   * A finished download. `import`: a study file saved at `path` for the caller to import (then delete).
+   * `saved`: another kind of file, kept at `path` in the user's Downloads folder.
+   */
+  onDownload(listener: (file: PortalFile) => void): void
 }
 
 export interface PipelineDeps {

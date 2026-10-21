@@ -5,6 +5,7 @@
  */
 export { createAiRegistry, providerFingerprint, type AiRegistry, type AiRegistryDeps } from './ai-registry'
 export { pickPdfs, PDF_OPEN_DIALOG } from './dialogs'
+export { createMarkdownPdfRenderer } from './markdown-pdf'
 export { createConsoleLog, type Log } from './log'
 export { buildMenuTemplate } from './menu'
 export {
@@ -23,6 +24,7 @@ export {
 } from './secrets'
 export { ensureSingleInstance } from './single-instance'
 export {
+  runMarkdownSmoke,
   runPortalSmoke,
   runSmoke,
   waitForRendererLoad,

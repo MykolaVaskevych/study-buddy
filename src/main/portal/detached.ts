@@ -1,4 +1,4 @@
-import type { PortalNav, PortalView } from '../pipelines/types'
+import type { PortalFile, PortalNav, PortalView } from '../pipelines/types'
 
 /**
  * A portal without a window, for tests, `--smoke` and scripts: navigation only records the address
@@ -6,14 +6,14 @@ import type { PortalNav, PortalView } from '../pipelines/types'
  */
 export interface DetachedPortal extends PortalView {
   visible(): boolean
-  download(file: { path: string; fileName: string; url: string }): void
+  download(file: PortalFile): void
 }
 
 export function createDetachedPortal(): DetachedPortal {
   let nav: PortalNav = { url: null, title: '', loading: false, canGoBack: false, canGoForward: false }
   let shown = false
   const changed: ((nav: PortalNav) => void)[] = []
-  const downloads: ((file: { path: string; fileName: string; url: string }) => void)[] = []
+  const downloads: ((file: PortalFile) => void)[] = []
   const history: string[] = []
   const set = (next: Partial<PortalNav>): void => {
     nav = { ...nav, ...next }

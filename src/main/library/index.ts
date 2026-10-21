@@ -1,13 +1,14 @@
 import { copyFile, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, extname, join } from 'node:path'
-import { needsConversion } from '@shared/files'
+import { isMarkdown, needsConversion } from '@shared/files'
 import { PAGE_STAMP_PREFIX } from './chunk-plan'
 import { readCompleteChunkGrid } from './chunks'
-import { io } from './errors'
+import { errorMessage, io } from './errors'
 import { readExtractCache, writeExtractCache } from './extract-cache'
 import { FOCUS_CHUNK_INDEX, writeFocusChunk } from './focus'
 import type { PdfJob } from './job'
 import { assertSha256, chunksDir, documentDir, extractCachePath, focusFilePath, storedPdfPath } from './paths'
+import { markdownTitle } from './markdown'
 import { installHint, type OfficeConverter } from './office'
 import { hashFile, storeSourcePdf } from './store'
 import { hasTextLayer } from './text'
@@ -57,6 +58,8 @@ export interface LibraryRuntimeOptions {
   workerTimeoutMs?: number
   /** Turns PowerPoint, Word and OpenDocument files into PDFs; without it they fail as `converter_missing`. */
   officeConverter?: OfficeConverter
+  /** Prints Markdown notes to PDF (the app's renderer in a hidden window). */
+  markdownToPdf?: (markdown: string, title: string) => Promise<Uint8Array>
 }
 
 /**
@@ -144,13 +147,17 @@ export function createPdfLibrary(config: LibraryConfig, runtime: LibraryRuntimeO
   }
 
   /**
-   * Office files are converted once: a note from the source's hash to the PDF's hash lets a re-import
-   * reuse the stored PDF (LibreOffice output differs byte for byte between runs, so it would duplicate).
-   * The file name is the title: slide decks often carry a generic "PowerPoint Presentation" title.
+   * Converted files (office documents, Markdown notes) are converted once: a note from the source's
+   * hash to the PDF's hash lets a re-import reuse the stored PDF (conversions differ byte for byte
+   * between runs, so they would duplicate). `convert` turns a copy under the library root into a PDF
+   * in `work`: a plain name, and a path a host LibreOffice sees from the Flatpak sandbox.
    */
-  async function importOffice(sourcePath: string): Promise<ImportedPdf> {
+  async function importConverted(
+    sourcePath: string,
+    title: string,
+    convert: (copy: string, work: string) => Promise<string>
+  ): Promise<ImportedPdf> {
     const name = basename(sourcePath)
-    const title = basename(name, extname(name))
     const sourceSha = await io(`Cannot read ${name}`, () => hashFile(sourcePath))
     const notePath = join(root, 'converted', `${sourceSha}.txt`)
     const known = await readFile(notePath, 'utf8').then(
@@ -165,17 +172,13 @@ export function createPdfLibrary(config: LibraryConfig, runtime: LibraryRuntimeO
       )
       if (present) return { ...(await importStoredPdf(stored, name)), title }
     }
-    const converter = runtime.officeConverter
-    if (!converter) throw new LibraryError('converter_missing', installHint())
-    // Converted from a copy under the library root: a plain name, and a path a host LibreOffice sees
-    // when the app runs in the Flatpak sandbox.
     const work = join(root, 'converting', sourceSha)
     await rm(work, { recursive: true, force: true })
     try {
       await io('Cannot prepare the conversion folder', () => mkdir(work, { recursive: true }))
       const copy = join(work, name)
       await io(`Cannot read ${name}`, () => copyFile(sourcePath, copy))
-      const imported = await importStoredPdf(await converter.toPdf(copy, work), name)
+      const imported = await importStoredPdf(await convert(copy, work), name)
       await io('Cannot save the conversion note', async () => {
         await mkdir(dirname(notePath), { recursive: true })
         await writeFile(notePath, imported.sha256)
@@ -186,7 +189,36 @@ export function createPdfLibrary(config: LibraryConfig, runtime: LibraryRuntimeO
     }
   }
 
+  /** The file name is the title: slide decks often carry a generic "PowerPoint Presentation" title. */
+  function importOffice(sourcePath: string): Promise<ImportedPdf> {
+    const name = basename(sourcePath)
+    const converter = runtime.officeConverter
+    if (!converter) return Promise.reject(new LibraryError('converter_missing', installHint()))
+    return importConverted(sourcePath, basename(name, extname(name)), (copy, work) =>
+      converter.toPdf(copy, work)
+    )
+  }
+
+  /** Markdown and text notes are printed to PDF by the app's renderer; the first heading is the title. */
+  async function importMarkdown(sourcePath: string): Promise<ImportedPdf> {
+    const name = basename(sourcePath)
+    const render = runtime.markdownToPdf
+    if (!render)
+      throw new LibraryError('conversion_failed', `Markdown notes cannot be imported here (${name})`)
+    const markdown = await io(`Cannot read ${name}`, () => readFile(sourcePath, 'utf8'))
+    const title = markdownTitle(markdown, basename(name, extname(name)))
+    return importConverted(sourcePath, title, async (_copy, work) => {
+      const bytes = await render(markdown, title).catch((err: unknown) => {
+        throw new LibraryError('conversion_failed', `Could not render ${name}: ${errorMessage(err)}`, err)
+      })
+      const pdf = join(work, `${basename(name, extname(name))}.pdf`)
+      await io('Cannot write the rendered notes', () => writeFile(pdf, bytes))
+      return pdf
+    })
+  }
+
   function importPdf(sourcePath: string): Promise<ImportedPdf> {
+    if (isMarkdown(sourcePath)) return importMarkdown(sourcePath)
     return needsConversion(sourcePath)
       ? importOffice(sourcePath)
       : importStoredPdf(sourcePath, basename(sourcePath))
