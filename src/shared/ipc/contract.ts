@@ -82,6 +82,7 @@ export const planInputSchema = z.object({
 
 const none = z.object({}).strict()
 const courseName = z.string().trim().min(1).max(200)
+const cramScope = z.object({ docId: id, topicIds: z.array(id).max(500).nullable() })
 
 /** Declares a channel: input schema + output type. */
 function route<O>() {
@@ -140,7 +141,22 @@ export const ipcContract = {
    */
   'cards.rebuildForExam': route<{ suspended: number; queued: number }>()(z.object({ docId: id })),
   /** "Don't panic" cram: `cards` flashcards that matter most for the exam, then exam-style questions. */
-  'cram.plan': route<CramPlan>()(z.object({ docId: id, cards: z.number().int().min(5).max(30) })),
+  'cram.plan': route<CramPlan>()(
+    z.object({
+      docId: id,
+      cards: z.number().int().min(5).max(30),
+      /** Files and chapters to cover, e.g. weeks 5–7 of a course; default: the whole of `docId`. */
+      scopes: z.array(cramScope).min(1).max(50).optional()
+    })
+  ),
+  /** Exam-style questions across the cram's files or chapters; the AI tops up where too few are stored. */
+  'cram.quiz': route<QuizSession>()(
+    z.object({
+      scopes: z.array(cramScope).min(1).max(50),
+      count: z.number().int().min(1).max(30),
+      types: z.array(questionTypeSchema).nullable()
+    })
+  ),
   /** Study-book chapters written so far. */
   'lessons.list': route<Lesson[]>()(z.object({ docId: id })),
   /** Writes (or rewrites) the chapter for a topic, or for every leaf topic without one (topicId null). */

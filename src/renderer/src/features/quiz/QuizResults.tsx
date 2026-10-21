@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import type { QuizResult, QuizSession } from '@shared/domain'
-import { useCreateQuiz, useTopics } from '../../api/hooks'
+import { useCreateQuiz, useTopicsOf } from '../../api/hooks'
 import { Button, buttonClass, cx, Icon, Markdown, Progress } from '../../components'
 import { verdictOf } from './question/Feedback'
 import { describeResponse, toResponse } from './question/response'
@@ -35,9 +35,11 @@ export function QuizResults({
   newLabel = 'New quiz',
   onRetry
 }: QuizResultsProps): React.JSX.Element {
-  const topics = useTopics(session.docId)
+  // A cram's quiz can span several files of a course.
+  const docIds = [...new Set([session.docId, ...session.questions.map((q) => q.docId)])]
+  const topics = useTopicsOf(docIds)
   const retry = useCreateQuiz()
-  const titles = new Map((topics.data ?? []).map((t) => [t.id, t.title]))
+  const titles = new Map(topics.map((t) => [t.id, t.title]))
   const ratio = result.maxScore > 0 ? result.score / result.maxScore : 0
   const byId = new Map(session.questions.map((q) => [q.id, q]))
   const missed = result.attempts

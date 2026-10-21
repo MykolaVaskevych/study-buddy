@@ -1,5 +1,5 @@
 import type { Card, Topic } from '@shared/domain'
-import { cramRank, pickCram } from './cram'
+import { cramRank, normaliseScopes, pickCram, topicsUnder } from './cram'
 import { createHarness, type Harness } from './test-harness'
 
 const srs = (over: Partial<Card['srs']> = {}): Card['srs'] => ({
@@ -62,10 +62,11 @@ describe('pickCram', () => {
     })
     expect(picked).toHaveLength(10)
     const from = (t: string): number => picked.filter((c) => c.topicId === t).length
-    // C has one card for its two slots; the spare slot goes to A, the heavier topic.
-    expect([from('A'), from('B'), from('C')]).toEqual([7, 2, 1])
-    const pages = picked.map((c) => c.sourcePages[0] ?? 0)
-    expect(pages).toEqual([...pages].sort((a, b) => a - b))
+    // Every topic first, then by weight; C has a single card, so its spare slot goes to A.
+    expect([from('A'), from('B'), from('C')]).toEqual([6, 3, 1])
+    // Interleaved: each round takes one card per topic, in book order.
+    expect(picked.slice(0, 3).map((c) => c.topicId)).toEqual(['A', 'B', 'C'])
+    expect(picked.slice(3, 5).map((c) => c.topicId)).toEqual(['A', 'B'])
   })
 
   it('skips excluded types and inactive cards, and prefers what went wrong', () => {
@@ -77,7 +78,25 @@ describe('pickCram', () => {
       card('wrong', { type: 'mistake', sourcePages: [9] })
     ]
     const picked = pickCram(cards, [], { count: 2, skip: new Set(['formula']) })
-    expect(picked.map((c) => c.id)).toEqual(['new', 'wrong'])
+    expect(picked.map((c) => c.id)).toEqual(['wrong', 'new'])
+  })
+
+  it('covers as many topics as it has slots, the most important first', () => {
+    const topics = Array.from({ length: 12 }, (_, i) => topic(`T${i}`, (12 - i) / 78))
+    const cards = topics.flatMap((t, i) =>
+      Array.from({ length: 5 }, (_, j) => card(`${t.id}-${j}`, { topicId: t.id, sourcePages: [i * 10 + j] }))
+    )
+    const picked = pickCram(cards, topics, { count: 10, skip: none })
+    expect(new Set(picked.map((c) => c.topicId))).toEqual(new Set(topics.slice(0, 10).map((t) => t.id)))
+  })
+
+  it('orders files as given and groups cards without a topic per file', () => {
+    const cards = [
+      card('w6', { docId: 'week6', sourcePages: [1] }),
+      card('w5', { docId: 'week5', sourcePages: [1] })
+    ]
+    const picked = pickCram(cards, [], { count: 2, skip: none, docOrder: ['week5', 'week6'] })
+    expect(picked.map((c) => c.id)).toEqual(['w5', 'w6'])
   })
 
   it('gives mastered topics fewer cards', () => {
@@ -88,6 +107,28 @@ describe('pickCram', () => {
     expect(picked.filter((c) => c.topicId === 'B').length).toBeGreaterThan(
       picked.filter((c) => c.topicId === 'A').length
     )
+  })
+})
+
+describe('cram scopes', () => {
+  it('expands chapters to everything below them', () => {
+    const t = (id: string, parentId: string | null): Topic => ({ id, parentId }) as unknown as Topic
+    const tree = [t('w5a', 'w5'), t('w5', null), t('w6', null), t('w5a1', 'w5a')]
+    expect(topicsUnder(tree, ['w5'])).toEqual(new Set(['w5', 'w5a', 'w5a1']))
+  })
+
+  it('merges repeated files; a whole file wins over chapters', () => {
+    expect(
+      normaliseScopes([
+        { docId: 'a', topicIds: ['x'] },
+        { docId: 'a', topicIds: ['y', 'x'] },
+        { docId: 'b', topicIds: ['z'] },
+        { docId: 'b', topicIds: null }
+      ])
+    ).toEqual([
+      { docId: 'a', topicIds: ['x', 'y'] },
+      { docId: 'b', topicIds: null }
+    ])
   })
 })
 
@@ -115,5 +156,31 @@ describe('cram.plan', () => {
     expect(plan.cards.length).toBeLessThanOrEqual(5)
     expect(plan.cards.every((c) => c.type !== 'formula' && c.status === 'active')).toBe(true)
     expect(plan).toMatchObject({ docId, questionCount: 5, questionTypes: ['mcq', 'multi', 'tf'] })
+    expect(plan.scopes).toEqual([{ docId, topicIds: null }])
+  })
+
+  it('limits cards to chosen chapters and builds a quiz over them', async () => {
+    harness = await createHarness()
+    const docId = await harness.importIndexed()
+    await harness.h['cards.generate']({
+      scope: { kind: 'document', docId },
+      essentialsOnly: true,
+      count: null
+    })
+    await harness.waitIdle()
+    const topics = await harness.h['topics.list']({ docId })
+    const chapter = topics.find((t) => t.parentId === null)
+    if (!chapter) throw new Error('fixture has no topics')
+    const scopes = [{ docId, topicIds: [chapter.id] }]
+    const plan = await harness.h['cram.plan']({ docId, cards: 30, scopes })
+    const inChapter = new Set(
+      topics.filter((t) => t.id === chapter.id || t.parentId === chapter.id).map((t) => t.id)
+    )
+    expect(plan.cards.every((c) => c.topicId !== null && inChapter.has(c.topicId))).toBe(true)
+
+    const quiz = await harness.h['cram.quiz']({ scopes, count: 3, types: null })
+    expect(quiz.questions.length).toBeGreaterThan(0)
+    expect(quiz.questions.length).toBeLessThanOrEqual(3)
+    expect(quiz.docId).toBe(docId)
   })
 })

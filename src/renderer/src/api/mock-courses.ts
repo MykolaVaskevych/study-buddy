@@ -24,6 +24,8 @@ export function createMockCourses(
     nextId: (prefix: string) => string
     titleOf: (docId: string) => string
     fail: (message: string) => never
+    /** Announced like the main process does, so screens refetch. */
+    changed: () => void
   }
 ): MockCourses {
   let courses: Course[] = books.map((b) => ({ id: `course-${b.id}`, name: b.title, docIds: [b.id] }))
@@ -44,44 +46,62 @@ export function createMockCourses(
   }
   const list = (): Course[] => courses.map((c) => ({ ...c, docIds: [...c.docIds] }))
 
+  const handlers: MockCourses['handlers'] = {
+    'courses.list': () => list(),
+    'courses.create': ({ name, docIds }) => create(name, docIds),
+    'courses.rename': ({ courseId, name }) => {
+      find(courseId).name = name
+      return { ...find(courseId) }
+    },
+    'courses.dissolve': ({ courseId }) => {
+      for (const id of [...find(courseId).docIds]) create(deps.titleOf(id), [id])
+      return { ok: true }
+    },
+    'courses.moveDocument': ({ docId, courseId, index }) => {
+      find(courseId)
+      // detach() rebuilds the course objects, so look the target up again afterwards.
+      detach([docId])
+      const target = find(courseId)
+      target.docIds.splice(Math.min(index, target.docIds.length), 0, docId)
+      prune()
+      return list()
+    },
+    'courses.reorder': ({ courseIds }) => {
+      const rank = (c: Course): number => {
+        const i = courseIds.indexOf(c.id)
+        return i < 0 ? courseIds.length : i
+      }
+      courses = courses
+        .map((c, i) => ({ c, i }))
+        .sort((a, b) => rank(a.c) - rank(b.c) || a.i - b.i)
+        .map((x) => x.c)
+      return list()
+    },
+    'courses.suggestNames': ({ courseId }) => {
+      const course = find(courseId)
+      return {
+        courseId,
+        name: `${course.name} (course)`,
+        files: course.docIds.map((docId, i) => ({ docId, title: `Part ${i + 1}: ${deps.titleOf(docId)}` }))
+      }
+    }
+  }
+  const announce =
+    <A extends unknown[], R>(fn: (...args: A) => R) =>
+    (...args: A): R => {
+      const out = fn(...args)
+      deps.changed()
+      return out
+    }
+
   return {
     handlers: {
-      'courses.list': () => list(),
-      'courses.create': ({ name, docIds }) => create(name, docIds),
-      'courses.rename': ({ courseId, name }) => {
-        find(courseId).name = name
-        return { ...find(courseId) }
-      },
-      'courses.dissolve': ({ courseId }) => {
-        for (const id of [...find(courseId).docIds]) create(deps.titleOf(id), [id])
-        return { ok: true }
-      },
-      'courses.moveDocument': ({ docId, courseId, index }) => {
-        const target = find(courseId)
-        detach([docId])
-        target.docIds.splice(Math.min(index, target.docIds.length), 0, docId)
-        prune()
-        return list()
-      },
-      'courses.reorder': ({ courseIds }) => {
-        const rank = (c: Course): number => {
-          const i = courseIds.indexOf(c.id)
-          return i < 0 ? courseIds.length : i
-        }
-        courses = courses
-          .map((c, i) => ({ c, i }))
-          .sort((a, b) => rank(a.c) - rank(b.c) || a.i - b.i)
-          .map((x) => x.c)
-        return list()
-      },
-      'courses.suggestNames': ({ courseId }) => {
-        const course = find(courseId)
-        return {
-          courseId,
-          name: `${course.name} (course)`,
-          files: course.docIds.map((docId, i) => ({ docId, title: `Part ${i + 1}: ${deps.titleOf(docId)}` }))
-        }
-      }
+      ...handlers,
+      'courses.create': announce(handlers['courses.create']),
+      'courses.rename': announce(handlers['courses.rename']),
+      'courses.dissolve': announce(handlers['courses.dissolve']),
+      'courses.moveDocument': announce(handlers['courses.moveDocument']),
+      'courses.reorder': announce(handlers['courses.reorder'])
     },
     place(docIds, courseId, name) {
       const fresh = docIds.filter((id) => !courses.some((c) => c.docIds.includes(id)))

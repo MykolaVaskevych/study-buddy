@@ -214,8 +214,16 @@ export interface Card {
  * "Don't panic": a short cram for an exam that is close. The flashcards worth most right now, then
  * a few exam-style questions in the types the exam profile allows.
  */
+/** What a cram covers in one file: the whole file (topicIds null) or some of its chapters. */
+export interface CramScope {
+  docId: DocId
+  topicIds: TopicId[] | null
+}
+
 export interface CramPlan {
   docId: DocId
+  /** The files and chapters covered (the opened file alone unless others were chosen). */
+  scopes: CramScope[]
   cards: Card[]
   questionCount: number
   /** null = any type. */

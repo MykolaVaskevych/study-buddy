@@ -179,7 +179,8 @@ export function createMockApi(options: MockOptions = {}): MockApi {
     titleOf: (docId) => getDoc(docId).title,
     fail: (message) => {
       throw new MockError('not_found', message)
-    }
+    },
+    changed: () => emit('library.changed', { docId: null })
   })
 
   const indexStatus = (d: DocState): IndexStatus => ({
@@ -650,14 +651,35 @@ export function createMockApi(options: MockOptions = {}): MockApi {
       return saved
     },
     'cards.rebuildForExam': () => ({ suspended: 3, queued: 6 }),
-    'cram.plan': ({ docId, cards }) => {
+    'cram.plan': ({ docId, cards, scopes }) => {
       const profile = profileOf(docId)
-      const picked = getDoc(docId)
-        .cards.filter((c) => c.status === 'active' && (profile.formulas !== 'none' || c.type !== 'formula'))
+      const covered = scopes ?? [{ docId, topicIds: null }]
+      const picked = covered
+        .flatMap((s) => getDoc(s.docId).cards)
+        .filter((c) => c.status === 'active' && (profile.formulas !== 'none' || c.type !== 'formula'))
         .slice(0, cards)
       const questionCount = cramQuestionCount(cards)
       const minutes = cramMinutes(picked.length, questionCount)
-      return { docId, cards: picked, questionCount, questionTypes: cramQuestionTypes(profile), minutes }
+      return {
+        docId,
+        scopes: covered,
+        cards: picked,
+        questionCount,
+        questionTypes: cramQuestionTypes(profile),
+        minutes
+      }
+    },
+    // The mock spans only the first file: enough for screens and tests.
+    'cram.quiz': ({ scopes, count, types }) => {
+      const first = scopes[0]
+      if (!first) throw new MockError('validation', 'No files to quiz on')
+      return study['quiz.create']({
+        scope: { kind: 'document', docId: first.docId },
+        mode: 'topic',
+        count,
+        types,
+        timeLimit: null
+      })
     },
     'progress.reset': () => ({ cards: 12, attempts: 4, readingPages: 14 }),
     'lessons.list': ({ docId }) => {

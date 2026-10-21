@@ -40,6 +40,7 @@ describe('mock api', () => {
       'cards.setStatus': { cardId: `${docId}-card-1`, status: 'active' },
       'cards.stats': { docId },
       'cram.plan': { docId, cards: 10 },
+      'cram.quiz': { scopes: [{ docId, topicIds: null }], count: 3, types: null },
       'courses.create': { name: 'Optics', docIds: [docId] },
       'courses.rename': { courseId: 'course-signals-systems', name: 'Signals' },
       'courses.moveDocument': { docId, courseId: 'course-signals-systems', index: 0 },

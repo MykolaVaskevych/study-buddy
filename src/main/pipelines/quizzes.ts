@@ -21,8 +21,8 @@ import { createSession, type PageChecks } from './page-checks'
 import type { Planner } from './planner'
 import { PRIORITY } from './priorities'
 import type { QuestionGen } from './questions'
-import { leafTopics, leavesUnder, resolveScope, scopeLabel, type ResolvedScope } from './scope'
-import { mockAllocation, pickFresh, reviewPages, rubricFromAnswer } from './selection'
+import { leafTopics, leavesUnder, requireDoc, resolveScope, scopeLabel, type ResolvedScope } from './scope'
+import { distribute, mockAllocation, pickFresh, reviewPages, rubricFromAnswer } from './selection'
 import type { IpcParsedInput } from '@shared/ipc/contract'
 import type { Handlers, PipelineDeps } from './types'
 import { ServiceError } from './types'
@@ -35,7 +35,13 @@ import type { UsageLedger } from './usage'
 export interface Quizzes {
   handlers: Pick<
     Handlers,
-    'quiz.create' | 'quiz.pageCheck' | 'quiz.answer' | 'quiz.finish' | 'quiz.history' | 'quiz.reportQuestion'
+    | 'quiz.create'
+    | 'quiz.pageCheck'
+    | 'quiz.answer'
+    | 'quiz.finish'
+    | 'quiz.history'
+    | 'quiz.reportQuestion'
+    | 'cram.quiz'
   >
 }
 
@@ -131,6 +137,60 @@ export function createQuizzes(
       throw new ServiceError('validation', `No questions could be made for ${scopeLabel(resolved)}`)
     }
     return session(resolved.doc.id, mode, input.scope, picked, input.timeLimit)
+  }
+
+  /**
+   * A cram's questions over several files or chapters: spread evenly, the AI tops up the parts with
+   * too few stored questions, and the result is interleaved so consecutive questions change topic.
+   */
+  async function cramQuiz(input: IpcParsedInput<'cram.quiz'>): Promise<QuizSession> {
+    const parts: Scope[] = input.scopes.flatMap((s): Scope[] => {
+      requireDoc(db, s.docId)
+      return s.topicIds === null
+        ? [{ kind: 'document', docId: s.docId }]
+        : s.topicIds.map((topicId) => ({ kind: 'topic', docId: s.docId, topicId }))
+    })
+    const want = distribute(
+      input.count,
+      parts.map(() => 1)
+    )
+    const chosen = new Set<QuestionId>()
+    const picked: Question[][] = parts.map(() => [])
+    const fill = (i: number): void => {
+      const scope = parts[i]
+      if (!scope) return
+      const have = picked[i] ?? []
+      const more = freshIn(scope, (want[i] ?? 0) - have.length, input.types, () => true, chosen)
+      for (const q of more) chosen.add(q.id)
+      picked[i] = [...have, ...more]
+    }
+    parts.forEach((_, i) => fill(i))
+    const jobs = parts.flatMap((scope, i) => {
+      const missing = (want[i] ?? 0) - (picked[i]?.length ?? 0)
+      if (missing <= 0) return []
+      const job = questionGen.enqueueQuestions(
+        { scope, count: missing, types: input.types, purpose: 'quiz' },
+        PRIORITY.awaited
+      )
+      return [{ i, jobId: job.id }]
+    })
+    const outcomes = await Promise.allSettled(jobs.map((j) => waiter.done(j.jobId)))
+    jobs.forEach((j, k) => {
+      if (outcomes[k]?.status === 'fulfilled') fill(j.i)
+    })
+    const questions: Question[] = []
+    const rounds = Math.max(0, ...picked.map((list) => list.length))
+    for (let round = 0; round < rounds; round++) {
+      for (const list of picked) {
+        const q = list[round]
+        if (q) questions.push(q)
+      }
+    }
+    const [first] = parts
+    if (!first || questions.length === 0) {
+      throw new ServiceError('validation', 'No questions could be made for these files yet')
+    }
+    return session(first.docId, 'topic', first, questions, null)
   }
 
   async function mockQuiz(input: CreateInput): Promise<QuizSession> {
@@ -368,6 +428,8 @@ export function createQuizzes(
       },
 
       'quiz.pageCheck': ({ docId, page }) => services.pageChecks.pageCheck(docId, page),
+
+      'cram.quiz': (input) => cramQuiz(input),
 
       'quiz.answer': async ({ quizId, questionId, response, elapsedMs }) => {
         const quiz = db.quizzes.get(quizId)
