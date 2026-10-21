@@ -30,6 +30,41 @@ export interface Connections {
   listModels(baseUrl: string, apiKey: string | null): Promise<string[]>
 }
 
+/** Window coordinates of the area the portal browser covers. */
+export interface PortalBounds {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+/** What the portal browser shows (the target course is the pipeline's business). */
+export interface PortalNav {
+  url: string | null
+  title: string
+  loading: boolean
+  canGoBack: boolean
+  canGoForward: boolean
+}
+
+/**
+ * The in-app study-portal browser (an Electron view on its own persistent session). Thin glue; the
+ * pipelines decide where downloads go and what to remember.
+ */
+export interface PortalView {
+  show(bounds: PortalBounds): void
+  hide(): void
+  setBounds(bounds: PortalBounds): void
+  navigate(url: string): void
+  go(action: 'back' | 'forward' | 'reload' | 'stop'): void
+  state(): PortalNav
+  /** Clears cookies and storage of the portal session (signs out of every portal). */
+  signOut(): Promise<void>
+  onChange(listener: (nav: PortalNav) => void): void
+  /** A finished download of a study file, saved at `path` (the caller imports, then deletes it). */
+  onDownload(listener: (file: { path: string; fileName: string; url: string }) => void): void
+}
+
 export interface PipelineDeps {
   db: Database
   library: PdfLibrary
@@ -51,6 +86,7 @@ export interface PipelineDeps {
   /** Native "open PDFs" dialog; resolves [] when cancelled. */
   pickPdfs(): Promise<string[]>
   appInfo: { version: string; platform: string; dataDir: string }
+  portal: PortalView
 }
 
 export interface Pipelines {

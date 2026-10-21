@@ -108,7 +108,7 @@ export function createCourses(
         requireCourse(db, courseId)
         db.courses.rename(courseId, name)
         changed()
-        return db.courses.get(courseId) ?? { id: courseId, name, docIds: [] }
+        return db.courses.get(courseId) ?? { id: courseId, name, docIds: [], portalUrl: null }
       },
 
       'courses.dissolve': async ({ courseId }) => {

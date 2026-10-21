@@ -387,3 +387,58 @@ export async function writeSmokePdf(dir: string): Promise<string> {
   await writeFile(path, await doc.save())
   return path
 }
+
+/**
+ * The portal browser end to end: a local page links a PDF served as an attachment; opening it in
+ * the portal must download it and import it into the chosen course. Needs the real Electron view.
+ */
+export async function runPortalSmoke(
+  handlers: Handlers,
+  opts: { pdfPath: string; log: Log; timeoutMs: number }
+): Promise<void> {
+  const { createServer } = await import('node:http')
+  const { readFile } = await import('node:fs/promises')
+  // A different file from the main smoke PDF (one byte more), so it imports as a new document.
+  const pdf = Buffer.concat([await readFile(opts.pdfPath), Buffer.from('\n%portal\n')])
+  const server = createServer((req, res) => {
+    if (req.url === '/week5.pdf') {
+      res.writeHead(200, {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="Week 5.pdf"'
+      })
+      res.end(pdf)
+    } else {
+      res.writeHead(200, { 'Content-Type': 'text/html' })
+      res.end('<!doctype html><title>Course page</title><a href="/week5.pdf">Week 5 slides</a>')
+    }
+  })
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+  try {
+    const address = server.address()
+    const port = typeof address === 'object' && address ? address.port : 0
+    const [course] = await handlers['courses.list']({})
+    if (!course) throw new Error('portal: no course to download into')
+    const before = (await handlers['library.list']({})).length
+    await handlers['portal.open']({ bounds: { x: 0, y: 48, width: 800, height: 500 }, courseId: course.id })
+    await handlers['portal.navigate']({ url: `http://127.0.0.1:${port}/` })
+    const deadline = Date.now() + opts.timeoutMs
+    const wait = async (what: string, done: () => Promise<boolean>): Promise<void> => {
+      while (!(await done())) {
+        if (Date.now() > deadline) throw new Error(`portal: timed out waiting for ${what}`)
+        await new Promise((resolve) => setTimeout(resolve, 200))
+      }
+    }
+    await wait('the course page', async () => (await handlers['portal.state']({})).title === 'Course page')
+    opts.log.info('[smoke] ok   portal: page loaded in the portal view')
+    await handlers['portal.navigate']({ url: `http://127.0.0.1:${port}/week5.pdf` })
+    await wait('the downloaded file in the course', async () => {
+      const docs = await handlers['library.list']({})
+      const files = (await handlers['courses.list']({})).find((c) => c.id === course.id)?.docIds ?? []
+      return docs.length > before && files.length > course.docIds.length
+    })
+    opts.log.info('[smoke] ok   portal: download imported into the course')
+    await handlers['portal.close']({})
+  } finally {
+    server.close()
+  }
+}

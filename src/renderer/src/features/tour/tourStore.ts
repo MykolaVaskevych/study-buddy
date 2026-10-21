@@ -29,6 +29,7 @@ const V010_STEPS: Record<TourId, string[]> = {
     '[data-tour="study-tools"]'
   ],
   studybook: ['[data-tour="studybook-toc"]', '[data-tour="write-all"]'],
+  portal: [],
   overview: ['[data-tour="ai-status"]', '[data-tour="prepare"]', '[data-tour="my-progress"]'],
   planner: [
     '[data-tour="plan-form"]',

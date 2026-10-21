@@ -37,6 +37,14 @@ ESLint enforces the import rules (`no-restricted-imports` in `eslint.config.js`)
 4. **Generators (`smart` tier, on demand, everything stored).** Flashcards (essentials and full), page checks (prefetched), quizzes, mock exams. Each item cites its source pages and carries an evidence quote that is checked against the page text. Answer keys are verified by a blind second pass.
 5. **Learning loop.** FSRS reviews (deadline-aware) and quiz attempts update topic mastery (a Beta belief). The planner re-solves.
 
+**Courses and sources.**
+- **Courses.** A course (`courses` table) groups files. Every document belongs to one course. Plans, cards and topics are still per document; a cram can span several files of a course.
+- **Office files.** PowerPoint, Word and OpenDocument files are converted to PDF at import by the user's LibreOffice (`library/office.ts`; on the host when running in the Flatpak). A source-hash note makes re-imports reuse the stored PDF.
+- **Study portal.** `/portal` is an Electron `WebContentsView` on the persistent partition `persist:portal`, laid over the screen's placeholder (`portal/view.ts`).
+  - Students sign in on the site itself; the app never sees the password.
+  - Study-file downloads are imported into the chosen course (`pipelines/portal.ts`).
+  - Pages are untrusted: no preload, sandboxed, every permission denied, http(s) only.
+
 ## AI providers
 
 Claude Code's own login is driven from Settings through `claude auth status --json` / `login` / `logout` (`ai/providers/claude-code/auth.ts`): without a terminal the CLI opens the browser and reads the one-time code from stdin, so sign-in is two IPC calls (`ai.claudeLogin`, `ai.claudeLoginCode`). The app never sees the credentials.

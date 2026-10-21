@@ -1,4 +1,4 @@
-import type { Annotation, ExamProfile, Lesson } from '@shared/domain'
+import type { Annotation, ExamProfile, Lesson, PortalState } from '@shared/domain'
 import { cramMinutes, cramQuestionCount, cramQuestionTypes } from '@shared/cram'
 import { createMockCourses } from './mock-courses'
 import { ipcContract } from '@shared/ipc/contract'
@@ -128,6 +128,14 @@ export function createMockApi(options: MockOptions = {}): MockApi {
   const docs = new Map<string, DocState>(BOOKS.map((b) => [b.id, initialState(b, now())]))
   const jobs = new Map<string, JobInfo>()
   const plans = new Map<string, ExamPlan>()
+  let portal: PortalState = {
+    url: null,
+    title: '',
+    loading: false,
+    canGoBack: false,
+    canGoForward: false,
+    courseId: null
+  }
   const pdfCache = new Map<string, Promise<Uint8Array>>()
   const timers = new Set<ReturnType<typeof setInterval>>()
   let settings: PublicSettings = { ...DEFAULT_SETTINGS, hasApiKey: false, hasOpenAiCompatibleKey: false }
@@ -160,6 +168,8 @@ export function createMockApi(options: MockOptions = {}): MockApi {
     'index.progress': new Set(),
     'library.changed': new Set(),
     'cards.changed': new Set(),
+    'portal.changed': new Set(),
+    'portal.downloaded': new Set(),
     'pageCheck.ready': new Set(),
     'ai.rateLimited': new Set(),
     'chat.delta': new Set(),
@@ -651,6 +661,29 @@ export function createMockApi(options: MockOptions = {}): MockApi {
       return saved
     },
     'cards.rebuildForExam': () => ({ suspended: 3, queued: 6 }),
+    // The portal browser is a native view in the app; in the mock it only keeps its address.
+    'portal.open': ({ courseId }) => {
+      portal = { ...portal, courseId }
+      return portal
+    },
+    'portal.close': () => ({ ok: true }),
+    'portal.setBounds': () => ({ ok: true }),
+    'portal.setCourse': ({ courseId }) => {
+      portal = { ...portal, courseId }
+      return portal
+    },
+    'portal.navigate': ({ url }) => {
+      const href = /^https?:\/\//.test(url) ? url : `https://${url}`
+      portal = { ...portal, url: href, title: href, canGoBack: portal.url !== null }
+      emit('portal.changed', portal)
+      return portal
+    },
+    'portal.go': () => portal,
+    'portal.state': () => portal,
+    'portal.signOut': () => {
+      portal = { ...portal, url: null, title: '', canGoBack: false }
+      return { ok: true }
+    },
     'cram.plan': ({ docId, cards, scopes }) => {
       const profile = profileOf(docId)
       const covered = scopes ?? [{ docId, topicIds: null }]

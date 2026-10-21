@@ -2,7 +2,7 @@
  * Guided tours, one per screen. Steps point at elements marked with data-tour="…" (or another
  * selector). `optional` steps are skipped when their element is not on screen (e.g. no books yet).
  */
-export type TourId = 'library' | 'book' | 'planner' | 'review' | 'quiz' | 'overview' | 'studybook'
+export type TourId = 'library' | 'book' | 'planner' | 'review' | 'quiz' | 'overview' | 'studybook' | 'portal'
 
 export interface TourStep {
   /** CSS selector of the element to highlight; omit for a centred card. */
@@ -13,6 +13,22 @@ export interface TourStep {
 }
 
 export const tours: Record<TourId, TourStep[]> = {
+  portal: [
+    {
+      title: 'Your study portal, inside the app',
+      body: 'Open Brightspace, Sulis, Blackboard, Moodle or any other portal and sign in as usual; the sign-in stays here for next time. Study Buddy never sees your password.'
+    },
+    {
+      target: '[data-tour="portal-bar"]',
+      title: 'Browse as usual',
+      body: 'Back, forward, reload and the address bar work like in any browser.'
+    },
+    {
+      target: '[data-tour="portal-course"]',
+      title: 'Downloads become course files',
+      body: 'Every PDF, PowerPoint or Word file you download goes into this course and is prepared like any other file. Other downloads go to your Downloads folder.'
+    }
+  ],
   library: [
     {
       title: 'Welcome to Study Buddy',
@@ -230,5 +246,6 @@ export function tourForPath(pathname: string): TourId {
   if (/^\/book\/[^/]+\/studybook/.test(pathname)) return 'studybook'
   if (/^\/book\/[^/]+\/?$/.test(pathname)) return 'book'
   if (pathname.startsWith('/review')) return 'review'
+  if (pathname.startsWith('/portal')) return 'portal'
   return 'library'
 }
