@@ -2,6 +2,7 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app, BrowserWindow, ipcMain, protocol, safeStorage } from 'electron'
+import { resolveRoutes } from '@shared/ai/routing'
 import {
   createClaudeAuth,
   createCodexAuth,
@@ -107,7 +108,11 @@ async function bootstrap(): Promise<void> {
         pdfText: (path) => library.pageTexts(path),
         codexWorkDir: join(dataDir, 'codex')
       }),
-    createStudyAi,
+    createStudyAi: (provider, settings) =>
+      createStudyAi(provider, {
+        routes: resolveRoutes(settings.aiRouting),
+        escalate: settings.aiRouting.escalate
+      }),
     forceProvider: isSmoke ? 'fake' : undefined
   })
   const pipelines = createPipelines({

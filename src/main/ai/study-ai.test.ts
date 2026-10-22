@@ -4,7 +4,8 @@ import { join } from 'node:path'
 import { PDFDocument } from 'pdf-lib'
 import type { Question } from '@shared/domain'
 import type { GenerateRequest, LlmProvider } from '@shared/ai/provider'
-import type { VerifyOutput } from '@shared/ai/schemas'
+import type { CardsOutput, VerifyOutput } from '@shared/ai/schemas'
+import { ROUTING_PRESETS } from '@shared/ai/routing'
 import { makeFixturePdf } from '../../../tests/fixtures/make-fixture-pdf'
 import type { ChunkInfo } from '../library/types'
 import { createFakeProvider } from './providers/fake/provider'
@@ -249,5 +250,67 @@ describe('StudyAi with the fake provider', () => {
     await expect(
       ai.gradeShortAnswer({ question: { ...question, answer: { type: 'tf', value: true } }, response: 'yes' })
     ).rejects.toMatchObject({ kind: 'unknown' })
+  })
+})
+
+describe('routing', () => {
+  /** Records the tier and effort of every call; `spoil` turns a call's cards into ungrounded ones. */
+  function recording(spoil: (call: number) => boolean) {
+    const fake = createFakeProvider()
+    const seen: { task: string; tier: string; effort: string | undefined }[] = []
+    const provider: LlmProvider = {
+      ...fake,
+      async generate<T>(req: GenerateRequest<T>) {
+        seen.push({ task: req.task, tier: req.tier, effort: req.effort })
+        const res = await fake.generate(req)
+        if (req.task === 'cards' && spoil(seen.length)) {
+          const data = res.data as unknown as CardsOutput
+          return {
+            ...res,
+            data: {
+              cards: data.cards.map((c) => ({ ...c, evidence: 'words that are not on the page at all' }))
+            } as T
+          }
+        }
+        return res
+      }
+    }
+    return { provider, seen }
+  }
+  const cardOpts = { count: 4, essentialsOnly: true, existingFronts: [] }
+
+  it('runs each task on its routed model and effort', async () => {
+    const { provider, seen } = recording(() => false)
+    const ai = createStudyAi(provider, { routes: ROUTING_PRESETS.balanced })
+    const res = await ai.generateCards(context(await indexed()), cardOpts)
+    expect(res.value.length).toBeGreaterThan(0)
+    expect(seen).toEqual([{ task: 'cards', tier: 'fast', effort: 'medium' }])
+    expect((await ai.provider.health()).ok).toBe(true)
+  })
+
+  it('redoes a weak fast batch on the strong model and keeps the good cards', async () => {
+    const { provider, seen } = recording((call) => call === 1)
+    const res = await createStudyAi(provider, { routes: ROUTING_PRESETS.balanced }).generateCards(
+      context(await indexed()),
+      cardOpts
+    )
+    expect(seen.map((s) => s.tier)).toEqual(['fast', 'smart'])
+    expect(res.usage).toHaveLength(2)
+    expect(res.value.length).toBeGreaterThan(0)
+  })
+
+  it('does not escalate when it is off or the task already uses the strong model', async () => {
+    const off = recording((call) => call === 1)
+    await createStudyAi(off.provider, { routes: ROUTING_PRESETS.balanced, escalate: false }).generateCards(
+      context(await indexed()),
+      cardOpts
+    )
+    expect(off.seen.map((s) => s.tier)).toEqual(['fast'])
+    const quality = recording((call) => call === 1)
+    await createStudyAi(quality.provider, { routes: ROUTING_PRESETS.quality }).generateCards(
+      context(await indexed()),
+      cardOpts
+    )
+    expect(quality.seen.map((s) => s.tier)).toEqual(['smart'])
   })
 })

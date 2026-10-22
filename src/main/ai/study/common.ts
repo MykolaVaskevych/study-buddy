@@ -1,4 +1,5 @@
 import { AiError, type AiTask, type GenerateResult } from '@shared/ai/provider'
+import { ROUTING_PRESETS, type Route, type RoutedTask } from '@shared/ai/routing'
 import type { ChunkInfo } from '../../library/types'
 import { DEFAULT_GROUNDING_THRESHOLD } from '../quality/grounding'
 import { DEFAULT_DEDUPE_THRESHOLD } from '../quality/dedupe'
@@ -14,6 +15,10 @@ export interface StudyAiOptions {
   maxRequestBytes?: number
   /** PDF pages per request (default 100). */
   maxRequestPages?: number
+  /** Model and effort per task (default: the "best quality" preset, every generator on the strong model). */
+  routes?: Record<RoutedTask, Route>
+  /** Redo weak batches of fast-model flashcards and page checks once on the strong model (default true). */
+  escalate?: boolean
 }
 
 export type ResolvedOptions = Required<StudyAiOptions>
@@ -23,7 +28,9 @@ export function resolveOptions(opts: StudyAiOptions): ResolvedOptions {
     groundingThreshold: opts.groundingThreshold ?? DEFAULT_GROUNDING_THRESHOLD,
     dedupeThreshold: opts.dedupeThreshold ?? DEFAULT_DEDUPE_THRESHOLD,
     maxRequestBytes: opts.maxRequestBytes ?? 22 * 1024 * 1024,
-    maxRequestPages: opts.maxRequestPages ?? 100
+    maxRequestPages: opts.maxRequestPages ?? 100,
+    routes: opts.routes ?? ROUTING_PRESETS.quality,
+    escalate: opts.escalate ?? true
   }
 }
 

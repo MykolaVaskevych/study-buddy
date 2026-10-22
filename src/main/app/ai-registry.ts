@@ -16,7 +16,8 @@ export interface AiRegistryDeps {
   /** Key for the OpenAI-compatible server. */
   openAiSecrets: Pick<SecretStore, 'getApiKey'>
   createProvider(settings: Settings, secrets: { apiKey: string | null }): LlmProvider
-  createStudyAi(provider: LlmProvider): StudyAi
+  /** `settings` carries the routing (which model does which task). */
+  createStudyAi(provider: LlmProvider, settings: Settings): StudyAi
   /** Serve this provider for every lookup, whatever is asked or configured (smoke runs use 'fake'). */
   forceProvider?: ProviderId
 }
@@ -65,11 +66,12 @@ export function createAiRegistry(deps: AiRegistryDeps): AiRegistry {
           : provider === 'openai-compatible'
             ? deps.openAiSecrets.getApiKey()
             : null
-      const fingerprint = providerFingerprint(provider, settings)
+      // Routing changes rebuild the StudyAi too (the provider itself would not need it).
+      const fingerprint = `${providerFingerprint(provider, settings)}|${JSON.stringify(settings.aiRouting)}`
       const hit = cache.get(provider)
       if (hit && hit.fingerprint === fingerprint && hit.apiKey === apiKey) return hit.ai
 
-      const ai = deps.createStudyAi(deps.createProvider({ ...settings, provider }, { apiKey }))
+      const ai = deps.createStudyAi(deps.createProvider({ ...settings, provider }, { apiKey }), settings)
       cache.set(provider, { fingerprint, apiKey, ai })
       return ai
     },
