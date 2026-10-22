@@ -156,6 +156,7 @@ export function CramScreen(): React.JSX.Element {
         {stage.step === 'cards' ? (
           <ReviewSession
             initial={stage.plan.cards}
+            repeat="missedOnce"
             docId={docId}
             bookTitles={titles}
             dueNow={0}

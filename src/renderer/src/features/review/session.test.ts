@@ -35,6 +35,24 @@ describe('reviewReducer', () => {
     expect(reviewReducer(s, { type: 'requeue', card: card('a') })).toBe(s)
   })
 
+  it('rotates short-interval Good reviews without duplicates for more than fifty ratings', () => {
+    const cards = Array.from({ length: 10 }, (_, i) => card(String(i)))
+    let state = initialReview(cards)
+    for (let i = 0; i < 55; i++) {
+      const current = state.pending[state.pos]
+      if (!current) throw new Error('Missing current card')
+      expect(current.id).toBe(String(i % cards.length))
+      state = reviewReducer(state, { type: 'rated', cardId: current.id, rating: 3 })
+      state = reviewReducer(state, { type: 'requeue', card: current })
+      expect(state.pending[state.pos]?.id).not.toBe(current.id)
+      expect(new Set(state.pending.map((c) => c.id)).size).toBe(10)
+      expect(state.pending).toHaveLength(10)
+      expect(reviewReducer(state, { type: 'requeue', card: current })).toBe(state)
+    }
+    expect(state.log).toHaveLength(55)
+    expect(recallRate(state.log)).toBe(1)
+  })
+
   it('moves with wrap-around and wraps after rating the last card', () => {
     const s = start({ type: 'move', delta: -1 })
     expect(s.pos).toBe(2)

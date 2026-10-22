@@ -136,6 +136,44 @@ describe('cram.plan', () => {
   let harness: Harness
   afterEach(async () => harness.close())
 
+  it('persists short Good review intervals for new cram cards with the exam tomorrow', async () => {
+    harness = await createHarness()
+    const docId = await harness.importIndexed()
+    await harness.h['cards.generate']({
+      scope: { kind: 'document', docId },
+      essentialsOnly: true,
+      count: null
+    })
+    await harness.waitIdle()
+    await harness.h['plan.save']({
+      docId,
+      input: {
+        examDate: '2026-10-18',
+        totalHours: 3,
+        hoursPerDay: null,
+        targetScore: 0.8,
+        mode: 'max_score',
+        format: 'mcq',
+        overrides: []
+      }
+    })
+    const plan = await harness.h['cram.plan']({ docId, cards: 10 })
+    expect(plan.cards.length).toBeGreaterThan(1)
+    expect(plan.cards.every((c) => c.srs.state === 'new')).toBe(true)
+    for (let i = 0; i < 55; i++) {
+      const card = plan.cards[i % plan.cards.length]
+      if (!card) throw new Error('Missing cram card')
+      const updated = await harness.h['cards.review']({ cardId: card.id, rating: 3, elapsedMs: 1000 })
+      const interval = Date.parse(updated.srs.due) - harness.clock.now().getTime()
+      expect(updated.id).toBe(card.id)
+      expect(updated.srs.reps).toBe(Math.floor(i / plan.cards.length) + 1)
+      expect(interval).toBeGreaterThan(0)
+      expect(interval).toBeLessThanOrEqual(10 * 60_000)
+      expect(harness.db.cards.get(card.id)).toEqual(updated)
+      harness.clock.advance(1000)
+    }
+  })
+
   it('builds a plan from stored cards and follows the exam profile', async () => {
     harness = await createHarness()
     const docId = await harness.importIndexed()
