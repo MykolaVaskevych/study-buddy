@@ -1,8 +1,25 @@
 import { z } from 'zod'
+import { DEFAULT_ROUTING } from './ai/routing'
 
 export const providerIdSchema = z.enum(['claude-code', 'anthropic-api', 'openai-compatible', 'codex', 'fake'])
 
 const tierModelsSchema = z.object({ fast: z.string().min(1), smart: z.string().min(1) })
+
+const routedTaskSchema = z.enum([
+  'index',
+  'topics',
+  'cards',
+  'page_check',
+  'questions',
+  'verify',
+  'grade',
+  'chat',
+  'lesson',
+  'past_paper',
+  'explain',
+  'naming',
+  'portal'
+])
 
 export const settingsSchema = z.object({
   provider: providerIdSchema,
@@ -30,7 +47,21 @@ export const settingsSchema = z.object({
   /** The student's study portals (Brightspace, Sulis, Blackboard…), shown on the portal's home. */
   portals: z
     .array(z.object({ name: z.string().trim().min(1).max(100), url: z.url({ protocol: /^https?$/ }) }))
-    .max(50)
+    .max(50),
+  /** Which model does which job (src/shared/ai/routing.ts): a preset plus per-task overrides. */
+  aiRouting: z.object({
+    preset: z.enum(['balanced', 'economy', 'quality']),
+    overrides: z
+      .array(
+        z.object({
+          task: routedTaskSchema,
+          tier: z.enum(['fast', 'smart']),
+          effort: z.enum(['low', 'medium', 'high'])
+        })
+      )
+      .max(20),
+    escalate: z.boolean()
+  })
 })
 
 export type Settings = z.infer<typeof settingsSchema>
@@ -59,5 +90,6 @@ export const DEFAULT_SETTINGS: Settings = {
   prefetchPageChecks: true,
   verifyAnswerKeys: true,
   claudeCodePath: null,
-  portals: []
+  portals: [],
+  aiRouting: DEFAULT_ROUTING
 }

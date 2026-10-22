@@ -2,6 +2,7 @@ import { useSettings } from '../../api/hooks'
 import { Button, EmptyState, Skeleton } from '../../components'
 import { ConnectionSection } from './ConnectionSection'
 import { ModelsSection } from './ModelsSection'
+import { RoutingSection } from './RoutingSection'
 import { PortalSection } from './PortalSection'
 import { UsageSection } from './UsageSection'
 import { AppearanceSection, WorkSection } from './WorkSection'
@@ -35,6 +36,7 @@ export function SettingsScreen(): React.JSX.Element {
           <>
             <ConnectionSection settings={s} />
             <ModelsSection settings={s} />
+            <RoutingSection settings={s} />
             <WorkSection settings={s} />
             <AppearanceSection settings={s} />
             <PortalSection />

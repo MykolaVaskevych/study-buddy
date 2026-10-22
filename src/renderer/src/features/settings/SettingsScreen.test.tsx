@@ -62,3 +62,41 @@ describe('SettingsScreen', () => {
     expect(await screen.findByText(/Notional: your Claude subscription covers this/)).toBeTruthy()
   })
 })
+
+describe('Which model does what', () => {
+  it('starts balanced, changes single jobs, and a new plan starts clean', async () => {
+    const { mock } = renderApp('/settings')
+    const invoke = vi.spyOn(mock, 'invoke')
+    const user = userEvent.setup()
+    const cards = await screen.findByRole('combobox', { name: 'Model for Flashcards' })
+    expect((cards as HTMLSelectElement).value).toBe('fast')
+    expect((screen.getByRole('combobox', { name: 'Model for Course map' }) as HTMLSelectElement).value).toBe(
+      'smart'
+    )
+
+    await user.selectOptions(cards, 'smart')
+    await waitFor(() =>
+      expect(invoke).toHaveBeenCalledWith('settings.update', {
+        aiRouting: {
+          preset: 'balanced',
+          overrides: [{ task: 'cards', tier: 'smart', effort: 'medium' }],
+          escalate: true
+        }
+      })
+    )
+    expect(await screen.findByRole('button', { name: 'reset' })).toBeTruthy()
+
+    await user.click(screen.getByRole('radio', { name: /Economy/ }))
+    await waitFor(() =>
+      expect(invoke).toHaveBeenCalledWith('settings.update', {
+        aiRouting: { preset: 'economy', overrides: [], escalate: true }
+      })
+    )
+    await waitFor(() =>
+      expect(
+        (screen.getByRole('combobox', { name: 'Model for Quizzes and mock exams' }) as HTMLSelectElement)
+          .value
+      ).toBe('fast')
+    )
+  })
+})
