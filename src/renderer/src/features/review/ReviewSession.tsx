@@ -86,6 +86,12 @@ export function NothingDue({ docId }: { docId: string | null }): React.JSX.Eleme
 interface ReviewSessionProps {
   /** Due cards at the start; the session keeps its own queue from here. */
   initial: Card[]
+  /**
+   * Which rated cards come back this session. 'due' (Review): any card due again within
+   * LEARN_AHEAD_MS. 'missedOnce' (a cram's fixed set): only a card rated Again, and only once, because
+   * near an exam every card is due again within minutes and the session would never end.
+   */
+  repeat?: 'due' | 'missedOnce'
   docId: string | null
   bookTitles: Map<string, string>
   /** Cards due right now according to the latest fetch (for "Review N more"). */
@@ -98,6 +104,7 @@ interface ReviewSessionProps {
 /** One review session: flip, rate 1–4, browse with j/k, edit with e, suspend with s. */
 export function ReviewSession({
   initial,
+  repeat = 'due',
   docId,
   bookTitles,
   dueNow,
@@ -111,6 +118,8 @@ export function ReviewSession({
   const card = state.pending[state.pos] ?? null
   const cardRef = useRef<HTMLElement>(null)
   const shownAt = useRef(0)
+  /** Cards already given their second look ('missedOnce'). */
+  const repeated = useRef(new Set<string>())
   const cardId = card?.id ?? null
 
   useEffect(() => {
@@ -125,8 +134,12 @@ export function ReviewSession({
     dispatch({ type: 'rated', cardId: card.id, rating })
     review.mutateAsync({ cardId: card.id, rating, elapsedMs }).then(
       (updated) => {
-        if (Date.parse(updated.srs.due) - Date.now() <= LEARN_AHEAD_MS)
+        if (repeat === 'due' && Date.parse(updated.srs.due) - Date.now() <= LEARN_AHEAD_MS)
           dispatch({ type: 'requeue', card: updated })
+        else if (repeat === 'missedOnce' && rating === 1 && !repeated.current.has(card.id)) {
+          repeated.current.add(card.id)
+          dispatch({ type: 'requeue', card: updated })
+        }
       },
       () => dispatch({ type: 'restore', card, rating })
     )
