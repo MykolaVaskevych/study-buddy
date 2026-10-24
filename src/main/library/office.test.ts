@@ -11,6 +11,7 @@ import {
   type ChildLike,
   type OfficeConverter
 } from './office'
+import { makePptx } from './pptx-notes.test'
 import { makeTempDir } from './test-pdfs'
 import { LibraryError } from './types'
 
@@ -147,6 +148,18 @@ describe('importing office files', () => {
     expect(converter.calls).toHaveLength(1)
     // The conversion folder is cleaned up.
     expect(await readdir(join(root, 'converting'))).toEqual([])
+  })
+
+  it("adds a deck's speaker notes to the text of their pages", async () => {
+    const library = createPdfLibrary(
+      { rootDir: join(tmp.dir, 'lib-notes'), chunk: DEFAULT_CHUNK_OPTIONS },
+      { inWorker: false, officeConverter: stubConverter() }
+    )
+    const deck = join(tmp.dir, 'src', 'Week 5 MapReduce.pptx')
+    await writeFile(deck, makePptx())
+    const doc = await library.importPdf(deck)
+    expect(doc.pages[0]?.text).not.toContain('Speaker notes')
+    expect(doc.pages[1]?.text).toContain('Speaker notes: Exam favourite: MapReduce & shuffle')
   })
 
   it('fails with an install hint when no converter is available', async () => {

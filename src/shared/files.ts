@@ -4,8 +4,16 @@ export const OFFICE_EXTENSIONS = ['pptx', 'ppt', 'ppsx', 'pps', 'odp', 'docx', '
 /** Notes rendered to PDF by the app (with formulas). */
 export const MARKDOWN_EXTENSIONS = ['md', 'markdown', 'txt'] as const
 
+/** Photos and screenshots, one page per image (WebP is not supported: pdf-lib cannot embed it). */
+export const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg'] as const
+
 /** Everything the library imports. */
-export const IMPORT_EXTENSIONS = ['pdf', ...OFFICE_EXTENSIONS, ...MARKDOWN_EXTENSIONS] as const
+export const IMPORT_EXTENSIONS = [
+  'pdf',
+  ...OFFICE_EXTENSIONS,
+  ...MARKDOWN_EXTENSIONS,
+  ...IMAGE_EXTENSIONS
+] as const
 
 const extensionOf = (name: string): string => /\.([^./\\]+)$/.exec(name)?.[1]?.toLowerCase() ?? ''
 
@@ -20,3 +28,7 @@ export const needsConversion = (name: string): boolean =>
 /** True for Markdown and plain-text notes. */
 export const isMarkdown = (name: string): boolean =>
   (MARKDOWN_EXTENSIONS as readonly string[]).includes(extensionOf(name))
+
+/** True for PNG and JPEG images. */
+export const isImage = (name: string): boolean =>
+  (IMAGE_EXTENSIONS as readonly string[]).includes(extensionOf(name))

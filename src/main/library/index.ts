@@ -1,6 +1,6 @@
 import { copyFile, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, extname, join } from 'node:path'
-import { isMarkdown, needsConversion } from '@shared/files'
+import { isImage, isMarkdown, needsConversion } from '@shared/files'
 import { PAGE_STAMP_PREFIX } from './chunk-plan'
 import { readCompleteChunkGrid } from './chunks'
 import { errorMessage, io } from './errors'
@@ -8,7 +8,9 @@ import { readExtractCache, writeExtractCache } from './extract-cache'
 import { FOCUS_CHUNK_INDEX, writeFocusChunk } from './focus'
 import type { PdfJob } from './job'
 import { assertSha256, chunksDir, documentDir, extractCachePath, focusFilePath, storedPdfPath } from './paths'
+import { imagesToPdf } from './images'
 import { markdownTitle } from './markdown'
+import { pptxNotes } from './pptx-notes'
 import { installHint, type OfficeConverter } from './office'
 import { hashFile, storeSourcePdf } from './store'
 import { hasTextLayer } from './text'
@@ -18,6 +20,7 @@ import {
   type ChunkOptions,
   type ChunkPageText,
   type ImportedPdf,
+  type PageExtract,
   type LibraryConfig,
   type PdfLibrary
 } from './types'
@@ -43,6 +46,16 @@ export function splitStamp(text: string): ChunkPageText {
     ? `${text.slice(0, match.index)} ${text.slice(match.index + match[0].length)}`.trim()
     : text
   return { page: match?.[1] ? Number(match[1]) : null, text: rest, hasTextLayer: hasTextLayer(rest) }
+}
+
+/** Each slide's speaker notes appended to its page's text (page i is slide i of the deck). */
+export function withNotes(pages: readonly PageExtract[], notes: readonly string[]): PageExtract[] {
+  return pages.map((p, i) => {
+    const note = notes[i]?.trim()
+    if (!note) return p
+    const text = p.text ? `${p.text}\n\nSpeaker notes: ${note}` : `Speaker notes: ${note}`
+    return { ...p, text, charCount: text.length }
+  })
 }
 
 /** Larger files are almost always scans or media dumps that would take minutes and gigabytes to process. */
@@ -190,13 +203,28 @@ export function createPdfLibrary(config: LibraryConfig, runtime: LibraryRuntimeO
   }
 
   /** The file name is the title: slide decks often carry a generic "PowerPoint Presentation" title. */
-  function importOffice(sourcePath: string): Promise<ImportedPdf> {
+  async function importOffice(sourcePath: string): Promise<ImportedPdf> {
     const name = basename(sourcePath)
     const converter = runtime.officeConverter
-    if (!converter) return Promise.reject(new LibraryError('converter_missing', installHint()))
-    return importConverted(sourcePath, basename(name, extname(name)), (copy, work) =>
+    if (!converter) throw new LibraryError('converter_missing', installHint())
+    const imported = await importConverted(sourcePath, basename(name, extname(name)), (copy, work) =>
       converter.toPdf(copy, work)
     )
+    if (!/\.(pptx|ppsx)$/i.test(name)) return imported
+    // The PDF export drops speaker notes; they are often the real explanation, so they join the text.
+    const notes = pptxNotes(await io(`Cannot read ${name}`, () => readFile(sourcePath)))
+    return { ...imported, pages: withNotes(imported.pages, notes) }
+  }
+
+  /** Photos and screenshots: one page per image. */
+  function importImage(sourcePath: string): Promise<ImportedPdf> {
+    const name = basename(sourcePath)
+    return importConverted(sourcePath, basename(name, extname(name)), async (copy, work) => {
+      const bytes = await io(`Cannot read ${name}`, () => readFile(copy))
+      const pdf = join(work, `${basename(name, extname(name))}.pdf`)
+      await io('Cannot write the image PDF', async () => writeFile(pdf, await imagesToPdf([{ name, bytes }])))
+      return pdf
+    })
   }
 
   /** Markdown and text notes are printed to PDF by the app's renderer; the first heading is the title. */
@@ -219,6 +247,7 @@ export function createPdfLibrary(config: LibraryConfig, runtime: LibraryRuntimeO
 
   function importPdf(sourcePath: string): Promise<ImportedPdf> {
     if (isMarkdown(sourcePath)) return importMarkdown(sourcePath)
+    if (isImage(sourcePath)) return importImage(sourcePath)
     return needsConversion(sourcePath)
       ? importOffice(sourcePath)
       : importStoredPdf(sourcePath, basename(sourcePath))
