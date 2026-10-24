@@ -275,7 +275,11 @@ export function CourseTree({ docId, activeContent }: CourseTreeProps): React.JSX
     if (isDesktopFiles(e)) {
       const result = resolveDrop([...e.dataTransfer.files])
       if (result.paths && result.paths.length > 0) addFiles(courseId, result.paths)
-      else toast({ tone: 'error', title: 'Only PDF, PowerPoint, Word, Markdown and text files can be added' })
+      else
+        toast({
+          tone: 'error',
+          title: 'Only PDF, PowerPoint, Word, Markdown, text and image (PNG, JPEG) files can be added'
+        })
     } else if (dragging) {
       apply(dropMove(list, dragging, target(edgeAt(e.clientY, e.currentTarget.getBoundingClientRect()))))
     }

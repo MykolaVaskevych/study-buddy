@@ -49,9 +49,12 @@ describe('spineIndex', () => {
 
 describe('resolveDrop', () => {
   const file = (name: string, type = ''): File => new File(['x'], name, { type })
-  it('keeps PDFs and resolves their paths', () => {
-    const r = resolveDrop([file('a.pdf'), file('b.PDF'), file('c.png', 'image/png')], (f) => `/tmp/${f.name}`)
-    expect(r).toEqual({ paths: ['/tmp/a.pdf', '/tmp/b.PDF'], rejected: 1 })
+  it('keeps importable files and resolves their paths', () => {
+    const r = resolveDrop(
+      [file('a.pdf'), file('b.PDF'), file('c.png', 'image/png'), file('d.zip', 'application/zip')],
+      (f) => `/tmp/${f.name}`
+    )
+    expect(r).toEqual({ paths: ['/tmp/a.pdf', '/tmp/b.PDF', '/tmp/c.png'], rejected: 1 })
   })
   it('returns null paths when the bridge cannot resolve files', () => {
     expect(resolveDrop([file('a.pdf')], () => null).paths).toBeNull()

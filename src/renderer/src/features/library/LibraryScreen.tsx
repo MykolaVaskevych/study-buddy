@@ -140,7 +140,7 @@ export function LibraryScreen(): React.JSX.Element {
       if (rejected > 0)
         toast({
           tone: 'info',
-          title: 'Only PDF, PowerPoint, Word, Markdown and text files can be imported',
+          title: 'Only PDF, PowerPoint, Word, Markdown, text and image (PNG, JPEG) files can be imported',
           body: `${rejected} skipped.`
         })
       if (paths === null) {
