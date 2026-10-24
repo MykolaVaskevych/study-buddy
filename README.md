@@ -29,7 +29,7 @@ Students already ask AI to turn their lectures into study notes. That still leav
     <td width="50%"><img src="docs/media/test-me.jpg" alt="Test me with instant feedback"></td>
   </tr>
   <tr>
-    <td><b>Import any PDF.</b> The AI reads every page in the background, image-only slides and formulas included. Today's sessions are waiting when you open the app.</td>
+    <td><b>Import your course files.</b> PDFs, PowerPoint (with speaker notes), Word, OpenDocument, Markdown and text notes with formulas, and photos. The AI reads every page in the background, image-only PDF slides included. Today's sessions are waiting when you open the app.</td>
     <td><b>Read → test.</b> Finished a page? "Test me" asks a few questions on exactly that page, prepared in advance so it's instant, with the reason behind each answer.</td>
   </tr>
   <tr>
@@ -46,6 +46,10 @@ Students already ask AI to turn their lectures into study notes. That still leav
       <b>Tutor that cites pages.</b> Ask anything about the book; every answer links back to the page it came from. One click for "explain simply", "exam answer" or a worked example.<br><br>
       <b>And also:</b>
       <ul>
+        <li>courses with many files per subject in a Sidebery-style tree sidebar: drag, drop, rename with F2, or review AI name suggestions. Files imported together become one course</li>
+        <li>a study portal inside the app: save Brightspace, Sulis, Blackboard, Moodle or another portal and stay signed in. Downloads go into your chosen course, and watched pages tell you when new files appear</li>
+        <li>"Get files with AI": the AI clicks through portal folders and downloads course files. It stays on the portal's site and blocks submit or delete actions; you can watch and stop it</li>
+        <li>"Don't panic": a 30-minute cram over chosen files (weeks) or chapters, with cards covering every selected topic, then exam-style questions</li>
         <li>flashcards with spaced repetition (FSRS), with decks shaped by your exam's format</li>
         <li>quizzes and timed mock exams with verified answer keys</li>
         <li>an AI-written study book, one chapter per topic</li>
@@ -61,7 +65,7 @@ Students already ask AI to turn their lectures into study notes. That still leav
 
 ```mermaid
 flowchart LR
-  A[PDF] --> B[Instant import<br>text, outline, search]
+  A[Course files] --> B[Import to PDF<br>text, outline, search]
   B --> C[AI reads each page<br>notes, concepts, formulas]
   C --> D[Course map<br>weight · difficulty · time]
   D --> E[Planner<br>Full / Core / Skip]
@@ -82,7 +86,9 @@ Your quiz results feed back into the plan, so it re-solves as you go ("ahead: ad
 | **Local model** (Ollama, LM Studio, llama.cpp)           | Free, offline                                        | `ollama pull qwen3.6:27b` (24 GB GPU; `gpt-oss:20b` for less), start Ollama with `OLLAMA_CONTEXT_LENGTH=32768`, and pick it in Settings     |
 | **Other OpenAI-compatible APIs** (DeepSeek, OpenRouter…) | That provider's prices                               | Pick the preset and paste its key                                                                                                           |
 
-Switch between them from the status bar at any time, for example when your subscription hits its usage limit. Local models read the text of each page, so image-only slides are skipped.
+Switch between them from the status bar at any time, for example when your subscription hits its usage limit. Codex and OpenAI-compatible connections (including local models) read each page's text, so image-only slides are skipped.
+
+In **Settings → Which model does what**, pick **Balanced**, **Economy** or **Best quality**, or change the model and effort for each job. Balanced uses the fast model for flashcards and "Test me", checks them against the pages, and retries weak batches on the strong model. Economy puts almost everything on the fast model. Best quality uses the strong model for all study material.
 
 ## Install
 
@@ -96,10 +102,14 @@ Grab the latest build from **[Releases](https://github.com/MykolaVaskevych/study
 
 Check that the AI connection works with `study-buddy --check-ai`.
 
+Install **LibreOffice** to import PowerPoint, Word and OpenDocument files. Flatpak uses the LibreOffice installed on your host. PDFs, Markdown and text notes need no extra converter.
+
 ## Roadmap
 
-- [ ] **Courses**: one subject, many files, with plan, review and tutor across the whole module ([#46](https://github.com/MykolaVaskevych/study-buddy/issues/46))
-- [ ] **Import PowerPoint, Word, images and Markdown** ([#47](https://github.com/MykolaVaskevych/study-buddy/issues/47))
+- [x] **Courses: one subject, many files**, with a tree sidebar and crams across files. Part of [#46](https://github.com/MykolaVaskevych/study-buddy/issues/46)
+- [ ] **Plan, review and tutor across the whole course**: still per file ([#46](https://github.com/MykolaVaskevych/study-buddy/issues/46))
+- [x] **Import PowerPoint (with speaker notes), Word, OpenDocument, Markdown, text notes and photos** ([#47](https://github.com/MykolaVaskevych/study-buddy/issues/47))
+- [x] **Study portal**: saved portals, "Get files with AI" and watched pages that report new files ([#53](https://github.com/MykolaVaskevych/study-buddy/issues/53))
 - [ ] **Create PDFs**: merge files into a course pack and export the AI study book ([#48](https://github.com/MykolaVaskevych/study-buddy/issues/48))
 - [ ] Freehand ink and highlights on pages ([#38](https://github.com/MykolaVaskevych/study-buddy/issues/38))
 
