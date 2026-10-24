@@ -16,6 +16,7 @@ import { createSettingsRepo } from './repos/settings'
 import { createAnnotationRepo } from './repos/annotations'
 import { createProgressRepo } from './repos/progress'
 import { createLessonRepo } from './repos/lessons'
+import { createPortalWatchRepo } from './repos/portal-watches'
 import { createCourseRepo } from './repos/courses'
 import { createExamProfileRepo } from './repos/exam-profiles'
 import { createTopicRepo } from './repos/topics'
@@ -80,6 +81,7 @@ export function openDatabase(file: string, options: OpenDatabaseOptions = {}): D
       lessons: createLessonRepo(ctx),
       examProfiles: createExamProfileRepo(ctx),
       courses: createCourseRepo(ctx),
+      portalWatches: createPortalWatchRepo(ctx),
       transaction: ctx.tx,
       close: () => {
         if (sqlite.open) sqlite.close()

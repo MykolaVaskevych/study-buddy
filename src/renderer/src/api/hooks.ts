@@ -14,10 +14,12 @@ import type {
   IndexStatus,
   JobInfo,
   PortalDownload,
+  PortalNewFiles,
   RateLimitInfo,
   Scope
 } from '@shared/domain'
 import type { ClaudeAccount, CodexAccount } from '@shared/ai/connections'
+import { toast } from '../app/toasts'
 import { call, subscribe } from './client'
 
 /**
@@ -362,6 +364,8 @@ interface ApiEventOptions {
 export function useApiEvents({ onJobFailed }: ApiEventOptions = {}): void {
   const qc = useQueryClient()
   useEffect(() => {
+    // Findings can arrive before the student ever visits the portal home.
+    qc.setQueryDefaults(['portal.findings'], { staleTime: Infinity, gcTime: Infinity })
     const offs = [
       subscribe('jobs.changed', (job) => {
         if (job.kind === 'write_lesson' && job.state === 'done' && job.docId)
@@ -384,6 +388,26 @@ export function useApiEvents({ onJobFailed }: ApiEventOptions = {}): void {
       }),
       subscribe('cards.changed', () => invalidateCards(qc)),
       subscribe('portal.changed', (state) => qc.setQueryData(channelKey('portal.state', {}), state)),
+      subscribe('portal.newFiles', (finding) => {
+        qc.setQueryData<PortalNewFiles[]>(['portal.findings'], (previous = []) =>
+          [finding, ...previous].slice(0, 30)
+        )
+        invalidate(qc, ['portal.watches'])
+        const announce = (name: string): void =>
+          toast({
+            tone: 'info',
+            title: `${finding.items.length} new ${finding.items.length === 1 ? 'file' : 'files'} in ${name}`,
+            action: {
+              label: 'Open page',
+              to: `/portal?${new URLSearchParams({ course: finding.courseId, url: finding.url })}`
+            }
+          })
+        void qc.ensureQueryData(channelQuery('courses.list', {})).then(
+          (courses) =>
+            announce(courses.find((course) => course.id === finding.courseId)?.name ?? finding.title),
+          () => announce(finding.title)
+        )
+      }),
       subscribe('portal.agent', (state) => qc.setQueryData(channelKey('portal.agentState', {}), state)),
       subscribe('pageCheck.ready', ({ docId, page }) => {
         invalidate(qc, channelKey('quiz.history', { docId }))
@@ -431,6 +455,31 @@ export function usePortalDownloads(): PortalDownload[] {
   useEffect(() => subscribe('portal.downloaded', (d) => setDownloads((all) => [d, ...all].slice(0, 20))), [])
   return downloads
 }
+
+/** Stored watched pages, refreshed after watch changes and new findings. */
+export const usePortalWatches = () => useQuery(channelQuery('portal.watches', {}))
+export const usePortalWatch = () =>
+  useChannelMutation('portal.watch', {
+    onSuccess: (_watch, _input, qc) => invalidate(qc, ['portal.watches'])
+  })
+export const usePortalUnwatch = () =>
+  useChannelMutation('portal.unwatch', {
+    onSuccess: (_result, { watchId }, qc) => {
+      invalidate(qc, ['portal.watches'])
+      qc.setQueryData<PortalNewFiles[]>(['portal.findings'], (previous = []) =>
+        previous.filter((finding) => finding.watchId !== watchId)
+      )
+    }
+  })
+/** Findings survive route changes for this app session. */
+export const usePortalFindings = () =>
+  useQuery<PortalNewFiles[]>({
+    queryKey: ['portal.findings'],
+    queryFn: () => [],
+    initialData: [],
+    staleTime: Infinity,
+    gcTime: Infinity
+  })
 
 // ------------------------------------------------------------------ study (page checks, card jobs)
 

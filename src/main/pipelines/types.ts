@@ -78,13 +78,19 @@ export interface PortalView {
   onDownload(listener: (file: PortalFile) => void): void
   /** The page as the AI sees it (numbered clickable elements); null when nothing is loaded. */
   snapshot(): Promise<PageSnapshot | null>
+  /** Reads in a separate signed-in view without interacting with the page. */
+  readPage(url: string): Promise<PageSnapshot | null>
   /** Presses element `id` of the last snapshot; false when it is gone. */
   click(id: number): Promise<boolean>
   /** Resolves once the page has stopped loading and stayed quiet briefly, or after `maxMs`. */
   settle(maxMs?: number): Promise<void>
 }
 
+/** A one-shot timer returning its cancellation function. */
+export type PortalScheduler = (task: () => void, delayMs: number) => () => void
+
 export interface PipelineDeps {
+  portalScheduler?: PortalScheduler
   db: Database
   library: PdfLibrary
   queue: JobQueue

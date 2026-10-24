@@ -1,5 +1,6 @@
 import type {
   ExamProfile,
+  PortalWatch,
   Lesson,
   Annotation,
   AnnotationKind,
@@ -327,7 +328,17 @@ export interface CourseRepo {
   ensureCourse(docId: DocId, now: IsoDate): CourseId
 }
 
+export interface PortalWatchRepo {
+  list(): PortalWatch[]
+  get(id: string): PortalWatch | null
+  /** Repeated requests preserve the original baseline. */
+  create(input: { courseId: CourseId; url: string; title: string }, now: IsoDate): PortalWatch
+  checked(id: string, title: string, seenLinks: string[], now: IsoDate): void
+  remove(id: string): void
+}
+
 export interface Database {
+  portalWatches: PortalWatchRepo
   documents: DocumentRepo
   courses: CourseRepo
   pages: PageRepo

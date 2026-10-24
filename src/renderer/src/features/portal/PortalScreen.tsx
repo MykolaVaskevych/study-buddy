@@ -1,7 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { useLocation, useSearchParams } from 'react-router'
 import {
   useCourses,
+  usePortalWatches,
+  usePortalWatch,
+  usePortalUnwatch,
   usePortalAgent,
   usePortalAgentStart,
   usePortalAgentStop,
@@ -41,8 +44,12 @@ const boundsOf = (el: HTMLElement): Bounds => {
  */
 export function PortalScreen(): React.JSX.Element {
   const [params] = useSearchParams()
+  const location = useLocation()
   const state = usePortalState()
   const courses = useCourses()
+  const watches = usePortalWatches()
+  const watch = usePortalWatch()
+  const unwatch = usePortalUnwatch()
   const open = usePortalOpen()
   const close = usePortalClose()
   const setBounds = usePortalBounds()
@@ -70,6 +77,7 @@ export function PortalScreen(): React.JSX.Element {
   // The student's pick, else the course from the link that opened the screen, else the last one.
   const [picked, setPicked] = useState<{ id: string | null } | null>(null)
   const courseId = picked ? picked.id : (params.get('course') ?? state.data?.courseId ?? null)
+  const watching = watches.data?.find((watch) => watch.courseId === courseId && watch.url === url)
   const target = useRef(courseId)
   useEffect(() => {
     target.current = courseId
@@ -96,6 +104,23 @@ export function PortalScreen(): React.JSX.Element {
       closeView({})
     }
   }, [shown, openView, closeView, moveView])
+
+  const linkedUrl = params.get('url')
+  const linkedCourse = params.get('course')
+  const { mutate: navigatePage } = navigate
+  const { mutate: chooseCourse } = setCourse
+  useEffect(() => {
+    if (!linkedUrl) return
+    chooseCourse(
+      { courseId: linkedCourse },
+      {
+        onSuccess: () => {
+          setPicked({ id: linkedCourse })
+          navigatePage({ url: linkedUrl }, { onSuccess: () => setHome(false) })
+        }
+      }
+    )
+  }, [linkedUrl, linkedCourse, location.key, navigatePage, chooseCourse])
 
   const visit = (target: string): void => {
     navigate.mutate({ url: target }, { onSuccess: () => setHome(false) })
@@ -166,6 +191,17 @@ export function PortalScreen(): React.JSX.Element {
             if (url) savePortals([...portals, { name: state.data?.title || new URL(url).hostname, url }])
           }}
         />
+        <IconButton
+          icon="flag"
+          label={watching ? 'Stop watching this page' : 'Watch this page'}
+          data-tour="portal-watch"
+          pressed={Boolean(watching)}
+          disabled={!shown || !courseId || watches.isPending || watch.isPending || unwatch.isPending}
+          onClick={() => {
+            if (watching) unwatch.mutate({ watchId: watching.id })
+            else if (url && courseId) watch.mutate({ courseId, url })
+          }}
+        />
         <Button
           size="sm"
           variant="primary"
@@ -210,6 +246,10 @@ export function PortalScreen(): React.JSX.Element {
             onOpen={visit}
             onContinue={() => setHome(false)}
             onChange={savePortals}
+            onOpenWatch={(watch) => {
+              setPicked({ id: watch.courseId })
+              setCourse.mutate({ courseId: watch.courseId }, { onSuccess: () => visit(watch.url) })
+            }}
           />
         ) : null}
       </div>

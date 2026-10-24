@@ -18,7 +18,7 @@ import { DEFAULT_CHUNK_OPTIONS, createPdfLibrary } from '../library'
 import type { PdfLibrary } from '../library/types'
 import { createSrs } from '../srs'
 import { DEFAULT_PIPELINE_OPTIONS, createPipelinesWith, type PipelineOptions } from './index'
-import type { Connections, Handlers, Pipelines, SecretStore } from './types'
+import type { Connections, Handlers, Pipelines, PortalScheduler, SecretStore } from './types'
 
 /**
  * Test-only (imported by *.test.ts): the pipelines over REAL modules. In-memory SQLite, the library
@@ -50,6 +50,7 @@ export interface Harness {
 }
 
 export interface HarnessOptions {
+  portalScheduler?: PortalScheduler
   /** Claude login and model discovery; defaults to "Claude Code not installed" and no models. */
   connections?: Connections
   provider?: LlmProvider
@@ -119,7 +120,8 @@ export async function createHarness(opts: HarnessOptions = {}): Promise<Harness>
       now: clock.now,
       pickPdfs: async () => [fixture],
       appInfo: { version: '0.0.0-test', platform: 'test', dataDir: dir },
-      portal
+      portal,
+      portalScheduler: opts.portalScheduler
     },
     { ...DEFAULT_PIPELINE_OPTIONS, ...opts.options }
   )

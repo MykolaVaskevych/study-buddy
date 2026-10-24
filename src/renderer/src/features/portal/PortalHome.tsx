@@ -1,3 +1,5 @@
+import type { PortalWatch } from '@shared/domain'
+import { useCourses, usePortalWatches, usePortalUnwatch, usePortalFindings } from '../../api/hooks'
 import { useState } from 'react'
 import { Button, cx, Icon, IconButton } from '../../components'
 import { fieldClass } from '../study/form'
@@ -95,9 +97,11 @@ export function PortalHome({
   current,
   onOpen,
   onContinue,
-  onChange
+  onChange,
+  onOpenWatch
 }: {
   portals: SavedPortal[]
+  onOpenWatch: (watch: PortalWatch) => void
   /** The page the portal browser still has open, if any. */
   current: { url: string; title: string } | null
   onOpen: (url: string) => void
@@ -105,6 +109,10 @@ export function PortalHome({
   onChange: (portals: SavedPortal[]) => void
 }): React.JSX.Element {
   const [adding, setAdding] = useState(false)
+  const watches = usePortalWatches()
+  const unwatch = usePortalUnwatch()
+  const findings = usePortalFindings()
+  const courses = useCourses()
   const has = (url: string): boolean => portals.some((p) => p.url === url)
   const suggestions = SUGGESTIONS.filter((s) => !has(s.url))
   const add = (p: SavedPortal): void => {
@@ -164,6 +172,62 @@ export function PortalHome({
             Add portal
           </Button>
         )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <h2 className="font-semibold">Watched pages</h2>
+        <p className="text-sm text-graphite">
+          Choose a course and use the flag on a page to watch it. Checks run after startup and every six hours
+          while Study Buddy is open.
+        </p>
+        {watches.isError ? <p className="text-sm text-redpen">{watches.error.message}</p> : null}
+        {watches.data?.length === 0 ? <p className="text-sm text-faint">No watched pages yet.</p> : null}
+        <ul aria-label="Watched pages" className="flex flex-col gap-3">
+          {(watches.data ?? []).map((watch) => (
+            <li key={watch.id} className="rounded-md border border-rule p-3">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="min-w-0 flex-1 truncate text-left font-semibold"
+                  onClick={() => onOpenWatch(watch)}
+                >
+                  {watch.title || watch.url}
+                </button>
+                <IconButton
+                  icon="close"
+                  label={`Stop watching ${watch.title || watch.url}`}
+                  disabled={unwatch.isPending}
+                  onClick={() => unwatch.mutate({ watchId: watch.id })}
+                />
+              </div>
+              <p className="text-sm text-graphite">
+                {courses.data?.find((course) => course.id === watch.courseId)?.name} ·{' '}
+                {watch.checkedAt
+                  ? `Checked ${new Date(watch.checkedAt).toLocaleString()}`
+                  : 'Awaiting first check'}
+              </p>
+              {findings.data
+                .filter((finding) => finding.watchId === watch.id)
+                .slice(0, 3)
+                .map((finding, index) => (
+                  <div key={index} className="mt-2 text-sm">
+                    <p className="font-semibold">
+                      {finding.items.length} new {finding.items.length === 1 ? 'file' : 'files'}
+                    </p>
+                    <ul>
+                      {finding.items.map((item) => (
+                        <li key={item.href}>{item.label || item.href}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+            </li>
+          ))}
+        </ul>
+        <p className="text-xs text-faint">
+          Newest findings from this app session appear here. The first successful check records existing files
+          quietly.
+        </p>
       </div>
 
       {suggestions.length > 0 ? (

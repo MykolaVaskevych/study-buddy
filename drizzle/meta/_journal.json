@@ -50,6 +50,13 @@
       "when": 1792594104267,
       "tag": "0006_course_portal",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1792850266446,
+      "tag": "0007_portal_watches",
+      "breakpoints": true
     }
   ]
 }

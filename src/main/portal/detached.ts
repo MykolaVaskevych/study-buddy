@@ -9,11 +9,13 @@ export interface DetachedPortal extends PortalView {
   visible(): boolean
   download(file: PortalFile): void
   /** Tests script the pages the AI sees and what a click does. */
+  readWith(reader: (url: string) => Promise<PageSnapshot | null>): void
   script(site: { snapshot: () => PageSnapshot | null; click: (id: number) => boolean }): void
 }
 
 export function createDetachedPortal(): DetachedPortal {
   let nav: PortalNav = { url: null, title: '', loading: false, canGoBack: false, canGoForward: false }
+  let reader: (url: string) => Promise<PageSnapshot | null> = async () => null
   let shown = false
   const changed: ((nav: PortalNav) => void)[] = []
   const downloads: ((file: PortalFile) => void)[] = []
@@ -53,6 +55,10 @@ export function createDetachedPortal(): DetachedPortal {
     script: (next) => {
       site = next
     },
+    readWith: (next) => {
+      reader = next
+    },
+    readPage: (url) => reader(url),
     snapshot: async () => site.snapshot(),
     click: async (id) => site.click(id),
     settle: async () => undefined

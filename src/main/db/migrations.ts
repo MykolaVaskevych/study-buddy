@@ -83,5 +83,12 @@ export const MIGRATIONS: readonly EmbeddedMigration[] = [
   {
     tag: '0006_course_portal',
     statements: ['ALTER TABLE `courses` ADD `portal_url` text;']
+  },
+  {
+    tag: '0007_portal_watches',
+    statements: [
+      "CREATE TABLE `portal_watches` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`course_id` text NOT NULL,\n\t`url` text NOT NULL,\n\t`title` text NOT NULL,\n\t`seen_links` text DEFAULT '[]' NOT NULL,\n\t`checked_at` text,\n\t`created_at` text NOT NULL,\n\tFOREIGN KEY (`course_id`) REFERENCES `courses`(`id`) ON UPDATE no action ON DELETE cascade\n);",
+      'CREATE UNIQUE INDEX `portal_watches_course_url` ON `portal_watches` (`course_id`,`url`);'
+    ]
   }
 ]

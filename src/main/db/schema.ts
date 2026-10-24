@@ -410,3 +410,20 @@ export const examProfiles = sqliteTable('exam_profiles', {
   }>('profile').notNull(),
   updatedAt: text('updated_at').notNull()
 })
+
+/** One baseline per course and page; deleting a course also removes its watches. */
+export const portalWatches = sqliteTable(
+  'portal_watches',
+  {
+    id: text('id').primaryKey(),
+    courseId: text('course_id')
+      .notNull()
+      .references(() => courses.id, { onDelete: 'cascade' }),
+    url: text('url').notNull(),
+    title: text('title').notNull(),
+    seenLinks: json<string[]>('seen_links').notNull().default(emptyJsonArray),
+    checkedAt: text('checked_at'),
+    createdAt: text('created_at').notNull()
+  },
+  (t) => [uniqueIndex('portal_watches_course_url').on(t.courseId, t.url)]
+)

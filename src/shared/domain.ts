@@ -514,3 +514,23 @@ export interface ExamProfile {
   source: 'default' | 'user' | 'past_paper'
   updatedAt: IsoDate | null
 }
+
+/** A course page checked for new study-file links using the portal session. */
+export interface PortalWatch {
+  id: string
+  courseId: CourseId
+  url: string
+  title: string
+  seenLinks: string[]
+  checkedAt: IsoDate | null
+  createdAt: IsoDate
+}
+
+/** New links from one successful watch check. */
+export interface PortalNewFiles {
+  watchId: string
+  courseId: CourseId
+  url: string
+  title: string
+  items: { label: string; href: string }[]
+}
