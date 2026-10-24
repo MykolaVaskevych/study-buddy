@@ -54,3 +54,17 @@ export function safeFileName(name: string): string {
     .trim()
   return cleaned === '' || cleaned === '.' || cleaned === '..' ? 'download' : cleaned.slice(-180)
 }
+
+/**
+ * Whether a failed navigation to `url` was really a download: the download's address is the page's
+ * or one it redirected to on the same site (portals often redirect a file link to a signed URL).
+ */
+export function becameDownload(url: string, downloadUrl: string | null): boolean {
+  if (downloadUrl === null) return false
+  if (downloadUrl === url) return true
+  try {
+    return new URL(downloadUrl).hostname === new URL(url).hostname
+  } catch {
+    return false
+  }
+}

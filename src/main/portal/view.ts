@@ -4,7 +4,7 @@ import { app, session as electronSession, shell, WebContentsView } from 'electro
 import type { BaseWindow, WebContents } from 'electron'
 import type { Log } from '../app/log'
 import type { PortalFile, PortalNav, PortalView } from '../pipelines/types'
-import { browserUserAgent, downloadTarget, isWebUrl, safeFileName } from './policy'
+import { becameDownload, browserUserAgent, downloadTarget, isWebUrl, safeFileName } from './policy'
 import type { PageSnapshot } from './snapshot'
 import { clickScript, pageSnapshotSchema, SNAPSHOT_SCRIPT } from './snapshot'
 
@@ -45,6 +45,8 @@ export function createPortalView(opts: {
   let host: BaseWindow | null = null
   let seq = 0
   let lastActivity = Date.now()
+  /** The last download started in the portal, to tell a link that was a file from a failed page. */
+  let lastDownloadUrl: string | null = null
   const readers = new Set<WebContents>()
 
   const nav = (wc: WebContents | undefined): PortalNav => {
@@ -69,6 +71,7 @@ export function createPortalView(opts: {
       event.preventDefault()
       return
     }
+    lastDownloadUrl = item.getURL()
     const fileName = safeFileName(item.getFilename())
     if (downloadTarget(fileName) === 'save') {
       // No dialog: like a browser, other files go to Downloads, and the portal screen says so.
@@ -156,12 +159,16 @@ export function createPortalView(opts: {
       view?.setBounds(bounds)
     },
     navigate(url) {
-      // Aborted loads (a redirect replacing this one) reject; the page still arrives.
+      // Aborted loads (a redirect replacing this one) reject; the page still arrives. A link that
+      // turns out to be a file rejects too (ERR_FAILED) once the download takes over: not a failure.
       ensure()
         .webContents.loadURL(url)
-        .catch((err: unknown) =>
-          log.warn(`[portal] ${url}: ${err instanceof Error ? err.message : String(err)}`)
-        )
+        .catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : String(err)
+          setTimeout(() => {
+            if (!becameDownload(url, lastDownloadUrl)) log.warn(`[portal] ${url}: ${message}`)
+          }, 1000)
+        })
     },
     go(action) {
       const wc = view?.webContents

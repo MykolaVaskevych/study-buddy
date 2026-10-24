@@ -1,4 +1,11 @@
-import { browserUserAgent, downloadTarget, isWebUrl, normaliseAddress, safeFileName } from './policy'
+import {
+  becameDownload,
+  browserUserAgent,
+  downloadTarget,
+  isWebUrl,
+  normaliseAddress,
+  safeFileName
+} from './policy'
 
 describe('portal policy', () => {
   it('turns what the student types into a web address', () => {
@@ -35,5 +42,12 @@ describe('portal policy', () => {
     expect(safeFileName('../../evil.pdf')).toBe('.._.._evil.pdf')
     expect(safeFileName('Week 5: Spark.pptx')).toBe('Week 5_ Spark.pptx')
     expect(safeFileName('..')).toBe('download')
+  })
+
+  it('tells a link that turned into a download from a page that failed', () => {
+    expect(becameDownload('https://x.edu/w5.pdf', 'https://x.edu/w5.pdf')).toBe(true)
+    expect(becameDownload('https://x.edu/d2l/topic/9', 'https://x.edu/content/signed/w5.pdf?t=1')).toBe(true)
+    expect(becameDownload('https://x.edu/page', null)).toBe(false)
+    expect(becameDownload('https://x.edu/page', 'https://cdn.other.com/a.pdf')).toBe(false)
   })
 })
