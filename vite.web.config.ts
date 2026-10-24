@@ -2,8 +2,8 @@ import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import { pdfjsAssets } from './build-tools/pdfjs-assets'
-import { whatsnew } from './build-tools/whatsnew'
+import { pdfjsAssets } from './build-tools/pdfjs-assets.ts'
+import { whatsnew } from './build-tools/whatsnew.ts'
 
 /**
  * Browser mode (`npm run dev:web`): the renderer alone in a normal browser. With no preload
