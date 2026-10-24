@@ -1,6 +1,7 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
+import type { Card } from '@shared/domain'
 import { renderApp } from '../../test/render'
 
 const reviewCalls = (invoke: { mock: { calls: unknown[][] } }) =>
@@ -55,5 +56,36 @@ describe('ReviewScreen', () => {
     renderApp('/review?book=probability-notes')
     expect(await screen.findByRole('heading', { name: 'Nothing due right now' })).toBeTruthy()
     expect(await screen.findByText(/The next card is due in 6 days/)).toBeTruthy()
+  })
+
+  it('shows rounds and offers a break when cards keep coming back the day before the exam', async () => {
+    const { mock } = renderApp('/review?book=optical-networks')
+    const original = mock.invoke.bind(mock)
+    vi.spyOn(mock, 'invoke').mockImplementation(async (channel, input) => {
+      const result = await original(channel, input)
+      // Like main near an exam: every rated card is due again within minutes.
+      if (channel === 'cards.review' && result.ok) {
+        const card = result.data as Card
+        card.srs = { ...card.srs, due: new Date(Date.now() + 60_000).toISOString() }
+      }
+      return result
+    })
+    const user = userEvent.setup()
+    let sawRound = false
+    for (let i = 0; i < 80 && !screen.queryByRole('region', { name: 'Take a break' }); i++) {
+      await screen.findByRole('article', { name: 'Flashcard' })
+      if (screen.queryByText(/^Round 2 ·/)) sawRound = true
+      await user.keyboard(' ')
+      await screen.findByRole('article', { name: 'Flashcard, answer shown' })
+      await user.keyboard('3')
+      await waitFor(() =>
+        expect(screen.queryByRole('article', { name: 'Flashcard, answer shown' })).toBeNull()
+      )
+    }
+    expect(sawRound).toBe(true)
+    const pause = await screen.findByRole('region', { name: 'Take a break' })
+    expect(within(pause).getByText(/Every card done 2 times/)).toBeTruthy()
+    await user.click(within(pause).getByRole('button', { name: 'Finish for now' }))
+    expect(await screen.findByRole('heading', { name: 'Done for now' })).toBeTruthy()
   })
 })

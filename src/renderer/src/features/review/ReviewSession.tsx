@@ -120,6 +120,8 @@ export function ReviewSession({
   const shownAt = useRef(0)
   /** Cards already given their second look ('missedOnce'). */
   const repeated = useRef(new Set<string>())
+  const [breakAt, setBreakAt] = useState(2)
+  const [stopped, setStopped] = useState(false)
   const cardId = card?.id ?? null
 
   useEffect(() => {
@@ -169,8 +171,17 @@ export function ReviewSession({
   const done = state.log.length
   const left = state.pending.length
   const recall = recallRate(state.log)
+  // How often each card was rated this session. Near an exam every card comes back within minutes,
+  // so the queue never empties: rounds show progress, and a break is offered after every card has
+  // had `breakAt` ratings.
+  const seen = new Map<string, number>()
+  for (const l of state.log) seen.set(l.cardId, (seen.get(l.cardId) ?? 0) + 1)
+  const inSession = new Set([...state.pending.map((c) => c.id), ...seen.keys()])
+  const round = card ? (seen.get(card.id) ?? 0) + 1 : 1
+  const breakTime =
+    repeat === 'due' && inSession.size > 0 && [...inSession].every((id) => (seen.get(id) ?? 0) >= breakAt)
 
-  if (!card) {
+  if (!card || stopped) {
     if (done === 0 && finish === undefined) return <NothingDue docId={docId} />
     return (
       <section aria-label="Session finished" className="flex flex-col items-start gap-5 py-6">
@@ -214,7 +225,7 @@ export function ReviewSession({
             <span className="tabular ml-1.5 font-serif text-lg font-semibold text-ink">{pct(recall)}</span>
           </span>
           <span className="tabular ml-auto text-faint">
-            Card {state.pos + 1} of {left}
+            {round > 1 ? `Round ${round} · ` : ''}Card {state.pos + 1} of {left}
           </span>
         </p>
         <Progress
@@ -224,6 +235,26 @@ export function ReviewSession({
           size="xs"
         />
       </div>
+
+      {breakTime ? (
+        <section
+          aria-label="Take a break"
+          className="flex flex-wrap items-center gap-3 rounded-lg border border-accent bg-accent-soft p-4"
+        >
+          <p className="min-w-0 flex-1 text-sm">
+            <span className="font-semibold">
+              Every card done {breakAt} times, recall {pct(recall)}.
+            </span>{' '}
+            With the exam this close they come back within minutes. Take a break and come back later.
+          </p>
+          <Button size="sm" variant="primary" onClick={() => setStopped(true)}>
+            Finish for now
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setBreakAt((b) => b + 2)}>
+            Keep going
+          </Button>
+        </section>
+      ) : null}
 
       <div data-tour="review-card">
         <IndexCard

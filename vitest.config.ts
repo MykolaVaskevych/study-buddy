@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
-import { whatsnew } from './build-tools/whatsnew'
+import { whatsnew } from './build-tools/whatsnew.ts'
 
 const alias = {
   '@shared': resolve(import.meta.dirname, 'src/shared'),
