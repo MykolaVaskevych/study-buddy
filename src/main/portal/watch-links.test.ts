@@ -1,4 +1,4 @@
-import { IMPORT_EXTENSIONS } from '@shared/files'
+import { IMAGE_EXTENSIONS, IMPORT_EXTENSIONS } from '@shared/files'
 import type { PageSnapshot } from './snapshot'
 import { fileLinks, isWatchPage, newFileLinks } from './watch-links'
 
@@ -12,13 +12,23 @@ const page = (links: [string, string][]): PageSnapshot => ({
 
 describe('watch links', () => {
   it('recognizes every study extension in paths or labels, with query strings and case differences', () => {
-    const links = IMPORT_EXTENSIONS.flatMap((extension): [string, string][] => [
+    const documents = IMPORT_EXTENSIONS.filter((e) => !(IMAGE_EXTENSIONS as readonly string[]).includes(e))
+    const links = documents.flatMap((extension): [string, string][] => [
       [`/notes.${extension.toUpperCase()}?download=1#page=2`, 'Notes'],
       [`/download/${extension}`, `Slides.${extension}`],
       [`/download?file=notes.${extension}`, 'Download']
     ])
     expect(fileLinks(page(links))).toHaveLength(links.length)
     expect(fileLinks(page(links))[0]?.href).toBe('https://portal.edu/notes.PDF?download=1')
+    // Pictures are not lecture material here: portal pages link logos, avatars and banners.
+    expect(
+      fileLinks(
+        page([
+          ['/banner.JPG', 'Banner'],
+          ['/avatar', 'me.png']
+        ])
+      )
+    ).toEqual([])
   })
 
   it('recognizes LMS items, deduplicates URLs and rejects actions and unrelated links', () => {

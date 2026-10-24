@@ -1,10 +1,13 @@
-import { isImportable } from '@shared/files'
+import { isImage, isImportable } from '@shared/files'
 import type { PortalNewFiles } from '@shared/domain'
 import type { PageSnapshot } from './snapshot'
 
 type FileLink = PortalNewFiles['items'][number]
 const LMS_CONTENT =
   /\/(?:d2l\/le\/content\/.*\/viewContent(?:\/|$)|mod\/resource(?:\/|$)|access\/content\/|bbcswebdav\/)/i
+
+/** Lecture material, not pictures: portal pages are full of linked logos, avatars and banners. */
+const isDocument = (name: string): boolean => isImportable(name) && !isImage(name)
 
 /** Keep unique web links to study files or known LMS content items; never actions or forms. */
 export function fileLinks(page: PageSnapshot): FileLink[] {
@@ -18,9 +21,9 @@ export function fileLinks(page: PageSnapshot): FileLink[] {
       // Fragments point into the same file; changes to them are not new course material.
       url.hash = ''
       if (
-        !isImportable(url.href) &&
-        !isImportable(path) &&
-        !isImportable(element.label.trim()) &&
+        !isDocument(url.href) &&
+        !isDocument(path) &&
+        !isDocument(element.label.trim()) &&
         !LMS_CONTENT.test(path)
       )
         continue
