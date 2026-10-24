@@ -34,6 +34,11 @@ export const tours: Record<TourId, TourStep[]> = {
       body: 'Open a course’s content page, then press this: the AI expands the weeks, opens each lecture and presses Download, and every file lands in your course. You watch each step below and can stop it any time. It never submits, deletes or posts anything.'
     },
     {
+      target: '[data-tour="portal-watch"]',
+      title: 'Watch for new course files',
+      body: 'Choose a course, open its page and press the flag to watch it. Study Buddy checks while the app is open using your portal sign-in. The first check records existing files; later finds appear in a toast and on the portal home, where you can also remove watches.'
+    },
+    {
       target: '[data-tour="portal-course"]',
       title: 'Downloads become course files',
       body: 'Every PDF, PowerPoint or Word file you download goes into this course and is prepared like any other file. Other downloads go to your Downloads folder.'

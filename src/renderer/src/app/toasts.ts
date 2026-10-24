@@ -7,6 +7,7 @@ export interface Toast {
   tone: ToastTone
   title: string
   body?: string
+  action?: { label: string; to: string }
 }
 
 interface ToastState {
@@ -26,7 +27,7 @@ const recent = new Map<string, number>()
 export const useToasts = create<ToastState>((set, get) => ({
   toasts: [],
   push: (toast) => {
-    const key = `${toast.tone}:${toast.title}:${toast.body ?? ''}`
+    const key = `${toast.tone}:${toast.title}:${toast.body ?? ''}:${toast.action?.to ?? ''}`
     const now = Date.now()
     const last = recent.get(key)
     if (last !== undefined && now - last < DEDUPE_MS) return

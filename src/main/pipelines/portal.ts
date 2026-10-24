@@ -2,6 +2,7 @@ import { rm } from 'node:fs/promises'
 import type { CourseId, PortalAgentState, PortalState } from '@shared/domain'
 import { normaliseAddress } from '../portal/policy'
 import { allowedClick, describeSnapshot } from '../portal/snapshot'
+import { createPortalWatchChecker } from './portal-watches'
 import { requireCourse } from './courses'
 import { messageOf } from './errors'
 import type { Handlers, PipelineDeps, PortalNav } from './types'
@@ -9,6 +10,9 @@ import type { UsageLedger } from './usage'
 import { ServiceError } from './types'
 
 type PortalChannels =
+  | 'portal.watch'
+  | 'portal.unwatch'
+  | 'portal.watches'
   | 'portal.open'
   | 'portal.close'
   | 'portal.setBounds'
@@ -33,10 +37,11 @@ const DEFAULT_GOAL =
  * "Get files with AI" clicks through the portal to download a course's files.
  */
 export function createPortal(
-  deps: Pick<PipelineDeps, 'db' | 'emit' | 'portal' | 'now'>,
+  deps: Pick<PipelineDeps, 'db' | 'emit' | 'portal' | 'now' | 'portalScheduler'>,
   services: { importFiles: Handlers['library.import']; ledger: UsageLedger }
-): { handlers: Pick<Handlers, PortalChannels> } {
+): { handlers: Pick<Handlers, PortalChannels>; start(): void; stop(): Promise<void> } {
   const { db, portal } = deps
+  const checker = createPortalWatchChecker(deps)
   let courseId: CourseId | null = null
   let agent: PortalAgentState = {
     status: 'idle',
@@ -173,7 +178,30 @@ export function createPortal(
   }
 
   return {
+    start: checker.start,
+    async stop() {
+      stopAgent?.abort()
+      await checker.stop()
+    },
     handlers: {
+      'portal.watch': async ({ courseId: id, url }) => {
+        requireCourse(db, id)
+        const address = normaliseAddress(url)
+        if (address === null) throw new ServiceError('validation', 'Choose a web page to watch')
+        return db.portalWatches.create(
+          {
+            courseId: id,
+            url: address,
+            title: portal.state().url === address ? portal.state().title : address
+          },
+          deps.now().toISOString()
+        )
+      },
+      'portal.unwatch': async ({ watchId }) => {
+        db.portalWatches.remove(watchId)
+        return { ok: true }
+      },
+      'portal.watches': async () => db.portalWatches.list(),
       'portal.open': async ({ bounds, courseId: id }) => {
         setCourse(id)
         portal.show(bounds)

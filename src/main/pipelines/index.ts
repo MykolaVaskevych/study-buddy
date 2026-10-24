@@ -102,9 +102,10 @@ export function createPipelinesWith(deps: PipelineDeps, options: PipelineOptions
   topicsReady.notify = overview.onTopicsReady
   const libraryService = createLibraryService(deps, { indexing })
 
+  const portal = createPortal(deps, { importFiles: libraryService.handlers['library.import'], ledger })
   const handlers = guardAll({
     ...libraryService.handlers,
-    ...createPortal(deps, { importFiles: libraryService.handlers['library.import'], ledger }).handlers,
+    ...portal.handlers,
     ...indexing.handlers,
     ...topics.handlers,
     ...cards.handlers,
@@ -132,6 +133,7 @@ export function createPipelinesWith(deps: PipelineDeps, options: PipelineOptions
     start() {
       if (started) return
       started = true
+      portal.start()
       queue.register('index_chunk', indexing.runJob)
       queue.register('topic_map', topics.runJob)
       queue.register('generate_cards', cards.runJob)
@@ -165,6 +167,7 @@ export function createPipelinesWith(deps: PipelineDeps, options: PipelineOptions
       if (!started) return
       started = false
       for (const off of unsubscribe.splice(0)) off()
+      await portal.stop()
       await queue.stop()
     }
   }

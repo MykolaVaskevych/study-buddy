@@ -11,6 +11,8 @@ import type {
   CramPlan,
   NameSuggestions,
   PortalState,
+  PortalWatch,
+  PortalNewFiles,
   PortalAgentState,
   PortalDownload,
   CheatSheet,
@@ -210,6 +212,11 @@ export const ipcContract = {
   /** Opens an address typed by the student ("sulis.ul.ie" works; only http and https). */
   'portal.navigate': route<PortalState>()(z.object({ url: z.string().trim().min(1).max(2000) })),
   'portal.go': route<PortalState>()(z.object({ action: z.enum(['back', 'forward', 'reload', 'stop']) })),
+  'portal.watch': route<PortalWatch>()(
+    z.strictObject({ courseId: id, url: z.string().trim().min(1).max(4000) })
+  ),
+  'portal.unwatch': route<{ ok: true }>()(z.strictObject({ watchId: id })),
+  'portal.watches': route<PortalWatch[]>()(none),
   'portal.state': route<PortalState>()(none),
   /**
    * "Get files with AI": the AI clicks through the open portal page (expands modules, opens topics,
@@ -379,6 +386,8 @@ export interface IpcEvents {
   'index.progress': { docId: string; status: IndexStatus }
   'library.changed': { docId: string | null }
   'cards.changed': { docId: string }
+  /** A watched course page has new study-file links. */
+  'portal.newFiles': PortalNewFiles
   /** The portal browser navigated, loaded or changed title. */
   'portal.changed': PortalState
   /** A file downloaded in the portal was imported (or why not). */

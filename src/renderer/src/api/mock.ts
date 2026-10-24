@@ -1,4 +1,11 @@
-import type { Annotation, ExamProfile, Lesson, PortalAgentState, PortalState } from '@shared/domain'
+import type {
+  Annotation,
+  ExamProfile,
+  Lesson,
+  PortalAgentState,
+  PortalState,
+  PortalWatch
+} from '@shared/domain'
 import { cramMinutes, cramQuestionCount, cramQuestionTypes } from '@shared/cram'
 import { createMockCourses } from './mock-courses'
 import { ipcContract } from '@shared/ipc/contract'
@@ -128,6 +135,7 @@ export function createMockApi(options: MockOptions = {}): MockApi {
   const docs = new Map<string, DocState>(BOOKS.map((b) => [b.id, initialState(b, now())]))
   const jobs = new Map<string, JobInfo>()
   const plans = new Map<string, ExamPlan>()
+  let watches: PortalWatch[] = []
   let agent: PortalAgentState = { status: 'idle', step: 0, maxSteps: 40, log: [], downloaded: [] }
   let portal: PortalState = {
     url: null,
@@ -170,6 +178,7 @@ export function createMockApi(options: MockOptions = {}): MockApi {
     'index.progress': new Set(),
     'library.changed': new Set(),
     'cards.changed': new Set(),
+    'portal.newFiles': new Set(),
     'portal.changed': new Set(),
     'portal.downloaded': new Set(),
     'portal.agent': new Set(),
@@ -682,6 +691,27 @@ export function createMockApi(options: MockOptions = {}): MockApi {
       return portal
     },
     'portal.go': () => portal,
+    'portal.watches': () => watches,
+    'portal.watch': ({ courseId, url }) => {
+      const href = new URL(url).href
+      const existing = watches.find((watch) => watch.courseId === courseId && watch.url === href)
+      if (existing) return existing
+      const watch: PortalWatch = {
+        id: crypto.randomUUID(),
+        courseId,
+        url: href,
+        title: portal.title || href,
+        seenLinks: [],
+        checkedAt: null,
+        createdAt: new Date().toISOString()
+      }
+      watches = [...watches, watch]
+      return watch
+    },
+    'portal.unwatch': ({ watchId }) => {
+      watches = watches.filter((watch) => watch.id !== watchId)
+      return { ok: true }
+    },
     'portal.state': () => portal,
     // The mock does not browse: a run says so and finishes at once.
     'portal.agentStart': () => {

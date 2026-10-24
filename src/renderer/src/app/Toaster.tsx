@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { cx, Icon, IconButton } from '../components'
 import type { IconName } from '../components'
 import { useToasts } from './toasts'
@@ -26,6 +27,15 @@ export function Toaster(): React.JSX.Element {
           <div className="min-w-0 flex-1">
             <p className="font-semibold">{t.title}</p>
             {t.body ? <p className="mt-0.5 text-sm break-words text-graphite">{t.body}</p> : null}
+            {t.action ? (
+              <Link
+                className="mt-1 inline-block text-sm text-accent underline"
+                to={t.action.to}
+                onClick={() => dismiss(t.id)}
+              >
+                {t.action.label}
+              </Link>
+            ) : null}
           </div>
           <IconButton
             icon="close"
