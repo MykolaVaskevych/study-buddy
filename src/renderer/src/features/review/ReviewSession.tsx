@@ -52,8 +52,16 @@ function pct(value: number | null): string {
   return value === null ? '–' : `${Math.round(value * 100)}%`
 }
 
-function NextDue({ docId, lead }: { docId: string | null; lead: string }): React.JSX.Element | null {
-  const stats = useCardStats(docId)
+function NextDue({
+  docId,
+  courseId,
+  lead
+}: {
+  docId: string | null
+  courseId?: string | null
+  lead: string
+}): React.JSX.Element | null {
+  const stats = useCardStats(docId, courseId)
   const [now] = useState(() => new Date())
   const s = stats.data
   if (!s) return null
@@ -67,7 +75,13 @@ function NextDue({ docId, lead }: { docId: string | null; lead: string }): React
 }
 
 /** Nothing due when the session starts. */
-export function NothingDue({ docId }: { docId: string | null }): React.JSX.Element {
+export function NothingDue({
+  docId,
+  courseId
+}: {
+  docId: string | null
+  courseId?: string | null
+}): React.JSX.Element {
   return (
     <EmptyState
       icon="review"
@@ -78,7 +92,7 @@ export function NothingDue({ docId }: { docId: string | null }): React.JSX.Eleme
         </Link>
       }
     >
-      <NextDue docId={docId} lead="You are up to date." />
+      <NextDue docId={docId} courseId={courseId} lead="You are up to date." />
     </EmptyState>
   )
 }
@@ -93,6 +107,7 @@ interface ReviewSessionProps {
    */
   repeat?: 'due' | 'missedOnce'
   docId: string | null
+  courseId?: string | null
   bookTitles: Map<string, string>
   /** Cards due right now according to the latest fetch (for "Review N more"). */
   dueNow: number
@@ -106,6 +121,7 @@ export function ReviewSession({
   initial,
   repeat = 'due',
   docId,
+  courseId,
   bookTitles,
   dueNow,
   onRestart,
@@ -182,7 +198,7 @@ export function ReviewSession({
     repeat === 'due' && inSession.size > 0 && [...inSession].every((id) => (seen.get(id) ?? 0) >= breakAt)
 
   if (!card || stopped) {
-    if (done === 0 && finish === undefined) return <NothingDue docId={docId} />
+    if (done === 0 && finish === undefined) return <NothingDue docId={docId} courseId={courseId} />
     return (
       <section aria-label="Session finished" className="flex flex-col items-start gap-5 py-6">
         <h2 className="font-serif text-2xl font-semibold">Done for now</h2>
@@ -192,7 +208,7 @@ export function ReviewSession({
             {done === 1 ? '' : 's'} and recalled{' '}
             <span className="tabular font-semibold text-ink">{pct(recall)}</span> of them.
           </p>
-          {finish === undefined ? <NextDue docId={docId} lead="" /> : null}
+          {finish === undefined ? <NextDue docId={docId} courseId={courseId} lead="" /> : null}
         </div>
         {finish ?? (
           <div className="flex gap-2">

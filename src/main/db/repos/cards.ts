@@ -1,8 +1,8 @@
-import { and, asc, eq, lte, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, lte, sql } from 'drizzle-orm'
 import type { Card, IsoDate, SrsData } from '@shared/domain'
 import { clampLimit, iso, normalisePages, NotFoundError, type RepoContext } from '../context'
 import { scopeCondition } from '../scope'
-import { cardReviews, cards } from '../schema'
+import { cardReviews, cards, documents } from '../schema'
 import type { CardRepo } from '../types'
 
 type CardRow = typeof cards.$inferSelect
@@ -81,6 +81,13 @@ export function createCardRepo(ctx: RepoContext): CardRepo {
   }
 
   const ofDoc = (docId: string | null) => (docId === null ? undefined : eq(cards.docId, docId))
+  const ofCourse = (courseId: string | undefined) =>
+    courseId === undefined
+      ? undefined
+      : inArray(
+          cards.docId,
+          db.select({ id: documents.id }).from(documents).where(eq(documents.courseId, courseId))
+        )
   const active = eq(cards.status, 'active')
 
   return {
@@ -137,11 +144,11 @@ export function createCardRepo(ctx: RepoContext): CardRepo {
         .map((r) => r.front)
     },
 
-    due(docId, now, limit) {
+    due(docId, now, limit, courseId) {
       return db
         .select()
         .from(cards)
-        .where(and(ofDoc(docId), active, lte(cards.due, iso(now))))
+        .where(and(ofDoc(docId), ofCourse(courseId), active, lte(cards.due, iso(now))))
         .orderBy(asc(cards.due), asc(sql`rowid`))
         .limit(clampLimit(limit))
         .all()
@@ -176,7 +183,7 @@ export function createCardRepo(ctx: RepoContext): CardRepo {
       })
     },
 
-    stats(docId, now) {
+    stats(docId, now, courseId) {
       // Counts cover the active deck only; suspended/reported cards are not studied.
       const nowIso = iso(now)
       const row = db
@@ -190,7 +197,7 @@ export function createCardRepo(ctx: RepoContext): CardRepo {
           nextDue: sql<string | null>`min(case when ${cards.due} > ${nowIso} then ${cards.due} end)`
         })
         .from(cards)
-        .where(and(ofDoc(docId), active))
+        .where(and(ofDoc(docId), ofCourse(courseId), active))
         .get()
       return row ?? { due: 0, new: 0, learning: 0, review: 0, total: 0, nextDue: null }
     }

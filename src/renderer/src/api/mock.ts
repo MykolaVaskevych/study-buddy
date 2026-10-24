@@ -365,6 +365,8 @@ export function createMockApi(options: MockOptions = {}): MockApi {
 
   const study = createStudyHandlers({
     docs,
+    courseDocIds: (courseId) =>
+      courses.handlers['courses.list']({}).find((c) => c.id === courseId)?.docIds ?? [],
     now,
     nextId,
     emit,

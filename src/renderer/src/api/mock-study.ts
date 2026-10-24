@@ -50,6 +50,7 @@ export interface StudyDoc {
 
 export interface StudyMockContext {
   docs: Map<string, StudyDoc>
+  courseDocIds: (courseId: string) => readonly string[]
   now: () => Date
   nextId: (prefix: string) => string
   emit: <E extends IpcEvent>(event: E, payload: IpcEvents[E]) => void
@@ -457,10 +458,17 @@ export function createStudyHandlers(ctx: StudyMockContext): StudyHandlers {
       getDoc(scope.docId)
         .cards.filter((c) => (includeInactive || c.status === 'active') && inScope(c, scope))
         .sort((a, b) => (a.sourcePages[0] ?? 0) - (b.sourcePages[0] ?? 0)),
-    'cards.due': ({ docId, limit }) => {
+    'cards.due': ({ docId, limit, courseId }) => {
       const t = now().toISOString()
+      const docIds = courseId === undefined ? null : ctx.courseDocIds(courseId)
       return allCards()
-        .filter((c) => (!docId || c.docId === docId) && c.status === 'active' && c.srs.due <= t)
+        .filter(
+          (c) =>
+            (!docId || c.docId === docId) &&
+            (docIds === null || docIds.includes(c.docId)) &&
+            c.status === 'active' &&
+            c.srs.due <= t
+        )
         .sort((a, b) => a.srs.due.localeCompare(b.srs.due))
         .slice(0, limit)
     },
@@ -475,9 +483,15 @@ export function createStudyHandlers(ctx: StudyMockContext): StudyHandlers {
       emit('cards.changed', { docId: next.docId })
       return next
     },
-    'cards.stats': ({ docId }) => {
+    'cards.stats': ({ docId, courseId }) => {
       const t = now().toISOString()
-      const cards = allCards().filter((c) => (!docId || c.docId === docId) && c.status === 'active')
+      const docIds = courseId === undefined ? null : ctx.courseDocIds(courseId)
+      const cards = allCards().filter(
+        (c) =>
+          (!docId || c.docId === docId) &&
+          (docIds === null || docIds.includes(c.docId)) &&
+          c.status === 'active'
+      )
       const count = (...s: Card['srs']['state'][]): number =>
         cards.filter((c) => s.includes(c.srs.state)).length
       const upcoming = cards

@@ -318,6 +318,18 @@ export function CourseTree({ docId, activeContent }: CourseTreeProps): React.JSX
   const courseMenu = (course: Course): (MenuItem | 'separator')[] => [
     { label: 'Rename', onSelect: () => setRenaming(course.id) },
     {
+      label: 'Review this course',
+      onSelect: () => void navigate(`/review?course=${encodeURIComponent(course.id)}`)
+    },
+    {
+      label: 'Don’t panic for this course',
+      disabled: course.docIds.length === 0,
+      onSelect: () => {
+        const first = course.docIds[0]
+        if (first) void navigate(`/book/${encodeURIComponent(first)}/panic?all=1`)
+      }
+    },
+    {
       label: 'Open study portal',
       onSelect: () => void navigate(`/portal?course=${encodeURIComponent(course.id)}`)
     },

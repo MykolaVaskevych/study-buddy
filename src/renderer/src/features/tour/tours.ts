@@ -99,7 +99,13 @@ export const tours: Record<TourId, TourStep[]> = {
     {
       target: '[data-tour="course-files"]',
       title: 'Courses and their files',
-      body: 'A course keeps all the files of one subject together: slides, notes, past papers. Drag files to reorder them or into another course, drop files from your desktop onto a course to add them, and double-click (or F2) to rename. The ⋯ menu has the rest.',
+      body: 'A course keeps all the files of one subject together: slides, notes, past papers. Drag files to reorder them or into another course, drop files from your desktop onto a course to add them, and double-click (or F2) to rename. The ⋯ menu also lets you review or cram the whole course.',
+      optional: true
+    },
+    {
+      target: '[data-tour="course-files"]',
+      title: 'Review or cram a whole course',
+      body: 'Open a course’s ⋯ menu for “Review this course” to study due cards across its files, or “Don’t panic for this course” to start a cram with every file ticked. You can still untick files or choose chapters.',
       optional: true
     },
     {
@@ -216,6 +222,12 @@ export const tours: Record<TourId, TourStep[]> = {
     }
   ],
   review: [
+    {
+      target: '[data-tour="review-scope"]',
+      title: 'Review a course',
+      body: 'Use “Cards from” to review every book, one book, or all the files in a course. Choose your course under Courses.',
+      optional: true
+    },
     {
       target: '[data-tour="review-card"]',
       title: 'Recall, then flip',

@@ -192,10 +192,11 @@ export const useRebuildTopics = () => useChannelMutation('topics.rebuild')
 export const useCards = (scope: Scope, includeInactive = false) =>
   useQuery(channelQuery('cards.list', { scope, includeInactive }))
 
-export const useDueCards = (docId: string | null, limit = 200) =>
-  useQuery(channelQuery('cards.due', { docId, limit }))
+export const useDueCards = (docId: string | null, limit = 200, courseId: string | null = null) =>
+  useQuery(channelQuery('cards.due', { docId, limit, ...(courseId === null ? {} : { courseId }) }))
 
-export const useCardStats = (docId: string | null) => useQuery(channelQuery('cards.stats', { docId }))
+export const useCardStats = (docId: string | null, courseId: string | null = null) =>
+  useQuery(channelQuery('cards.stats', { docId, ...(courseId === null ? {} : { courseId }) }))
 
 const invalidateCards = (qc: QueryClient): void =>
   invalidate(qc, ['cards.list'], ['cards.due'], ['cards.stats'], ['library.list'])

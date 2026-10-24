@@ -2,7 +2,7 @@ import { DeckChips, inDeck, type DeckFilter } from '../study/DeckChips'
 import { useAutoTour } from '../tour/useAutoTour'
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { downloadText, useDueCards, useExportAnki, useLibrary } from '../../api/hooks'
+import { downloadText, useCourses, useDueCards, useExportAnki, useLibrary } from '../../api/hooks'
 import { Button, cx, EmptyState, Skeleton } from '../../components'
 import { fieldClass } from '../study/form'
 import { ReviewSession } from './ReviewSession'
@@ -21,12 +21,15 @@ function SessionSkeleton(): React.JSX.Element {
   )
 }
 
-/** Review: due flashcards from every book (or one), scheduled by FSRS against the exam date. */
+/** Review: due flashcards from all books, one book or a course, scheduled by FSRS. */
 export function ReviewScreen(): React.JSX.Element {
   const [params, setParams] = useSearchParams()
-  const docId = params.get('book')
+  const courseId = params.get('course')
+  const docId = courseId === null ? params.get('book') : null
+  const scope = courseId === null ? (docId ?? '') : `course:${courseId}`
   const library = useLibrary()
-  const due = useDueCards(docId, 200)
+  const courses = useCourses()
+  const due = useDueCards(docId, 200, courseId)
   const exportAnki = useExportAnki()
   const [deck, setDeck] = useState<DeckFilter>('all')
   useAutoTour('review', !due.isPending)
@@ -43,8 +46,13 @@ export function ReviewScreen(): React.JSX.Element {
             size="sm"
             variant="ghost"
             loading={exportAnki.isPending}
+            disabled={courseId !== null}
             data-tour="export-anki"
-            title="Download cards as an Anki import file"
+            title={
+              courseId === null
+                ? 'Download cards as an Anki import file'
+                : 'Choose a book or All books to export cards to Anki'
+            }
             onClick={() =>
               exportAnki.mutate({ docId }, { onSuccess: (f) => downloadText(f.fileName, f.content) })
             }
@@ -54,11 +62,28 @@ export function ReviewScreen(): React.JSX.Element {
           <label className="ml-auto flex items-center gap-2 text-sm text-graphite">
             Cards from
             <select
-              value={docId ?? ''}
-              onChange={(e) => setParams(e.target.value ? { book: e.target.value } : {})}
+              value={scope}
+              data-tour="review-scope"
+              onChange={(e) => {
+                const value = e.target.value
+                setParams(
+                  value.startsWith('course:')
+                    ? { course: value.slice('course:'.length) }
+                    : value
+                      ? { book: value }
+                      : {}
+                )
+              }}
               className={cx(fieldClass, 'h-8 max-w-64 pr-8')}
             >
               <option value="">All books</option>
+              <optgroup label="Courses">
+                {(courses.data ?? []).map((c) => (
+                  <option key={c.id} value={`course:${c.id}`}>
+                    {c.name}
+                  </option>
+                ))}
+              </optgroup>
               {books.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.title}
@@ -75,9 +100,10 @@ export function ReviewScreen(): React.JSX.Element {
           <SessionSkeleton />
         ) : due.data ? (
           <ReviewSession
-            key={`${docId ?? 'all'}:${deck}:${round}`}
+            key={`${scope}:${deck}:${round}`}
             initial={due.data.filter((c) => inDeck(c, deck))}
             docId={docId}
+            courseId={courseId}
             bookTitles={titles}
             dueNow={due.data.filter((c) => inDeck(c, deck)).length}
             onRestart={() => setRound((r) => r + 1)}

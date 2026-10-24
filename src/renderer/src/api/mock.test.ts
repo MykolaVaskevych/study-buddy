@@ -34,11 +34,11 @@ describe('mock api', () => {
       'index.focus': { docId, page: 3 },
       'cards.generate': { scope: { kind: 'document', docId }, essentialsOnly: true, count: null },
       'cards.list': { scope: { kind: 'document', docId }, includeInactive: false },
-      'cards.due': { docId, limit: 10 },
+      'cards.due': { docId: null, courseId: 'course-optical-networks', limit: 10 },
       'cards.review': { cardId: `${docId}-card-1`, rating: 3, elapsedMs: 1000 },
       'cards.update': { cardId: `${docId}-card-1`, front: 'f', back: 'b' },
       'cards.setStatus': { cardId: `${docId}-card-1`, status: 'active' },
-      'cards.stats': { docId },
+      'cards.stats': { docId: null, courseId: 'course-optical-networks' },
       'cram.plan': { docId, cards: 10 },
       'cram.quiz': { scopes: [{ docId, topicIds: null }], count: 3, types: null },
       'portal.open': { bounds: { x: 0, y: 0, width: 10, height: 10 }, courseId: null },
@@ -169,6 +169,31 @@ describe('mock api', () => {
     const res = await mock().invoke('library.pageNotes', { docId: 'optical-networks', page: 0 })
     expect(res.ok).toBe(false)
     if (!res.ok) expect(res.error.kind).toBe('validation')
+  })
+
+  it('filters course cards and stats across files while preserving document filters', async () => {
+    const api = mock()
+    const courseId = 'course-optical-networks'
+    await api.invoke('courses.moveDocument', { docId: 'signals-systems', courseId, index: 1 })
+    const due = await api.invoke('cards.due', { docId: null, courseId, limit: 500 })
+    if (!due.ok) throw new Error(due.error.message)
+    expect(new Set(due.data.map((c) => c.docId))).toEqual(new Set(['optical-networks', 'signals-systems']))
+    const allStats = await api.invoke('cards.stats', { docId: null, courseId })
+    if (!allStats.ok) throw new Error(allStats.error.message)
+    expect(allStats.data.due).toBe(due.data.length)
+    let total = 0
+    for (const docId of ['optical-networks', 'signals-systems']) {
+      const stats = await api.invoke('cards.stats', { docId })
+      if (!stats.ok) throw new Error(stats.error.message)
+      total += stats.data.total
+    }
+    expect(allStats.data.total).toBe(total)
+    expect(await api.invoke('cards.due', { docId: 'probability-notes', courseId, limit: 500 })).toEqual({
+      ok: true,
+      data: []
+    })
+    const missing = await api.invoke('cards.stats', { docId: null, courseId: 'missing' })
+    expect(missing).toMatchObject({ ok: true, data: { due: 0, total: 0, nextDue: null } })
   })
 
   it('returns not_found for unknown documents', async () => {
