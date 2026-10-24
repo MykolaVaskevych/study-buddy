@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { CRAM_SIZES, cramMinutes } from '@shared/cram'
 import type { CramPlan, QuizSession } from '@shared/domain'
 import { useCourses, useCramPlan, useCramQuiz, useDocument, useLibrary } from '../../api/hooks'
@@ -42,6 +42,9 @@ function SessionClock({ endsAt }: { endsAt: number }): React.JSX.Element {
  */
 export function CramScreen(): React.JSX.Element {
   const { docId = '' } = useParams()
+  const [params] = useSearchParams()
+  const all = params.get('all') === '1'
+  const scopeKey = `${docId}:${all}`
   const navigate = useNavigate()
   const doc = useDocument(docId)
   const cram = useCramPlan()
@@ -50,12 +53,17 @@ export function CramScreen(): React.JSX.Element {
   const library = useLibrary()
   const [size, setSize] = useState<number>(20)
   const [stage, setStage] = useState<Stage>({ step: 'intro' })
-  const [choice, setChoice] = useState<ScopeChoice>(() => new Map([[docId, 'all']]))
+  const [selection, setSelection] = useState<{ key: string; choice: ScopeChoice } | null>(null)
   const title = doc.data?.title ?? 'this book'
   const titles = useMemo(() => new Map((library.data ?? []).map((d) => [d.id, d.title])), [library.data])
   // The other files of this book's course (weeks, lectures) can join the cram.
   const course = courses.data?.find((c) => c.docIds.includes(docId))
   const files = (course?.docIds ?? [docId]).map((id) => ({ docId: id, title: titles.get(id) ?? title }))
+  // Derive the default after courses load; a student's edits take precedence from then on.
+  const choice: ScopeChoice =
+    selection?.key === scopeKey
+      ? selection.choice
+      : new Map((all ? files.map((f) => f.docId) : [docId]).map((id) => [id, 'all']))
   const scopes = scopesOf(
     choice,
     files.map((f) => f.docId)
@@ -110,7 +118,11 @@ export function CramScreen(): React.JSX.Element {
                 mistakes and shaky cards come first, and formula cards stay out if your exam has no formulas.
               </p>
             </div>
-            <ScopePicker files={files} choice={choice} onChange={setChoice} />
+            <ScopePicker
+              files={files}
+              choice={choice}
+              onChange={(next) => setSelection({ key: scopeKey, choice: next })}
+            />
             <fieldset className="flex flex-col gap-2">
               <legend className="mb-2 text-sm font-semibold">How long have you got?</legend>
               <div className="flex flex-wrap gap-2">
@@ -143,7 +155,7 @@ export function CramScreen(): React.JSX.Element {
               <button
                 type="button"
                 className={cx(panicClass, 'h-14 px-10 text-lg')}
-                disabled={cram.isPending || scopes.length === 0}
+                disabled={cram.isPending || (all && courses.isPending) || scopes.length === 0}
                 onClick={start}
               >
                 {cram.isPending ? 'Picking cards…' : 'Start'}

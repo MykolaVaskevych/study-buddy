@@ -143,7 +143,8 @@ export interface CardRepo {
   get(cardId: CardId): Card | null
   list(scope: Scope, includeInactive: boolean): Card[]
   fronts(docId: DocId): string[]
-  due(docId: DocId | null, now: IsoDate, limit: number): Card[]
+  /** Document and course filters intersect when both are supplied. */
+  due(docId: DocId | null, now: IsoDate, limit: number, courseId?: CourseId): Card[]
   update(cardId: CardId, patch: { front?: string; back?: string; status?: ItemStatus }): Card
   saveReview(
     cardId: CardId,
@@ -153,7 +154,8 @@ export interface CardRepo {
   /** nextDue: earliest due date among active cards not due yet, null if none. */
   stats(
     docId: DocId | null,
-    now: IsoDate
+    now: IsoDate,
+    courseId?: CourseId
   ): { due: number; new: number; learning: number; review: number; total: number; nextDue: IsoDate | null }
 }
 

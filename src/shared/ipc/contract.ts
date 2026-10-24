@@ -248,7 +248,9 @@ export const ipcContract = {
     })
   ),
   'cards.list': route<Card[]>()(z.object({ scope: scopeSchema, includeInactive: z.boolean() })),
-  'cards.due': route<Card[]>()(z.object({ docId: id.nullable(), limit: z.number().int().min(1).max(500) })),
+  'cards.due': route<Card[]>()(
+    z.object({ docId: id.nullable(), courseId: id.optional(), limit: z.number().int().min(1).max(500) })
+  ),
   'cards.review': route<Card>()(
     z.object({ cardId: id, rating: ratingSchema, elapsedMs: z.number().int().min(0) })
   ),
@@ -264,7 +266,7 @@ export const ipcContract = {
     review: number
     total: number
     nextDue: IsoDate | null
-  }>()(z.object({ docId: id.nullable() })),
+  }>()(z.object({ docId: id.nullable(), courseId: id.optional() })),
 
   // ------------------------------------------------------------ quizzes
   /** Resolves when the questions are ready (may take a while if they must be generated). */

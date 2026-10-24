@@ -88,7 +88,7 @@ export function createCards(
 
       'cards.list': async ({ scope, includeInactive }) => db.cards.list(scope, includeInactive),
 
-      'cards.due': async ({ docId, limit }) => db.cards.due(docId, nowIso(), limit),
+      'cards.due': async ({ docId, limit, courseId }) => db.cards.due(docId, nowIso(), limit, courseId),
 
       'cards.review': async ({ cardId, rating, elapsedMs }) => {
         const card = db.cards.get(cardId)
@@ -107,7 +107,7 @@ export function createCards(
 
       'cards.setStatus': async ({ cardId, status }) => db.cards.update(cardId, { status }),
 
-      'cards.stats': async ({ docId }) => db.cards.stats(docId, nowIso())
+      'cards.stats': async ({ docId, courseId }) => db.cards.stats(docId, nowIso(), courseId)
     }
   }
 }

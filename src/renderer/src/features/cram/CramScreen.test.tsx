@@ -8,6 +8,37 @@ const calls = (invoke: { mock: { calls: unknown[][] } }, channel: string): unkno
   invoke.mock.calls.filter(([c]) => c === channel).map(([, input]) => input)
 
 describe('CramScreen', () => {
+  it('pre-ticks every course file with all=1 and keeps later choices', async () => {
+    const { mock } = renderApp('/book/optical-networks/panic?all=1')
+    const invoke = vi.spyOn(mock, 'invoke')
+    const user = userEvent.setup()
+    await mock.invoke('courses.moveDocument', {
+      docId: 'signals-systems',
+      courseId: 'course-optical-networks',
+      index: 1
+    })
+    const picker = await screen.findByRole('group', { name: 'What’s on the test?' })
+    const optical = await within(picker).findByRole<HTMLInputElement>('checkbox', {
+      name: /Optical Networks/
+    })
+    const signals = await within(picker).findByRole<HTMLInputElement>('checkbox', {
+      name: /Signals and Systems/
+    })
+    expect(optical.checked).toBe(true)
+    expect(signals.checked).toBe(true)
+    expect(within(picker).queryByRole('checkbox', { name: /Probability/ })).toBeNull()
+    await user.click(signals)
+    expect(signals.checked).toBe(false)
+    await mock.invoke('courses.rename', { courseId: 'course-optical-networks', name: 'Optics' })
+    await waitFor(() => expect(signals.checked).toBe(false))
+    await user.click(screen.getByRole('button', { name: 'Start' }))
+    await waitFor(() =>
+      expect(calls(invoke, 'cram.plan')).toEqual([
+        { docId: 'optical-networks', cards: 20, scopes: [{ docId: 'optical-networks', topicIds: null }] }
+      ])
+    )
+  })
+
   it('finishes the picked set when Good reviews are due again in ten minutes', async () => {
     const { mock } = renderApp('/book/optical-networks/panic')
     const original = mock.invoke.bind(mock)
